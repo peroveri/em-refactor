@@ -1,0 +1,4 @@
+{
+    "refactor": "extract-method",
+    "position": "3:0,3:11"
+}
