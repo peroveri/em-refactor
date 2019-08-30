@@ -27,6 +27,7 @@ The way the term 'lint' is used here seems to be fixing (broken) code and refact
     * Similar to rustc builtin [lints](https://rust-lang.github.io/rustc-guide/diagnostics.html#lints) and clippy lints
     * Output the suggested refactoring with --error-format json (code change + message),
     which may then be applied later by another tool
+    * May be some suggestions here: [github clippy issues](https://github.com/rust-lang/rust-clippy/issues?q=is%3Aissue+is%3Aopen)
 * rustc_driver::Callbacks::after_parsing/after_analysis
     * Similar to [rerast](https://github.com/google/rerast/), a search and replace tool.
     * Handle the file changes internally
