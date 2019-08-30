@@ -1,4 +1,4 @@
-## [Examples in rust](./refactor-examples)
+## [./refactor-examples -- Examples in rust](./refactor-examples)
 This project should contain a list of valid refactorings that can be used for unit tests.
 
 Each refactoring example should contain the code before, after and the arguments passed to the refactoring tool. The arguments must contain refactoring definition name (e.g. 'extract-method'). Other arguments might be required such as position (line:column) depending on the actual refactoring.
@@ -13,7 +13,7 @@ So if for the testcase 'extract-method-01', the following files are required
 
 When searching automatically for candidates that can be refactored, the arguments should not be required. How can that be tested automatically?
 
-## [Refactor library](./refactor-lib)
+## [./refactor-lib -- Refactor library](./refactor-lib)
 The project containing the actual refactorings. 
 
 ### Rustc callbacks
@@ -31,8 +31,8 @@ The way the term 'lint' is used here seems to be fixing (broken) code and refact
     * Similar to [rerast](https://github.com/google/rerast/), a search and replace tool.
     * Handle the file changes internally
 
-## [CLI](./refactor-cli)
+## [refactor-cli -- CLI](./refactor-cli)
 
 
-## [LSP client and server](./refactor-ls)
+## [refactor-ls -- LSP client and server](./refactor-ls)
 TODO: add LSP client and server. Could use the example at https://github.com/Microsoft/vscode-extension-samples/tree/master/lsp-sample as a starting point.
