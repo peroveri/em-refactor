@@ -8,13 +8,14 @@ extern crate rustc_interface;
 extern crate rustc;
 #[allow(unused_extern_crates)]
 extern crate syntax;
+#[allow(unused_extern_crates)]
+extern crate syntax_pos;
 
 use std::process::{exit, Command};
 use std::path::{Path, PathBuf};
 
 mod my_refactor_callbacks;
-mod hir_visitor;
-mod ast_visitor;
+mod refactorings;
 
 fn arg_value<'a>(
     args: impl IntoIterator<Item = &'a String>,
@@ -100,7 +101,8 @@ pub fn main() {
 
             // let mut default = rustc_driver::DefaultCallbacks;
             let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks {
-                args: my_refactor_callbacks::def()
+                args: my_refactor_callbacks::def(),
+                changes: vec![]
             };
             let callbacks: &mut (dyn rustc_driver::Callbacks + Send) = &mut my_refactor;
 
