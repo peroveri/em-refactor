@@ -1,22 +1,38 @@
-extern crate assert_cli;
+extern crate assert_cmd;
+extern crate my_refactor_lib;
 
-// #[test]
-// fn calling_without_args_should_output_file_must_be_specified() {
-//     assert_cli::Assert::main_binary()
-//         .fails()
-//         .and()
-//         .stderr()
-//         .is("Filename must be specified!")
-//         .unwrap();
-// }
+use std::process::Command;
+use assert_cmd::prelude::*;
+use my_refactor_lib::Change;
 
 #[test]
-fn extract_method_01() {
-    assert_cli::Assert::main_binary()
-        .current_dir(std::path::Path::new("../refactor-examples/extract-method-01"))
-        .with_args(&["--method extract-method --file main.rs --selection 3:0,3:11"])
-        .succeeds()
-        .and().stdout().is("")
-        .and().stderr().is("")
-        .unwrap();
+fn extract_method_owned_mut_value() {
+    // using cargo check to invoke the refactoring tool, so we need to force it to check files when they have not been changed (instead of running cargo clean before)
+    Command::new("touch").arg("-c").arg("../refactor-examples/extract_method_01/src/main.rs").unwrap().assert().success();
+    Command::cargo_bin("cargo-my-refactor")
+        .unwrap()
+        .current_dir("../refactor-examples/extract_method_01")
+        .arg("--")
+        .arg("--")
+        .arg("--refactoring=extract-method")
+        .arg("--file=src/owned_mut_value.rs")
+        .arg("--selection=43:53")
+        .arg("--new_function=inc")
+        // add --args-from-file=...
+        // add --print-changed-files
+        .assert()
+        .success()
+        //stdout=read_file("owned_mut_value_after.rs")
+        .stdout(format!("{:?}\n{:?}\n", Change {
+            file_name: "src/owned_mut_value.rs".to_owned(),
+            start: 0,
+            end: 0,
+            replacement: "fn inc() {\ni += 1;\n}".to_owned()
+        }, Change {
+            file_name: "src/owned_mut_value.rs".to_owned(),
+            start: 0,
+            end: 0,
+            replacement: "inc(&mut i);".to_owned()
+        }));
+        // .stderr("");
 }

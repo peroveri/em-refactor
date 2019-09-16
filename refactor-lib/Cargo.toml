@@ -13,10 +13,13 @@ path = "src/main.rs"
 
 [[bin]]
 name = "my-refactor-driver"
-test = false
+test = true
 path = "src/driver.rs"
+
+[lib]
+name = "my_refactor_lib"
 
 [dependencies]
 
 [dev-dependencies]
-assert_cli = "0.6.3"
+assert_cmd = "0.11.1"

@@ -1,4 +1,3 @@
-#![cfg_attr(feature = "deny-warnings", deny(warnings))]
 static DRIVER_NAME: &str = "my-refactor-driver";
 
 pub fn main() {
@@ -19,6 +18,8 @@ where
         }
         args.push(arg);
     }
+    // TODO: collect as JSON
+    let my_refactor_args: String = old_args.collect::<Vec<_>>().join(";");
 
     let mut path = std::env::current_exe()
         .expect("current executable path invalid")
@@ -30,6 +31,7 @@ where
     let exit_status = std::process::Command::new("cargo")
         .args(&args)
         .env("RUSTC_WRAPPER", path)
+        .env("MY_REFACTOR_ARGS", my_refactor_args)
         .spawn()
         .expect("could not run cargo")
         .wait()

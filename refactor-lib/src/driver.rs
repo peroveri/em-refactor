@@ -14,8 +14,10 @@ extern crate syntax_pos;
 use std::process::{exit, Command};
 use std::path::{Path, PathBuf};
 
-mod my_refactor_callbacks;
 mod refactorings;
+mod refactor_args;
+mod my_refactor_callbacks;
+mod change;
 
 fn arg_value<'a>(
     args: impl IntoIterator<Item = &'a String>,
@@ -38,7 +40,7 @@ fn arg_value<'a>(
     None
 }
 pub fn main() {
-    // eprintln!("driver.rs: args: {}", std::env::args().collect::<Vec<_>>().join(","));
+    // eprintln!("MY ARGS: {}", std::env::var("MY_REFACTOR_ARGS").unwrap());
     rustc_driver::init_rustc_env_logger();
     exit(
         rustc_driver::report_ices_to_stderr_if_any(move || {
@@ -99,11 +101,15 @@ pub fn main() {
                     .collect()
             };
 
+            args.push("--allow".to_owned());
+            args.push("dead_code".to_owned());
+            args.push("--allow".to_owned());
+            args.push("deprecated".to_owned());
+            args.push("--allow".to_owned());
+            args.push("unused".to_owned());
+
             // let mut default = rustc_driver::DefaultCallbacks;
-            let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks {
-                args: my_refactor_callbacks::def(),
-                changes: vec![]
-            };
+            let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks::from_arg(std::env::var("MY_REFACTOR_ARGS").unwrap());
             let callbacks: &mut (dyn rustc_driver::Callbacks + Send) = &mut my_refactor;
 
             // let args = std::env::args().collect::<Vec<_>>();

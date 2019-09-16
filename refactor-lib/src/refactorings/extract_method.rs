@@ -1,12 +1,11 @@
-use rustc::hir::intravisit;
 use rustc::ty;
 use rustc::hir;
-use syntax::source_map::SourceMap;
-use crate::refactorings::hir_visitor::StmtsVisitor;
-use syntax_pos::Span;
+use crate::refactorings::stmts_visitor::StmtsVisitor;
+use crate::refactor_args::RefactorArgs;
+use crate::change::Change;
 
 /**
- * A naive and incorrect algorithm for extract method
+ * WIP
  * 
  * Extract method
  * 
@@ -29,47 +28,43 @@ use syntax_pos::Span;
 pub struct ExtractMethodRefactoring<'v> {
     pub tcx: ty::TyCtxt<'v>,
 }
+fn get_selection(s: &str) -> (u32, u32) {
+    let vs = s.split(':').collect::<Vec<_>>();
+    (vs[0].parse().unwrap(), vs[1].parse().unwrap())
+}
 
-impl<'v> ExtractMethodRefactoring<'v> {
+fn get_selection_with_global_offset(source_map: &syntax::source_map::SourceMap, selection: (u32, u32), file: &str) -> (u32, u32) {
+    let filename = syntax::source_map::FileName::Real(std::path::PathBuf::from(file));
+    let source_file = source_map.get_source_file(&filename).unwrap();
+    (selection.0 + source_file.start_pos.0, selection.1 + source_file.start_pos.0)
+}
 
-    pub fn extract_method(&self, file_name: &str, pos: (u32, u32)) -> Option<Span> {
-        let mut stmt_visit = StmtsVisitor {
-            tcx: self.tcx,
-            span: None,
-            pos
-        };
-
-        intravisit::walk_crate(&mut stmt_visit, self.tcx.hir().krate());
-
-        return stmt_visit.span;
-    }
+fn get_stmts_source(source_map: &syntax::source_map::SourceMap, stmts: &[&hir::Stmt]) -> String {
+    stmts.iter().map(|stmt| source_map.span_to_snippet(stmt.span).unwrap().to_string()).collect::<Vec<_>>().join("\n")
 }
 
 impl<'v> ExtractMethodRefactoring<'v> {
 
+    pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
+        let selection = get_selection_with_global_offset(ty.sess.source_map(), get_selection(&args.selection), &args.file);
+        let stmts_visit = StmtsVisitor::visit(ty, &args.file, selection);
 
+        if let Some(stmts) = stmts_visit.stmts {
+            
+            let new_fn = format!("fn {}() {{\n{}\n}}", args.new_function, get_stmts_source(ty.sess.source_map(), &stmts));
 
-    pub fn refactor() {
-        // args: f: Function, m: Module, s: Selection
-        // 
-
-        // let g = fresh function(m)
-        // add_function_decl(m, g)
-        // let vs = undeclared_vars(f, s)
-        // add_params(g, vs)
-        // replace_statements_with_call(f, s, g)
+            vec![
+                Change {
+                    file_name: args.file.to_string(),
+                    start: 0,
+                    end: 0,
+                    replacement: new_fn
+                }
+            ]
+            // println!("{}", new_fn);
+        } else {
+            println!("no statements");
+            vec![]
+        }
     }
 }
-
-/*
- * 
-01 fn foo() {
-02   let mut i = 1;
-03   i += 1;
-04 }
- * "UndeclaredVariablesVisitor" -- Visits a set of statements. Collects variables appearing "free/unbound" within those statements.
- * "FreshFunctionNameVisitor" -- Returns a fresh name for a function
- * 
- * "ExtractMethodVisitor" -- Given a span (byte start, byte length), it should return the block containing the span and the NodeId's of the first and last statement
- * 
- */
