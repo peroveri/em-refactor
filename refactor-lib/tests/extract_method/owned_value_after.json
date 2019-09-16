@@ -1,0 +1,5 @@
+{
+    "refactoring": "extract-method",
+    "selection": "3:12,3:17",
+    "new-function-name": "inc"
+}
