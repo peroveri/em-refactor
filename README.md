@@ -16,21 +16,9 @@ When searching automatically for candidates that can be refactored, the argument
 ## [./refactor-lib -- Refactor library](./refactor-lib)
 The project containing the actual refactorings. 
 
-### Rustc callbacks
+There are two executable files, one from main.rs and one from driver.rs.
 
-The way the term 'lint' is used here seems to be fixing (broken) code and refactoring, so it is some kind of issue with the source code that the tool points out and maybe it also suggest a 
-
-* Register EarlyLintPass/LateLintPass
-    * Register the 'lints' in rustc_driver::Callbacks::after_parsing
-    * EarlyLintPass is with original syntax, but before type checking
-    * LateLintPass is after type checking, but with a desugared syntax
-    * Similar to rustc builtin [lints](https://rust-lang.github.io/rustc-guide/diagnostics.html#lints) and clippy lints
-    * Output the suggested refactoring with --error-format json (code change + message),
-    which may then be applied later by another tool
-    * May be some suggestions here: [github clippy issues](https://github.com/rust-lang/rust-clippy/issues?q=is%3Aissue+is%3Aopen)
-* rustc_driver::Callbacks::after_parsing/after_analysis
-    * Similar to [rerast](https://github.com/google/rerast/), a search and replace tool.
-    * Handle the file changes internally
+main.rs calls ```cargo check``` with the executable from driver.rs as argument. The RUSTC_WRAPPER flag is set to 1 when calling cargo. Cargo then calls the executable with the same argument as if it was calling rustc. We can then pass callbacks when we run rustc_driver::run_compiler.
 
 ## [refactor-ls -- LSP client and server](./refactor-ls)
 TODO: add LSP client and server. Could use the example at https://github.com/Microsoft/vscode-extension-samples/tree/master/lsp-sample as a starting point.
