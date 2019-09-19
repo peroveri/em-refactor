@@ -32,8 +32,5 @@ The way the term 'lint' is used here seems to be fixing (broken) code and refact
     * Similar to [rerast](https://github.com/google/rerast/), a search and replace tool.
     * Handle the file changes internally
 
-## [refactor-cli -- CLI](./refactor-cli)
-
-
 ## [refactor-ls -- LSP client and server](./refactor-ls)
 TODO: add LSP client and server. Could use the example at https://github.com/Microsoft/vscode-extension-samples/tree/master/lsp-sample as a starting point.
