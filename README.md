@@ -1,9 +1,9 @@
 ## [./refactor-examples -- Examples in rust](./refactor-examples)
 This project should contain a list of valid refactorings that can be used for unit tests.
 
-Each refactoring example should contain the code before, after and the arguments passed to the refactoring tool. The arguments must contain refactoring definition name (e.g. 'extract-method'). Other arguments might be required such as position (line:column) depending on the actual refactoring.
+Each refactoring example should contain the code before, after and the arguments passed to the refactoring tool. The arguments must contain refactoring definition name (e.g. 'extract-method') and selection (from and to). Other arguments might be required depending on the actual refactoring.
 
-So if for the testcase 'extract-method-01', the following files are required
+So for the testcase 'extract-method-01', the following files are required
 * `extract-method-01.rs`
     * The code before refactoring
 * `extract-method-01.after.rs`
