@@ -1,7 +1,7 @@
 use rustc_interface::{interface};
 use rustc_driver;
 use rustc::ty;
-use crate::refactorings;
+use crate::refactorings::extract_method;
 use crate::refactor_args::RefactorArgs;
 use crate::change::Change;
 
@@ -22,7 +22,7 @@ impl MyRefactorCallbacks {
 
 fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
     if args.refactoring == "extract-method" {
-        refactorings::extract_method::ExtractMethodRefactoring::do_refactoring(ty, args)
+        extract_method::do_refactoring(ty, args)
     } else {
         vec![]
     }

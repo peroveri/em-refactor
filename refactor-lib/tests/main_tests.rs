@@ -27,7 +27,7 @@ fn extract_method_owned_mut_value() {
             file_name: "src/owned_mut_value.rs".to_owned(),
             start: 0,
             end: 0,
-            replacement: "fn inc() {\ni += 1;\n}".to_owned()
+            replacement: "fn inc(i: &mut i32) {\ni += 1;\n}".to_owned()
         }, Change {
             file_name: "src/owned_mut_value.rs".to_owned(),
             start: 0,
