@@ -42,8 +42,9 @@ fn arg_value<'a>(
 pub fn main() {
     // eprintln!("MY ARGS: {}", std::env::var("MY_REFACTOR_ARGS").unwrap());
     rustc_driver::init_rustc_env_logger();
+    rustc_driver::install_ice_hook();
     exit(
-        rustc_driver::report_ices_to_stderr_if_any(move || {
+        rustc_driver::catch_fatal_errors(move || {
             
             let mut orig_args: Vec<String> = std::env::args().collect();
 
@@ -108,6 +109,7 @@ pub fn main() {
             args.push("--allow".to_owned());
             args.push("unused".to_owned());
 
+            std::env::set_var("RUST_BACKTRACE", "1");
             // let mut default = rustc_driver::DefaultCallbacks;
             let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks::from_arg(std::env::var("MY_REFACTOR_ARGS").unwrap());
             let callbacks: &mut (dyn rustc_driver::Callbacks + Send) = &mut my_refactor;
