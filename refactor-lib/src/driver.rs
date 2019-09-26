@@ -46,7 +46,7 @@ pub fn main() {
     exit(
         rustc_driver::catch_fatal_errors(move || {
             
-            let mut orig_args: Vec<String> = std::env::args().collect();
+            let orig_args: Vec<String> = std::env::args().collect();
 
             let sys_root_arg = arg_value(&orig_args, "--sysroot", |_| true);
             let have_sys_root_arg = sys_root_arg.is_some();
@@ -83,39 +83,44 @@ pub fn main() {
             // We're invoking the compiler programmatically, so we ignore this/
             let wrapper_mode = Path::new(&orig_args[1]).file_stem() == Some("rustc".as_ref());
 
+            let refactor_args: String;
+            let mut rustc_args: Vec<_>;
+
             if wrapper_mode {
                 // we still want to be able to invoke it normally though
-                orig_args.remove(1);
+                rustc_args = orig_args.into_iter().skip(1).collect();
+                refactor_args = std::env::var("MY_REFACTOR_ARGS").unwrap();
+            } else {
+                let orig_args = orig_args.into_iter().skip(1).collect::<Vec<String>>();
+                rustc_args = orig_args.clone().into_iter().take_while(|s| *s != "--").collect();
+                let mut refactor_args_vec = orig_args.into_iter().skip_while(|s| *s != "--").skip(1).collect::<Vec<String>>();
+                let file_path = rustc_args.iter().find(|s| !s.starts_with('-')).unwrap();
+                refactor_args_vec.push(format!("--file={}", file_path));
+                refactor_args = refactor_args_vec.join(";");
+                rustc_args.insert(0, "".to_owned());
             }
 
             // this conditional check for the --sysroot flag is there so users can call
             // `clippy_driver` directly
             // without having to pass --sysroot or anything
-            let mut args: Vec<String> = if have_sys_root_arg {
-                orig_args.clone()
-            } else {
-                orig_args
-                    .clone()
-                    .into_iter()
-                    .chain(Some("--sysroot".to_owned()))
-                    .chain(Some(sys_root))
-                    .collect()
-            };
-
-            args.push("--allow".to_owned());
-            args.push("dead_code".to_owned());
-            args.push("--allow".to_owned());
-            args.push("deprecated".to_owned());
-            args.push("--allow".to_owned());
-            args.push("unused".to_owned());
+            if !have_sys_root_arg {
+                rustc_args.push("--sysroot".to_owned());
+                rustc_args.push(sys_root);
+            }
+            rustc_args.push("--allow".to_owned());
+            rustc_args.push("dead_code".to_owned());
+            rustc_args.push("--allow".to_owned());
+            rustc_args.push("deprecated".to_owned());
+            rustc_args.push("--allow".to_owned());
+            rustc_args.push("unused".to_owned());
 
             std::env::set_var("RUST_BACKTRACE", "1");
             // let mut default = rustc_driver::DefaultCallbacks;
-            let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks::from_arg(std::env::var("MY_REFACTOR_ARGS").unwrap());
+            let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_args);
             let callbacks: &mut (dyn rustc_driver::Callbacks + Send) = &mut my_refactor;
 
             // let args = std::env::args().collect::<Vec<_>>();
-            rustc_driver::run_compiler(&args, callbacks, None, None)
+            rustc_driver::run_compiler(&rustc_args, callbacks, None, None)
         }).and_then(|result| result)
         .is_err() as i32
     )
