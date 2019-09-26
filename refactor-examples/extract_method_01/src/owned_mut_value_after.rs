@@ -4,5 +4,5 @@ fn inc(i: &mut i32) {
 pub fn main() -> i32 {
     let mut i = 0;
     inc(&mut i);
-    i
+    return i;
 }
