@@ -33,7 +33,7 @@ fn run_testcase(name: &str) -> std::io::Result<()> {
     Command::cargo_bin("my-refactor-driver")
         .unwrap()
         .current_dir(TEST_CASE_PATH)
-        // .arg("--out-dir tmp")
+        .arg("--out-dir=../../../tmp")
         .arg(format!("{}.rs", name))
         .arg("--")
         .args(refactoring_args)
