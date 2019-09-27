@@ -1,5 +1,5 @@
 fn inc(j: &mut i32) {
-    *j += 1;
+*j += 1;
 }
 pub fn main() {
     let mut i = 0;
