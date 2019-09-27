@@ -1,8 +1,8 @@
 fn succ(i: &i32) -> i32 {
-    i + 1
+    return i + 1;
 }
-pub fn main() -> i32 {
+pub fn main() {
     let i = 0;
     let j = succ(&i);
-    j
+    println!("{}", j);
 }

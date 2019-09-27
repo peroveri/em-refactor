@@ -1,9 +1,9 @@
-fn inc(i: &mut i32) {
-    *i += 1;
+fn inc(j: &mut i32) {
+    *j += 1;
 }
-pub fn main() -> i32 {
+pub fn main() {
     let mut i = 0;
     let j = &mut i;
     inc(j);
-    i
+    println!("{}", i);
 }
