@@ -126,17 +126,29 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
         // let params = ExtractMethodRefactoring::convert_to_params(&ty, &Va);
         // println!("params: {}", params);
         let new_fn = format!(
-            "fn {}({}) {{\n{}\n}}",
+            "fn {}({}) {{\n{}\n}}\n",
             args.new_function,
             params,
             get_stmts_source(ty.sess.source_map(), &stmts.Si)
         );
 
+        let arguments = x.arguments.iter().map(|(name, _)| name.to_string()).collect::<Vec<_>>().join(", ");
+
+        let fn_call = format!("{}({});", args.new_function, arguments);
+        let si_start = stmts.Si.first().unwrap().span.lo().0;
+        let si_end = stmts.Si.last().unwrap().span.hi().0;
+
         vec![Change {
             file_name: args.file.to_string(),
-            start: 0,
-            end: 0,
+            start: stmts.fn_decl_pos,
+            end: stmts.fn_decl_pos,
             replacement: new_fn,
+        },
+        Change {
+            file_name: args.file.to_string(),
+            start: si_start,
+            end: si_end,
+            replacement: fn_call
         }]
     // println!("{}", new_fn);
     } else {

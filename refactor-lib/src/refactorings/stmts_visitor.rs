@@ -7,7 +7,8 @@ pub struct ExtractMethodStatements<'v> {
     pub fn_body_id: hir::BodyId,
     pub S0: Vec<&'v hir::Stmt>,
     pub Si: Vec<&'v hir::Stmt>,
-    pub Sj: Vec<&'v hir::Stmt>
+    pub Sj: Vec<&'v hir::Stmt>,
+    pub fn_decl_pos: u32
 }
 
 /**
@@ -19,6 +20,7 @@ pub struct StmtsVisitor<'v> {
     pub file: String,
     pub pos: (u32, u32),
     pub stmts: Option<ExtractMethodStatements<'v>>,
+    pub fn_decl_pos: u32,
     mod_: Option<&'v hir::Mod>,
     fn_body_id: Option<hir::BodyId>
 }
@@ -39,6 +41,7 @@ impl StmtsVisitor<'_> {
             pos,
             stmts: None,
             mod_: None,
+            fn_decl_pos: 0,
             fn_body_id: None
         };
 
@@ -69,6 +72,7 @@ impl<'v> intravisit::Visitor<'v> for StmtsVisitor<'v> {
 
     fn visit_fn(&mut self, fk: hir::intravisit::FnKind<'v>, fd: &'v hir::FnDecl, b: hir::BodyId, s: Span, id: hir::HirId) {
         self.fn_body_id = Some(b);
+        self.fn_decl_pos = s.lo().0;
         intravisit::walk_fn(self, fk, fd, b, s, id);
     }
 
@@ -94,7 +98,8 @@ impl<'v> intravisit::Visitor<'v> for StmtsVisitor<'v> {
             Si: stmts.iter().skip(start_index).take(1 + end_index - start_index).collect(),
             Sj: stmts.iter().skip(end_index + 1).collect(),
             mod_: self.mod_.unwrap(),
-            fn_body_id: self.fn_body_id.unwrap()
+            fn_body_id: self.fn_body_id.unwrap(),
+            fn_decl_pos: self.fn_decl_pos // TODO: is possibly wrong if there is a fn decl inside the block
         });
 
     }
