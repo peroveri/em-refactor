@@ -6,12 +6,14 @@ Each refactoring example should contain the code before, after and the arguments
 So for the testcase 'extract-method-01', the following files are required
 * `extract-method-01.rs`
     * The code before refactoring
-* `extract-method-01.after.rs`
+* `extract-method-01_after.rs`
     * The expected code after refactoring
 * `extract-method-01.json`
     * The arguments to be passed
+    
+If the test is expected to fail, then the file ending with `_after.rs` is not required.
 
-When searching automatically for candidates that can be refactored, the arguments should not be required. How can that be tested automatically?
+TODO: When searching automatically for candidates that can be refactored, the arguments should not be required. How can that be tested automatically?
 
 ## [./refactor-lib -- Refactor library](./refactor-lib)
 The project containing the actual refactorings. 
@@ -19,6 +21,10 @@ The project containing the actual refactorings.
 There are two executable files, one from main.rs and one from driver.rs.
 
 main.rs calls ```cargo check``` with the executable from driver.rs as argument. The RUSTC_WRAPPER flag is set to 1 when calling cargo. Cargo then calls the executable with the same argument as if it was calling rustc. We can then pass callbacks when we run rustc_driver::run_compiler.
+
+The tool can be invoked like this:
+
+`cargo run --bin my-refactor-driver refactor-examples/extract_method/owned_mut_value.rs  -- --refactoring=extract-method --selection=39:46 --new_function=foo`
 
 ## [refactor-ls -- LSP client and server](./refactor-ls)
 TODO: add LSP client and server. Could use the example at https://github.com/Microsoft/vscode-extension-samples/tree/master/lsp-sample as a starting point.
