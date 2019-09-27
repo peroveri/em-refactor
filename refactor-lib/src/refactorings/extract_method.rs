@@ -1,7 +1,7 @@
 use crate::change::Change;
 use crate::refactor_args::RefactorArgs;
 use crate::refactorings::expr_use_visit::CollectVarsArgs;
-use crate::refactorings::stmts_visitor::StmtsVisitor;
+use crate::refactorings::stmts_visitor::visit_stmts;
 use rustc::hir;
 use rustc::ty;
 use syntax::source_map::{BytePos, Span};
@@ -91,45 +91,38 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
         &args.file,
     );
 
-    let stmts_visit = StmtsVisitor::visit(ty, &args.file, selection);
+    let stmts_visit_res = visit_stmts(ty, &args.file, selection);
 
-    if let Some(stmts) = stmts_visit.stmts {
+    if let Some(stmts) = stmts_visit_res {
         let collect_args = CollectVarsArgs {
             body_id: stmts.fn_body_id,
             spi,
         };
-        let x = crate::refactorings::expr_use_visit::collect_vars(ty, collect_args);
+        let vars_used = crate::refactorings::expr_use_visit::collect_vars(ty, collect_args);
 
-        // let Va = get_decl_and_used(ty, &stmts.S0, &stmts.Si);
-        // let Vb = get_decl_and_used(ty, &stmts.Si, &stmts.Sj);
-
-        // println!("S0: {:?}, Si: {:?}, Sj: {:?}", stmts.S0, stmts.Si, stmts.Sj);
-        // println!("Va: {}, Vb: {}", Va.len(), Vb.len());
-        if x.return_values.len() > 1 {
-            return vec![]; // should be error
+        if vars_used.return_values.len() > 1 {
+            return vec![]; // TODO: should be error
         }
 
-        let params = x
+        let params = vars_used
             .arguments
             .iter()
             .map(|(name, ty)| format!("{}: {:?}", name, ty))
             .collect::<Vec<_>>()
             .join(", ");
 
-        // let params = ExtractMethodRefactoring::convert_to_params(&ty, &Va);
-        // println!("params: {}", params);
         let new_fn = format!(
             "fn {}({}) {{\n{}\n}}\n",
             args.new_function,
             params,
-            get_stmts_source(ty.sess.source_map(), &stmts.Si)
+            get_stmts_source(ty.sess.source_map(), &stmts.S)
         );
 
-        let arguments = x.arguments.iter().map(|(name, _)| name.to_string()).collect::<Vec<_>>().join(", ");
+        let arguments = vars_used.arguments.iter().map(|(name, _)| name.to_string()).collect::<Vec<_>>().join(", ");
 
         let fn_call = format!("{}({});", args.new_function, arguments);
-        let si_start = stmts.Si.first().unwrap().span.lo().0;
-        let si_end = stmts.Si.last().unwrap().span.hi().0;
+        let si_start = stmts.S.first().unwrap().span.lo().0;
+        let si_end = stmts.S.last().unwrap().span.hi().0;
 
         vec![Change {
             file_name: args.file.to_string(),
@@ -143,7 +136,6 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
             end: si_end,
             replacement: fn_call
         }]
-    // println!("{}", new_fn);
     } else {
         println!("no statements");
         vec![]

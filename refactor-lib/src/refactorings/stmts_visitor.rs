@@ -5,9 +5,7 @@ use syntax_pos::Span;
 pub struct ExtractMethodStatements<'v> {
     pub mod_: &'v hir::Mod,
     pub fn_body_id: hir::BodyId,
-    pub S0: Vec<&'v hir::Stmt>,
-    pub Si: Vec<&'v hir::Stmt>,
-    pub Sj: Vec<&'v hir::Stmt>,
+    pub S: Vec<&'v hir::Stmt>,
     pub fn_decl_pos: u32
 }
 
@@ -16,11 +14,11 @@ pub struct ExtractMethodStatements<'v> {
  * the sequence of statements starting and ending at selection start and end.
  */
 pub struct StmtsVisitor<'v> {
-    pub tcx: TyCtxt<'v>,
-    pub file: String,
-    pub pos: (u32, u32),
-    pub stmts: Option<ExtractMethodStatements<'v>>,
-    pub fn_decl_pos: u32,
+    tcx: TyCtxt<'v>,
+    file: String,
+    pos: (u32, u32),
+    stmts: Option<ExtractMethodStatements<'v>>,
+    fn_decl_pos: u32,
     mod_: Option<&'v hir::Mod>,
     fn_body_id: Option<hir::BodyId>
 }
@@ -34,22 +32,22 @@ impl StmtsVisitor<'_> {
         false
     }
 
-    pub fn visit<'v>(tcx: TyCtxt<'v>, file: &str, pos: (u32, u32))-> StmtsVisitor<'v> {
-        let mut v = StmtsVisitor {
-            tcx,
-            file: file.to_string(),
-            pos,
-            stmts: None,
-            mod_: None,
-            fn_decl_pos: 0,
-            fn_body_id: None
-        };
-
-        intravisit::walk_crate(&mut v, tcx.hir().krate());
-        v
-    }
+    
 }
+pub fn visit_stmts<'v>(tcx: TyCtxt<'v>, file: &str, pos: (u32, u32))-> Option<ExtractMethodStatements<'v>> {
+    let mut v = StmtsVisitor {
+        tcx,
+        file: file.to_string(),
+        pos,
+        stmts: None,
+        mod_: None,
+        fn_decl_pos: 0,
+        fn_body_id: None
+    };
 
+    intravisit::walk_crate(&mut v, tcx.hir().krate());
+    v.stmts
+}
 /**
  * byte 0 ...      byte i
  * <stmt start>xxx;<statment end> 
@@ -94,9 +92,7 @@ impl<'v> intravisit::Visitor<'v> for StmtsVisitor<'v> {
         // let mut iter = body.stmts.iter();
 
         self.stmts = Some(ExtractMethodStatements {
-            S0: stmts.iter().take(start_index).collect(), //.take_while(|s| s.span.lo().0 < from).collect(),
-            Si: stmts.iter().skip(start_index).take(1 + end_index - start_index).collect(),
-            Sj: stmts.iter().skip(end_index + 1).collect(),
+            S: stmts.iter().skip(start_index).take(1 + end_index - start_index).collect(),
             mod_: self.mod_.unwrap(),
             fn_body_id: self.fn_body_id.unwrap(),
             fn_decl_pos: self.fn_decl_pos // TODO: is possibly wrong if there is a fn decl inside the block
