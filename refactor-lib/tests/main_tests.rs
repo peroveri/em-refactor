@@ -7,7 +7,7 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::process::Command;
 
-static TEST_CASE_PATH: &str = "../refactor-examples/extract_method_01/src";
+static TEST_CASE_PATH: &str = "../refactor-examples/extract_method_01";
 
 fn read_test_file(file_path: &str) -> std::io::Result<String> {
     let mut path = PathBuf::from(TEST_CASE_PATH);
@@ -33,7 +33,7 @@ fn run_testcase(name: &str) -> std::io::Result<()> {
     Command::cargo_bin("my-refactor-driver")
         .unwrap()
         .current_dir(TEST_CASE_PATH)
-        .arg("--out-dir=../../../tmp")
+        .arg("--out-dir=../../tmp")
         .arg(format!("{}.rs", name))
         .arg("--")
         .args(refactoring_args)
