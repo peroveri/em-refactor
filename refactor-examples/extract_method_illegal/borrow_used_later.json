@@ -1,0 +1,5 @@
+{
+    "refactoring": "extract-method",
+    "selection": "60:71",
+    "new_function": "foo"
+}
