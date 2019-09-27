@@ -52,40 +52,33 @@ fn map_to_span(
 /**
  * WIP
  *
- * Extract method
+ * Extract method (from statements)
  *
  * Input:
- * - f - A function
- * - m - The module containing f
- * - s - A selection in f (of consecutive statements?)
+ * - F - A function
+ * - M - The module containing F
+ * - S - A selection in F of consecutive statements
  *
  * Assumptions:
- * - f is not a method
+ * - F is not a method
  *
  * Steps:
- * g <- new function with fresh name
- * add g to m
- * vs <- all variables in s not declared in s
- * add vs as parameters of g
- * replace s with a call to g with arguments vs
+ * G <- new function with fresh name
+ * add G to M
+ * Vb <- variables in S declared before S
+ * Va <- variables in S declared in S and used after S
+ * for each V in Vb
+ *   add V as parameter of G
+ * for each V in Va
+ *   add V as return type of G
+ * move S to G
+ * replace S in F with call to G
+ * if |Va| > 0
+ *   add return statement at the end of M with Va
+ *   add declaration for all Va's before call to G and assign
+ * 
  */
 
-/**
- * Extract method
- * 1.  Collect S0, Si and Sj
- * 2.  Va <- Vars declared in S0, used in Si
- * 3.  Vb <- Vars declared in Si, used in Sj
- * 4.  if |Vb| > 1 fail
- * 5.  g <- new method with fresh name
- * 6.  add g to m
- * 7.  for each v in Va
- * 8.    add v as parameter of g
- * 9.  move body of f to g
- * 10. add method call to g at Si
- * 11. if |Vb| == 1
- * 12.   add as return type of g
- * 13.   declare before Si and asign to g()
- */
 pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
     let selection = get_selection_with_global_offset(
         ty.sess.source_map(),
