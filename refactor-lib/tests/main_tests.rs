@@ -7,7 +7,7 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::process::Command;
 
-static TEST_CASE_PATH: &str = "../refactor-examples/extract_method_01";
+static TEST_CASE_PATH: &str = "../refactor-examples/extract_method";
 
 fn read_test_file(file_path: &str) -> std::io::Result<String> {
     let mut path = PathBuf::from(TEST_CASE_PATH);
@@ -27,10 +27,10 @@ fn json_str_to_param_vec(s: &str) -> serde_json::Result<Vec<String>> {
     ])
 }
 
-fn run_testcase(name: &str) -> std::io::Result<()> {
-    let expected = read_test_file(&format!("{}_after.rs", name))?;
+fn run_testcase(name: &str, expect_sucess: bool) -> std::io::Result<()> {
     let refactoring_args = json_str_to_param_vec(&read_test_file(&format!("{}.json", name))?)?;
-    Command::cargo_bin("my-refactor-driver")
+    let expected = if expect_sucess {read_test_file(&format!("{}_after.rs", name))?} else {"".to_string()};
+    let assert = Command::cargo_bin("my-refactor-driver")
         .unwrap()
         .current_dir(TEST_CASE_PATH)
         .arg("--out-dir=../../tmp")
@@ -39,21 +39,36 @@ fn run_testcase(name: &str) -> std::io::Result<()> {
         .args(refactoring_args)
         .arg(format!("--file={}.rs", name))
         .arg("--output-changes")
-        .assert()
-        .success()
-        .stdout(expected);
+        .assert();
+
+    if expect_sucess {
+        assert.success().stdout(expected);
+    } else {
+        assert.failure();
+    }
     Ok(())
+}
+
+fn run_test_and_assert_success(name: &str) {
+    run_testcase(name, true).unwrap();
+}
+fn run_test_and_assert_failure(name: &str) {
+    run_testcase(name, false).unwrap();
 }
 
 #[test]
 fn extract_method_owned_mut_value() {
-    run_testcase("owned_mut_value").unwrap();
+    run_test_and_assert_success("owned_mut_value");
 }
 #[test]
 fn extract_method_borrowed_mut_value() {
-    run_testcase("borrowed_mut_value").unwrap();
+    run_test_and_assert_success("borrowed_mut_value");
 }
 #[test]
 fn extract_method_owned_value() {
-    run_testcase("owned_value").unwrap();
+    run_test_and_assert_success("owned_value");
+}
+#[test]
+fn extract_method_failure_borrow_used_later() {
+    run_test_and_assert_failure("failure_borrow_used_later");
 }
