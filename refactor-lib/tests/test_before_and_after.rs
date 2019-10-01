@@ -51,6 +51,9 @@ fn compile_and_run() -> std::io::Result<Vec<u8>> {
         .current_dir(TEST_TMP_PROJECT_DIR)
         .output()
         .expect("failed to run");
+    if !output.status.success() {
+        panic!(String::from_utf8(output.stderr).unwrap());
+    }
     Ok(output.stdout)
 }
 
