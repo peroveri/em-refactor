@@ -55,7 +55,7 @@ fn contains_multiple_files(changes: &[Change]) -> bool {
     set.len() > 1
 }
 
-fn output_changes(tcx: ty::TyCtxt, changes: &Vec<Change>) {
+fn output_changes(tcx: ty::TyCtxt, changes: &[Change]) {
     if changes.is_empty() {
         return;
     }
@@ -63,7 +63,7 @@ fn output_changes(tcx: ty::TyCtxt, changes: &Vec<Change>) {
         // TODO: figure out how the output should be
         panic!("changes in multiple files not currently supported");
     }
-    let mut changes = changes.clone();
+    let mut changes = changes.to_owned();
     changes.sort_by_key(|c| c.start);
     changes.reverse();
     let source_map = tcx.sess.source_map();

@@ -5,7 +5,7 @@ use syntax_pos::Span;
 pub struct ExtractMethodStatements<'v> {
     pub mod_: &'v hir::Mod,
     pub fn_body_id: hir::BodyId,
-    pub S: Vec<&'v hir::Stmt>,
+    pub stmts: Vec<&'v hir::Stmt>,
     pub fn_decl_pos: u32
 }
 
@@ -63,12 +63,12 @@ impl<'v> intravisit::Visitor<'v> for StmtsVisitor<'v> {
 
     fn visit_block(&mut self, body: &'v hir::Block) {
         if let Some(expr) = &body.expr {
-            if let hir::ExprKind::Match(ref match_expr, ref arms, hir::MatchSource::WhileDesugar) = (*expr).kind {
+            if let hir::ExprKind::Match(_, ref arms, hir::MatchSource::WhileDesugar) = (*expr).kind {
                 
                 if let Some(arm) = arms.first() {
-                    if let hir::Arm{body, ..} = arm {
-                        intravisit::walk_expr(self, &**body);
-                    }
+                    let hir::Arm{body, ..} = arm ;
+                    intravisit::walk_expr(self, &**body);
+                    
                 }
             }
         }
@@ -83,7 +83,7 @@ impl<'v> intravisit::Visitor<'v> for StmtsVisitor<'v> {
         }
 
         self.stmts = Some(ExtractMethodStatements {
-            S: stmts,
+            stmts,
             mod_: self.mod_.unwrap(),
             fn_body_id: self.fn_body_id.unwrap(),
             fn_decl_pos: self.fn_decl_pos // TODO: is possibly wrong if there is a fn decl inside the block

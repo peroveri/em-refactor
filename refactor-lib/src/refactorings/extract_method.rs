@@ -13,10 +13,10 @@ fn get_selection(s: &str) -> (u32, u32) {
 /**
  * rewrites: places in the source code where deref * needs to be added
  */
-fn get_stmts_source(source_map: &syntax::source_map::SourceMap, span: Span, rewrites: &Vec<u32>) -> String {
+fn get_stmts_source(source_map: &syntax::source_map::SourceMap, span: Span, rewrites: &[u32]) -> String {
     let mut source = source_map.span_to_snippet(span).unwrap();
     
-    let mut rewrites = rewrites.clone();
+    let mut rewrites = rewrites.to_owned();
     rewrites.sort();
     rewrites.reverse();
 
@@ -110,8 +110,8 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
         let arguments = vars_used.get_arguments().iter().map(|arg| arg.as_arg()).collect::<Vec<_>>().join(", ");
 
         let fn_call = format!("{}({});", args.new_function, arguments);
-        let si_start = stmts.S.first().unwrap().span.lo().0;
-        let si_end = stmts.S.last().unwrap().span.hi().0;
+        let si_start = stmts.stmts.first().unwrap().span.lo().0;
+        let si_end = stmts.stmts.last().unwrap().span.hi().0;
 
         vec![Change {
             file_name: args.file.to_string(),
