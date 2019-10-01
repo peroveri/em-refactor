@@ -1,21 +1,22 @@
-use rustc_interface::{interface};
-use rustc_driver;
-use rustc::ty;
-use crate::refactorings::extract_method;
-use crate::refactor_args::RefactorArgs;
 use crate::change::Change;
-
+use crate::refactor_args::RefactorArgs;
+use crate::refactorings::extract_method;
+use rustc::ty;
+use rustc_driver;
+use rustc_interface::interface;
+use std::path::PathBuf;
+use syntax::source_map::FileName;
 
 pub struct MyRefactorCallbacks {
     pub args: RefactorArgs,
-    pub changes: Vec<Change>
+    pub changes: Vec<Change>,
 }
 
 impl MyRefactorCallbacks {
     pub fn from_arg(arg: String) -> Result<MyRefactorCallbacks, String> {
         Ok(MyRefactorCallbacks {
             args: RefactorArgs::parse(arg)?,
-            changes: vec![]
+            changes: vec![],
         })
     }
 }
@@ -36,7 +37,6 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
         compiler.session().abort_if_errors();
         compiler.global_ctxt().unwrap().peek_mut().enter(|tcx| {
             let changes = do_ty_refactoring(tcx, &self.args);
-            
             output_changes(tcx, &changes);
         });
         rustc_driver::Compilation::Continue
@@ -46,7 +46,12 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
 fn contains_multiple_files(changes: &[Change]) -> bool {
     use std::collections::HashSet;
     use std::iter::FromIterator;
-    let set: HashSet<String> = HashSet::from_iter(changes.iter().map(|c| c.file_name.to_string()).collect::<Vec<_>>());
+    let set: HashSet<String> = HashSet::from_iter(
+        changes
+            .iter()
+            .map(|c| c.file_name.to_string())
+            .collect::<Vec<_>>(),
+    );
     set.len() > 1
 }
 
@@ -61,11 +66,14 @@ fn output_changes(tcx: ty::TyCtxt, changes: &Vec<Change>) {
     let mut changes = changes.clone();
     changes.sort_by_key(|c| c.start);
     changes.reverse();
-    
     let source_map = tcx.sess.source_map();
-    let file_name = syntax::source_map::FileName::Real(std::path::PathBuf::from(changes[0].file_name.to_string()));
+    let file_name = FileName::Real(PathBuf::from(changes[0].file_name.to_string()));
     let source_file = source_map.get_source_file(&file_name).unwrap();
-    let mut content = if let Some(s) = &source_file.src { s.to_string()} else {panic!("")};
+    let mut content = if let Some(s) = &source_file.src {
+        s.to_string()
+    } else {
+        panic!("")
+    };
 
     let file_start_pos = source_file.start_pos.0 as u32;
     for change in &changes {
