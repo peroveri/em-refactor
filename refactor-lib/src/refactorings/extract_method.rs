@@ -1,6 +1,6 @@
 use crate::change::Change;
 use crate::refactor_args::RefactorArgs;
-use crate::refactorings::expr_use_visit::{CollectVarsArgs};
+use crate::refactorings::expr_use_visit::CollectVarsArgs;
 use crate::refactorings::stmts_visitor::visit_stmts;
 use rustc::ty;
 use syntax::source_map::{BytePos, Span};
@@ -13,9 +13,12 @@ fn get_selection(s: &str) -> (u32, u32) {
 /**
  * rewrites: places in the source code where deref * needs to be added
  */
-fn get_stmts_source(source_map: &syntax::source_map::SourceMap, span: Span, rewrites: &[u32]) -> String {
+fn get_stmts_source(
+    source_map: &syntax::source_map::SourceMap,
+    span: Span,
+    rewrites: &[u32],
+) -> String {
     let mut source = source_map.span_to_snippet(span).unwrap();
-    
     let mut rewrites = rewrites.to_owned();
     rewrites.sort();
     rewrites.reverse();
@@ -70,7 +73,7 @@ fn map_to_span(
  * if |Va| > 0
  *   add return statement at the end of M with Va
  *   add declaration for all Va's before call to G and assign
- * 
+ *
  */
 
 pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
@@ -107,37 +110,43 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
             get_stmts_source(ty.sess.source_map(), spi, &vars_used.get_rewrites())
         );
 
-        let arguments = vars_used.get_arguments().iter().map(|arg| arg.as_arg()).collect::<Vec<_>>().join(", ");
+        let arguments = vars_used
+            .get_arguments()
+            .iter()
+            .map(|arg| arg.as_arg())
+            .collect::<Vec<_>>()
+            .join(", ");
 
         let fn_call = format!("{}({});", args.new_function, arguments);
         let si_start = stmts.stmts.first().unwrap().span.lo().0;
         let si_end = stmts.stmts.last().unwrap().span.hi().0;
 
-        vec![Change {
-            file_name: args.file.to_string(),
-            start: stmts.fn_decl_pos,
-            end: stmts.fn_decl_pos,
-            replacement: new_fn,
-        },
-        Change {
-            file_name: args.file.to_string(),
-            start: si_start,
-            end: si_end,
-            replacement: fn_call
-        }]
+        vec![
+            Change {
+                file_name: args.file.to_string(),
+                start: stmts.fn_decl_pos,
+                end: stmts.fn_decl_pos,
+                replacement: new_fn,
+            },
+            Change {
+                file_name: args.file.to_string(),
+                start: si_start,
+                end: si_end,
+                replacement: fn_call,
+            },
+        ]
     } else {
         println!("no statements");
         vec![]
     }
 }
 
-
 /*
  * For each variable used in S and declared before
  *   if consumed, it must be moved into the function
  *   if mutated, it must be passed as mutable
  *   if used later, it must be borrowed
- * 
+ *
  * For each variable declared in S and used later
  *   if it is a borrow, fail?
  *   must be returned
