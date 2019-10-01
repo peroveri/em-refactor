@@ -62,6 +62,16 @@ impl<'v> intravisit::Visitor<'v> for StmtsVisitor<'v> {
     }
 
     fn visit_block(&mut self, body: &'v hir::Block) {
+        if let Some(expr) = &body.expr {
+            if let hir::ExprKind::Match(ref match_expr, ref arms, hir::MatchSource::WhileDesugar) = (*expr).kind {
+                
+                if let Some(arm) = arms.first() {
+                    if let hir::Arm{body, ..} = arm {
+                        intravisit::walk_expr(self, &**body);
+                    }
+                }
+            }
+        }
         if !body.span.contains(self.pos) {
             return;
         }
