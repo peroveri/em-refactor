@@ -72,3 +72,18 @@ fn extract_method_owned_value() {
 fn extract_method_failure_borrow_used_later() {
     run_test_and_assert_failure("failure_borrow_used_later");
 }
+
+// #[test]
+fn nested_block() {
+    run_test_and_assert_success("nested_block");
+}
+
+// #[test]
+fn while_loop_inside() {
+    run_test_and_assert_success("while_loop_inside");
+}
+
+#[test]
+fn while_loop_outside() {
+    run_test_and_assert_success("while_loop_outside");
+}
