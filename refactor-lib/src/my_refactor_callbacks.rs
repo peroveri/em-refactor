@@ -104,5 +104,5 @@ fn output_changes(tcx: &ty::TyCtxt, changes: &Vec<Change>) {
         content = format!("{}{}{}", s1, change.replacement, s2);
     }
 
-    println!("{}", content);
+    print!("{}", content);
 }

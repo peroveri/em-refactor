@@ -1,5 +1,5 @@
 fn inc(i: &mut i32) {
-    while *i == 0 {
+while *i == 0 {
         *i += 1;
     }
 }
