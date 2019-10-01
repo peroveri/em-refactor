@@ -24,7 +24,6 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
                 panic!("unhandled type"); // TODO: check which types node can be here
             };
 
-            // println!("var_used decl: {:?}, used: {:?}, ident: {}", decl_span, sp, ident);
             if self.args.spi.contains(sp) && !self.args.spi.contains(decl_span) {
                 // should be arg
                 self.ct.arguments.push(VariableUsage {
@@ -49,7 +48,11 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
 
     fn matched_pat(&mut self, _: &Pat, _: &cmt_<'tcx>, _: MatchMode) {}
 
-    fn consume_pat(&mut self, _: &Pat, _: &cmt_<'tcx>, _: ConsumeMode) {}
+    fn consume_pat(&mut self, _: &Pat, cmt: &cmt_<'tcx>, _: ConsumeMode) {
+        if let Categorization::Local(_) = cmt.cat {
+            self.var_used(cmt.span, &cmt.cat, cmt.ty, true, false);
+        }
+    }
 
     fn borrow(
         &mut self,
@@ -104,7 +107,7 @@ impl ExtractMethodContext<'_> {
             }
         }
 
-        map.into_iter().map(|(k,v)| v).collect::<Vec<VariableUsage>>()
+        map.into_iter().map(|(_, v)| v).collect::<Vec<VariableUsage>>()
     }
     pub fn get_return_values(&self) -> Vec<VariableUsage> {
         self.return_values.iter().map(|(id, ty)| VariableUsage {
