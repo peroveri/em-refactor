@@ -12,11 +12,11 @@ pub struct MyRefactorCallbacks {
 }
 
 impl MyRefactorCallbacks {
-    pub fn from_arg(arg: String) -> MyRefactorCallbacks {
-        MyRefactorCallbacks {
-            args: RefactorArgs::parse(arg),
+    pub fn from_arg(arg: String) -> Result<MyRefactorCallbacks, String> {
+        Ok(MyRefactorCallbacks {
+            args: RefactorArgs::parse(arg)?,
             changes: vec![]
-        }
+        })
     }
 }
 

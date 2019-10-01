@@ -116,7 +116,14 @@ pub fn main() {
 
             std::env::set_var("RUST_BACKTRACE", "1");
             // let mut default = rustc_driver::DefaultCallbacks;
-            let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_args);
+            let my_refactor_res = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_args);
+
+            if let Err(msg) = my_refactor_res {
+                println!("{}", msg);
+                return Ok(());
+            }
+            let mut my_refactor = my_refactor_res.unwrap();
+
             let callbacks: &mut (dyn rustc_driver::Callbacks + Send) = &mut my_refactor;
 
             // let args = std::env::args().collect::<Vec<_>>();
