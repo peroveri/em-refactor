@@ -60,7 +60,7 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
         bk: ty::BorrowKind,
         _: LoanCause,
     ) {
-        let is_mutated = if let ty::BorrowKind::MutBorrow = bk {true} else {false};
+        let is_mutated = ty::BorrowKind::MutBorrow == bk;
         self.var_used(sp, &cmt.cat, cmt.ty, false, is_mutated);
     }
 
