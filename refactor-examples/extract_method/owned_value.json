@@ -1,5 +1,5 @@
 {
     "refactoring": "extract-method",
-    "selection": "35:49",
+    "selection": "53:100",
     "new_function": "succ"
 }
