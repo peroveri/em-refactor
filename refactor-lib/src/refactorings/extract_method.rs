@@ -11,23 +11,6 @@ fn get_selection(s: &str) -> (u32, u32) {
     (vs[0].parse().unwrap(), vs[1].parse().unwrap())
 }
 
-/**
- * Translate (file name, local offset) to (global offset) in the source map
- * TODO: do this earlier?
- */
-fn get_selection_with_global_offset(
-    source_map: &syntax::source_map::SourceMap,
-    selection: (u32, u32),
-    file: &str,
-) -> (u32, u32) {
-    let filename = syntax::source_map::FileName::Real(std::path::PathBuf::from(file));
-    let source_file = source_map.get_source_file(&filename).unwrap();
-    (
-        selection.0 + source_file.start_pos.0,
-        selection.1 + source_file.start_pos.0,
-    )
-}
-
 fn get_stmts_source(source_map: &syntax::source_map::SourceMap, stmts: &[&hir::Stmt]) -> String {
     stmts
         .iter()
@@ -80,18 +63,13 @@ fn map_to_span(
  */
 
 pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
-    let selection = get_selection_with_global_offset(
-        ty.sess.source_map(),
-        get_selection(&args.selection),
-        &args.file,
-    );
     let spi = map_to_span(
         ty.sess.source_map(),
         get_selection(&args.selection),
         &args.file,
     );
 
-    let stmts_visit_res = visit_stmts(ty, &args.file, selection);
+    let stmts_visit_res = visit_stmts(ty, spi);
 
     if let Some(stmts) = stmts_visit_res {
         let collect_args = CollectVarsArgs {
