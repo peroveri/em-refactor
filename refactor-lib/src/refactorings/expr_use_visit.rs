@@ -29,6 +29,8 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
                 self.ct.arguments.push(VariableUsage {
                     ident, 
                     ty,
+                    borrows: vec![],
+                    was_borrow: Some(sp.lo().0),
                     is_mutated,
                     is_consumed
                 });
@@ -102,15 +104,27 @@ impl ExtractMethodContext<'_> {
             if let Some(entry) = map.get_mut(&arg.ident) {
                 entry.is_consumed = entry.is_consumed || arg.is_consumed;
                 entry.is_mutated = entry.is_mutated || arg.is_mutated;
+                if let Some(idx) = arg.was_borrow {
+                    entry.borrows.push(idx);
+                }
             } else {
-                map.insert(arg.ident.clone(), arg.clone());
+                let mut e = arg.clone();
+                if let Some(idx) = arg.was_borrow {
+                    e.borrows.push(idx);
+                }
+                map.insert(arg.ident.clone(), e);
             }
         }
 
         map.into_iter().map(|(_, v)| v).collect::<Vec<VariableUsage>>()
     }
+    pub fn get_rewrites(&self) -> Vec<u32> {
+        self.get_arguments().iter().filter(|u| !u.is_consumed).flat_map(|u| u.borrows.clone()).collect()
+    }
     pub fn get_return_values(&self) -> Vec<VariableUsage> {
         self.return_values.iter().map(|(id, ty)| VariableUsage {
+            was_borrow: None,
+            borrows: vec![],
             is_consumed: false,
             is_mutated: false,
             ident: id.to_string(),
@@ -122,6 +136,8 @@ impl ExtractMethodContext<'_> {
 pub struct VariableUsage<'tcx> {
     pub is_consumed: bool,
     pub is_mutated: bool,
+    pub was_borrow: Option<u32>, // TODO: name
+    pub borrows: Vec<u32>,
     pub ident: String,
     pub ty: ty::Ty<'tcx>
 }

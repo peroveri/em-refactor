@@ -1,8 +1,7 @@
 use crate::change::Change;
 use crate::refactor_args::RefactorArgs;
-use crate::refactorings::expr_use_visit::CollectVarsArgs;
+use crate::refactorings::expr_use_visit::{CollectVarsArgs};
 use crate::refactorings::stmts_visitor::visit_stmts;
-use rustc::hir;
 use rustc::ty;
 use syntax::source_map::{BytePos, Span};
 
@@ -11,12 +10,24 @@ fn get_selection(s: &str) -> (u32, u32) {
     (vs[0].parse().unwrap(), vs[1].parse().unwrap())
 }
 
-fn get_stmts_source(source_map: &syntax::source_map::SourceMap, stmts: &[&hir::Stmt]) -> String {
-    stmts
-        .iter()
-        .map(|stmt| source_map.span_to_snippet(stmt.span).unwrap().to_string())
-        .collect::<Vec<_>>()
-        .join("\n")
+/**
+ * rewrites: places in the source code where deref * needs to be added
+ */
+fn get_stmts_source(source_map: &syntax::source_map::SourceMap, span: Span, rewrites: &Vec<u32>) -> String {
+    let mut source = source_map.span_to_snippet(span).unwrap();
+    
+    let mut rewrites = rewrites.clone();
+    rewrites.sort();
+    rewrites.reverse();
+
+    for rewrite in rewrites {
+        if span.lo().0 <= rewrite && rewrite <= span.hi().0 {
+            let local_index = (rewrite - span.lo().0) as usize;
+            source.insert(local_index, '*');
+        }
+    }
+
+    source
 }
 
 fn map_to_span(
@@ -93,7 +104,7 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
             "fn {}({}) {{\n{}\n}}\n",
             args.new_function,
             params,
-            get_stmts_source(ty.sess.source_map(), &stmts.S)
+            get_stmts_source(ty.sess.source_map(), spi, &vars_used.get_rewrites())
         );
 
         let arguments = vars_used.get_arguments().iter().map(|arg| arg.as_arg()).collect::<Vec<_>>().join(", ");
@@ -131,6 +142,3 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
  *   if it is a borrow, fail?
  *   must be returned
  */
-fn create_argument_list() {
-
-}
