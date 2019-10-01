@@ -71,11 +71,11 @@ pub struct ExtractMethodContext<'tcx> {
     /**
      * Variables declared in S0, used in Si
      */
-    pub arguments: Vec<(String, ty::Ty<'tcx>)>,
+    arguments: Vec<(String, ty::Ty<'tcx>)>,
     /**
      * Variables declared in Si, used in Sj
      */
-    pub return_values: Vec<(String, ty::Ty<'tcx>)>,
+    return_values: Vec<(String, ty::Ty<'tcx>)>,
 }
 impl ExtractMethodContext<'_> {
     fn new() -> Self {
@@ -83,6 +83,42 @@ impl ExtractMethodContext<'_> {
             arguments: vec![],
             return_values: vec![],
         }
+    }
+    pub fn get_arguments(&self) -> Vec<VariableUsage> { // iter?
+        self.arguments.iter().map(|(id, ty)| VariableUsage {
+            is_consumed: false,
+            is_mutated: false,
+            ident: id.to_string(),
+            ty
+        }).collect()
+    }
+    pub fn get_return_values(&self) -> Vec<VariableUsage> {
+        self.return_values.iter().map(|(id, ty)| VariableUsage {
+            is_consumed: false,
+            is_mutated: false,
+            ident: id.to_string(),
+            ty
+        }).collect()
+    }
+}
+pub struct VariableUsage<'tcx> {
+    pub is_consumed: bool,
+    pub is_mutated: bool,
+    pub ident: String,
+    pub ty: ty::Ty<'tcx>
+}
+impl VariableUsage<'_> {
+    pub fn as_param(&self) -> String {
+        let mut_ = (if self.is_mutated {"mut "} else {""}).to_string();
+        let borrow = (if self.is_consumed {""} else {"&"}).to_string();
+
+        format!("{}: {}{}{:?}", self.ident, borrow, mut_, self.ty)
+    }
+    pub fn as_arg(&self) -> String {
+        let mut_ = (if self.is_mutated {"mut "} else {""}).to_string();
+        let borrow = (if self.is_consumed {""} else {"&"}).to_string();
+
+        format!("{}{}{}", borrow, mut_, self.ident)
     }
 }
 pub struct CollectVarsArgs {

@@ -78,14 +78,14 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
         };
         let vars_used = crate::refactorings::expr_use_visit::collect_vars(ty, collect_args);
 
-        if vars_used.return_values.len() > 1 {
+        if vars_used.get_return_values().len() > 1 {
             return vec![]; // TODO: should be error
         }
 
         let params = vars_used
-            .arguments
+            .get_arguments()
             .iter()
-            .map(|(name, ty)| format!("{}: {:?}", name, ty))
+            .map(|arg| arg.as_param())
             .collect::<Vec<_>>()
             .join(", ");
 
@@ -96,7 +96,7 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
             get_stmts_source(ty.sess.source_map(), &stmts.S)
         );
 
-        let arguments = vars_used.arguments.iter().map(|(name, _)| name.to_string()).collect::<Vec<_>>().join(", ");
+        let arguments = vars_used.get_arguments().iter().map(|arg| arg.as_arg()).collect::<Vec<_>>().join(", ");
 
         let fn_call = format!("{}({});", args.new_function, arguments);
         let si_start = stmts.S.first().unwrap().span.lo().0;
@@ -118,4 +118,19 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
         println!("no statements");
         vec![]
     }
+}
+
+
+/*
+ * For each variable used in S and declared before
+ *   if consumed, it must be moved into the function
+ *   if mutated, it must be passed as mutable
+ *   if used later, it must be borrowed
+ * 
+ * For each variable declared in S and used later
+ *   if it is a borrow, fail?
+ *   must be returned
+ */
+fn create_argument_list() {
+
 }
