@@ -4,5 +4,5 @@ members = [
 	"refactor-lib"
 ]
 exclude = [
-	"refactor-examples"
+	"refactor-examples", "tmp"
 ]
