@@ -76,7 +76,7 @@ fn map_to_span(
  *
  */
 
-pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
+pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Result<Vec<Change>, String> {
     let spi = map_to_span(
         ty.sess.source_map(),
         get_selection(&args.selection),
@@ -93,7 +93,7 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
         let vars_used = crate::refactorings::expr_use_visit::collect_vars(ty, collect_args);
 
         if vars_used.get_return_values().len() > 1 {
-            return vec![]; // TODO: should be error
+            return Err("Multiple returnvalues not implemented".to_owned());
         }
 
         let params = vars_used
@@ -121,7 +121,7 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
         let si_start = stmts.stmts.first().unwrap().span.lo().0;
         let si_end = stmts.stmts.last().unwrap().span.hi().0;
 
-        vec![
+        Ok(vec![
             Change {
                 file_name: args.file.to_string(),
                 start: stmts.fn_decl_pos,
@@ -134,10 +134,9 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
                 end: si_end,
                 replacement: fn_call,
             },
-        ]
+        ])
     } else {
-        println!("no statements");
-        vec![]
+        Err(format!("{} is not a valid selection!", args.selection))
     }
 }
 

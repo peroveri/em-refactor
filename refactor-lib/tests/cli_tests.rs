@@ -17,3 +17,19 @@ fn missing_args_should_output_nicely() {
         .success()
         .stdout("Expected --refactoring\n");
 }
+
+#[test]
+fn unknown_refactoring() {
+    Command::cargo_bin("my-refactor-driver")
+        .unwrap()
+        .current_dir(TEST_CASE_PATH)
+        .arg("--out-dir=../../tmp")
+        .arg("nested_block.rs")
+        .arg("--")
+        .arg("--refactoring=invalid_refactoring_name")
+        .arg("--new_function=a")
+        .arg("--selection=0:0")
+        .assert()
+        .failure()
+        .stderr("error: Unknown refactoring: invalid_refactoring_name\n\nerror: aborting due to previous error\n\n");
+}

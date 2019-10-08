@@ -6,7 +6,7 @@
         "new_function": "inc"
     },
     "expected": {
-        "code": -1,
-        "stderr": "Selection 29:107 is not a valid selection!"
+        "code": 1,
+        "stderr": "error: 29:107 is not a valid selection!\n\nerror: aborting due to previous error\n\n"
     }
 }

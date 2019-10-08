@@ -21,11 +21,11 @@ impl MyRefactorCallbacks {
     }
 }
 
-fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Vec<Change> {
+fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Result<Vec<Change>, String> {
     if args.refactoring == "extract-method" {
         extract_method::do_refactoring(ty, args)
     } else {
-        vec![]
+        Err(format!("Unknown refactoring: {}", &args.refactoring))
     }
 }
 
@@ -37,7 +37,11 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
         compiler.session().abort_if_errors();
         compiler.global_ctxt().unwrap().peek_mut().enter(|tcx| {
             let changes = do_ty_refactoring(tcx, &self.args);
-            output_changes(tcx, &changes);
+            if let Ok(changes) = changes {
+                output_changes(tcx, &changes);
+            } else {
+                compiler.session().err(&changes.unwrap_err());
+            }
         });
         rustc_driver::Compilation::Continue
     }

@@ -7,6 +7,9 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::process::Command;
 
+// These tests are currently not thread safe for multiple tests on a single .rs file
+// run single threaded with: cargo test -- --test-threads=1
+
 static TEST_CASE_PATH: &str = "../refactor-examples/extract_method";
 
 struct TestCase {
