@@ -124,6 +124,14 @@ fn while_loop_outside() {
     run_testcase("while_loop_outside").unwrap();
 }
 #[test]
-fn invalid_selection_1_2() {
-    run_testcase("invalid_selection_1").unwrap();
+fn failure_selection_break_id() {
+    run_testcase("failure_selection_break_id").unwrap();
+}
+#[test]
+fn failure_selection_empty() {
+    run_testcase("failure_selection_empty").unwrap();
+}
+#[test]
+fn failure_selection_unbalanced() {
+    run_testcase("failure_selection_unbalanced").unwrap();
 }

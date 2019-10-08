@@ -2,11 +2,11 @@
     "file": "invalid_selection.rs",
     "args": {
         "refactoring": "extract-method",
-        "selection": "29:107",
+        "selection": "16:76",
         "new_function": "inc"
     },
     "expected": {
         "code": -1,
-        "stderr": "Selection 29:107 is not a valid selection!"
+        "stderr": "Selection 14:15 is not a valid selection!"
     }
 }
