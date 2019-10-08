@@ -9,6 +9,49 @@ use std::process::Command;
 
 static TEST_CASE_PATH: &str = "../refactor-examples/extract_method";
 
+struct TestCase {
+    file: String,
+    args: Vec<String>,
+    expected: Expected,
+}
+/**
+ * Assertions are only made for fields with values
+ */
+struct Expected {
+    code: Option<i64>,
+    stderr: Option<String>,
+    stdout: Option<String>,
+    stdout_file: Option<String>,
+}
+
+impl TestCase {
+    fn from_json(s: &str) -> serde_json::Result<TestCase> {
+        let v: Value = serde_json::from_str(s)?;
+        Ok(TestCase {
+            file: v["file"].as_str().unwrap().to_string(),
+            args: TestCase::json_str_to_param_vec(&v)?,
+            expected: TestCase::map_expected(&v).unwrap(),
+        })
+    }
+    fn map_expected(v: &Value) -> Option<Expected> {
+        let expected = &v["expected"];
+        Some(Expected {
+            code: expected["code"].as_i64(),
+            stderr: expected["stderr"].as_str().map(|s| s.to_string()),
+            stdout: expected["stdout"].as_str().map(|s| s.to_string()),
+            stdout_file: expected["stdout_file"].as_str().map(|s| s.to_string()),
+        })
+    }
+    fn json_str_to_param_vec(v: &Value) -> serde_json::Result<Vec<String>> {
+        let args = &v["args"];
+        Ok(vec![
+            format!("--refactoring={}", args["refactoring"].as_str().unwrap()),
+            format!("--selection={}", args["selection"].as_str().unwrap()),
+            format!("--new_function={}", args["new_function"].as_str().unwrap()),
+        ])
+    }
+}
+
 fn read_test_file(file_path: &str) -> std::io::Result<String> {
     let mut path = PathBuf::from(TEST_CASE_PATH);
     path.push(file_path);
@@ -18,72 +61,69 @@ fn read_test_file(file_path: &str) -> std::io::Result<String> {
     Ok(file_content)
 }
 
-fn json_str_to_param_vec(s: &str) -> serde_json::Result<Vec<String>> {
-    let v: Value = serde_json::from_str(s)?;
-    Ok(vec![
-        format!("--refactoring={}", v["refactoring"].as_str().unwrap()),
-        format!("--selection={}", v["selection"].as_str().unwrap()),
-        format!("--new_function={}", v["new_function"].as_str().unwrap()),
-    ])
+fn run_testcase(name: &str) -> std::io::Result<()> {
+    let json_content = read_test_file(&format!("{}.json", name))?;
+    let mut test = TestCase::from_json(&json_content)?;
+    if let Some(ref f) = test.expected.stdout_file {
+        // read expected output from file if set
+        test.expected.stdout = Some(read_test_file(&f)?);
+    }
+    run_tool_and_assert(test)
 }
 
-fn run_testcase(name: &str, expect_sucess: bool) -> std::io::Result<()> {
-    let refactoring_args = json_str_to_param_vec(&read_test_file(&format!("{}.json", name))?)?;
-    let expected = if expect_sucess {read_test_file(&format!("{}_after.rs", name))?} else {"".to_string()};
-    let assert = Command::cargo_bin("my-refactor-driver")
+fn run_tool_and_assert(test: TestCase) -> std::io::Result<()> {
+    let mut assert = Command::cargo_bin("my-refactor-driver")
         .unwrap()
         .current_dir(TEST_CASE_PATH)
         .arg("--out-dir=../../tmp")
-        .arg(format!("{}.rs", name))
+        .arg(&test.file)
         .arg("--")
-        .args(refactoring_args)
-        .arg(format!("--file={}.rs", name))
+        .args(test.args)
+        .arg(format!("--file={}", &test.file))
         .arg("--output-changes")
         .assert();
 
-    if expect_sucess {
-        assert.success().stdout(expected);
-    } else {
-        assert.failure();
+    if let Some(code) = test.expected.code {
+        assert = assert.code(code as i32);
+    }
+    if let Some(ref stdout) = test.expected.stdout {
+        assert = assert.stdout(stdout.to_string());
+    }
+    if let Some(ref stderr) = test.expected.stderr {
+        assert.stderr(stderr.to_string());
     }
     Ok(())
 }
 
-fn run_test_and_assert_success(name: &str) {
-    run_testcase(name, true).unwrap();
-}
-fn run_test_and_assert_failure(name: &str) {
-    run_testcase(name, false).unwrap();
-}
-
 #[test]
 fn extract_method_owned_mut_value() {
-    run_test_and_assert_success("owned_mut_value");
+    run_testcase("owned_mut_value").unwrap();
 }
 #[test]
 fn extract_method_borrowed_mut_value() {
-    run_test_and_assert_success("borrowed_mut_value");
+    run_testcase("borrowed_mut_value").unwrap();
 }
 #[test]
 fn extract_method_owned_value() {
-    run_test_and_assert_success("owned_value");
+    run_testcase("owned_value").unwrap();
 }
 #[test]
 fn extract_method_failure_borrow_used_later() {
-    run_test_and_assert_failure("failure_borrow_used_later");
+    run_testcase("failure_borrow_used_later").unwrap();
 }
-
 #[test]
 fn nested_block() {
-    run_test_and_assert_success("nested_block");
+    run_testcase("nested_block").unwrap();
 }
-
 #[test]
 fn while_loop_inside() {
-    run_test_and_assert_success("while_loop_inside");
+    run_testcase("while_loop_inside").unwrap();
 }
-
 #[test]
 fn while_loop_outside() {
-    run_test_and_assert_success("while_loop_outside");
+    run_testcase("while_loop_outside").unwrap();
+}
+#[test]
+fn invalid_selection_1_2() {
+    run_testcase("invalid_selection_1").unwrap();
 }

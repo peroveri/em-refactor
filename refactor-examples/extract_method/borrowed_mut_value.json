@@ -1,5 +1,12 @@
 {
-    "refactoring": "extract-method",
-    "selection": "59:67",
-    "new_function": "inc"
+    "file": "borrowed_mut_value.rs",
+    "args": {
+        "refactoring": "extract-method",
+        "selection": "59:67",
+        "new_function": "inc"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "borrowed_mut_value_after.rs"
+    }
 }

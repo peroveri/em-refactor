@@ -1,5 +1,12 @@
 {
-    "refactoring": "extract-method",
-    "selection": "38:71",
-    "new_function": "foo"
+    "file": "failure_borrow_used_later.rs",
+    "args": {
+        "refactoring": "extract-method",
+        "selection": "38:71",
+        "new_function": "foo"
+    },
+    "expected": {
+        "code": -1,
+        "stderr": "A borrow declared in the selection is being used later"
+    }
 }

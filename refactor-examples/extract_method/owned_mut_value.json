@@ -1,5 +1,12 @@
 {
-    "refactoring": "extract-method",
-    "selection": "57:79",
-    "new_function": "inc"
+    "file": "owned_mut_value.rs",
+    "args": {
+        "refactoring": "extract-method",
+        "selection": "57:79",
+        "new_function": "inc"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "owned_mut_value_after.rs"
+    }
 }

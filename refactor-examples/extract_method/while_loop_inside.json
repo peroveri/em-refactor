@@ -1,5 +1,12 @@
 {
-    "refactoring": "extract-method",
-    "selection": "58:65",
-    "new_function": "inc"
+    "file": "while_loop_inside.rs",
+    "args": {
+        "refactoring": "extract-method",
+        "selection": "58:65",
+        "new_function": "inc"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "while_loop_inside_after.rs"
+    }
 }
