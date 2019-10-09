@@ -98,6 +98,7 @@ fn get_sys_root() -> String {
             "need to specify SYSROOT env var during clippy compilation, or use rustup or multirust",
         )
 }
+
 fn get_compiler_args(args: &[String]) -> Vec<String> {
     let have_sys_root = arg_value(args, "--sysroot", |_| true).is_some();
     // Setting RUSTC_WRAPPER causes Cargo to pass 'rustc' as the first argument.
@@ -136,30 +137,31 @@ fn get_compiler_args(args: &[String]) -> Vec<String> {
     rustc_args
 }
 
+fn run_rustc() -> Result<(), rustc::util::common::ErrorReported> {
+    let std_env_args = &std::env::args().collect::<Vec<_>>();
+    let rustc_args = get_compiler_args(std_env_args);
+    let refactor_args = get_refactor_args(std_env_args);
+    // let mut default = rustc_driver::DefaultCallbacks;
+    let my_refactor_res = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_args);
+
+    if let Err(msg) = my_refactor_res {
+        println!("{}", msg);
+        return Ok(());
+    }
+    let mut my_refactor = my_refactor_res.unwrap();
+
+    let callbacks: &mut (dyn rustc_driver::Callbacks + Send) = &mut my_refactor;
+
+    std::env::set_var("RUST_BACKTRACE", "1");
+    rustc_driver::run_compiler(&rustc_args, callbacks, None, None)
+}
+
 pub fn main() {
     rustc_driver::init_rustc_env_logger();
     rustc_driver::install_ice_hook();
     exit(
-        rustc_driver::catch_fatal_errors(move || {
-            let std_env_args = &std::env::args().collect::<Vec<_>>();
-            let rustc_args = get_compiler_args(std_env_args);
-            let refactor_args = get_refactor_args(std_env_args);
-            // let mut default = rustc_driver::DefaultCallbacks;
-            let my_refactor_res =
-                my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_args);
-
-            if let Err(msg) = my_refactor_res {
-                println!("{}", msg);
-                return Ok(());
-            }
-            let mut my_refactor = my_refactor_res.unwrap();
-
-            let callbacks: &mut (dyn rustc_driver::Callbacks + Send) = &mut my_refactor;
-
-            std::env::set_var("RUST_BACKTRACE", "1");
-            rustc_driver::run_compiler(&rustc_args, callbacks, None, None)
-        })
-        .and_then(|result| result)
-        .is_err() as i32,
+        rustc_driver::catch_fatal_errors(run_rustc)
+            .and_then(|result| result)
+            .is_err() as i32,
     )
 }
