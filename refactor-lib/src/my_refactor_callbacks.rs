@@ -9,7 +9,7 @@ use syntax::source_map::FileName;
 
 pub struct MyRefactorCallbacks {
     pub args: RefactorArgs,
-    pub changes: Vec<Change>,
+    pub result: Result<Vec<Change>, String>,
     pub content: Option<String>,
 }
 
@@ -17,7 +17,7 @@ impl MyRefactorCallbacks {
     pub fn from_arg(arg: String) -> Result<MyRefactorCallbacks, String> {
         Ok(MyRefactorCallbacks {
             args: RefactorArgs::parse(arg)?,
-            changes: vec![],
+            result: Err("".to_owned()),
             content: None,
         })
     }
@@ -68,15 +68,9 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
     fn after_analysis(&mut self, compiler: &interface::Compiler) -> rustc_driver::Compilation {
         compiler.session().abort_if_errors();
         compiler.global_ctxt().unwrap().peek_mut().enter(|tcx| {
-            let changes = do_ty_refactoring(tcx, &self.args);
-            if let Ok(changes) = changes {
+            self.result = do_ty_refactoring(tcx, &self.args);
+            if let Ok(changes) = self.result.clone() {
                 self.output_changes(tcx, &changes);
-                self.changes = changes;
-            } else {
-                let err = changes.unwrap_err();
-                self.content = Some(err.clone());
-                compiler.session().err(&err);
-                compiler.session().abort_if_errors();
             }
         });
         rustc_driver::Compilation::Continue

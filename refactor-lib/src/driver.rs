@@ -185,7 +185,11 @@ fn run_rustc() -> Result<(), i32> {
     let mut file_loader = Box::new(file_loader::InMemoryFileLoader::new(
         syntax::source_map::RealFileLoader,
     ));
-    file_loader.add_changes(my_refactor.changes.clone());
+    if let Err(err) = my_refactor.result {
+        eprintln!("{}", err);
+        return Err(1);
+    }
+    file_loader.add_changes(my_refactor.result.clone().unwrap());
 
     let emitter = Box::new(Vec::new());
     let err = rustc_driver::run_compiler(&rustc_args, &mut default, Some(file_loader), Some(emitter));
