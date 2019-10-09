@@ -52,27 +52,25 @@ fn get_file_path(args: &[String]) -> Option<&String> {
     args.iter().find(|s| !s.starts_with('-'))
 }
 fn get_refactor_args(args: &[String]) -> String {
-
     if is_wrapper_mode(&args) {
         std::env::var("MY_REFACTOR_ARGS").unwrap()
     } else {
-        
         let mut ret = args
             .iter()
             .skip_while(|s| *s != "--")
-            .skip(1).map(|s| s.to_string()).collect::<Vec<_>>();
+            .skip(1)
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
 
         ret.push(format!("--file={}", get_file_path(args).unwrap()));
         ret.join(";")
     }
 }
-fn get_compiler_args(args: &Vec<String>) -> Vec<String> {
-    let args = args.clone();
-    let sys_root_arg = arg_value(&args, "--sysroot", |_| true);
-    let have_sys_root_arg = sys_root_arg.is_some();
-    let sys_root = sys_root_arg
+
+fn get_sys_root() -> String {
+    std::env::var("SYSROOT")
+        .ok()
         .map(PathBuf::from)
-        .or_else(|| std::env::var("SYSROOT").ok().map(PathBuf::from))
         .or_else(|| {
             let home = option_env!("RUSTUP_HOME").or(option_env!("MULTIRUST_HOME"));
             let toolchain = option_env!("RUSTUP_TOOLCHAIN").or(option_env!("MULTIRUST_TOOLCHAIN"));
@@ -98,8 +96,10 @@ fn get_compiler_args(args: &Vec<String>) -> Vec<String> {
         .map(|pb| pb.to_string_lossy().to_string())
         .expect(
             "need to specify SYSROOT env var during clippy compilation, or use rustup or multirust",
-        );
-
+        )
+}
+fn get_compiler_args(args: &[String]) -> Vec<String> {
+    let have_sys_root = arg_value(args, "--sysroot", |_| true).is_some();
     // Setting RUSTC_WRAPPER causes Cargo to pass 'rustc' as the first argument.
     // We're invoking the compiler programmatically, so we ignore this/
     let wrapper_mode = Path::new(&args[1]).file_stem() == Some("rustc".as_ref());
@@ -108,13 +108,13 @@ fn get_compiler_args(args: &Vec<String>) -> Vec<String> {
 
     if wrapper_mode {
         // we still want to be able to invoke it normally though
-        rustc_args = args.into_iter().skip(1).collect();
+        rustc_args = args.iter().skip(1).map(|s| s.to_string()).collect();
     } else {
-        let orig_args = args.into_iter().skip(1).collect::<Vec<String>>();
-        rustc_args = orig_args
-            .clone()
-            .into_iter()
+        rustc_args = args
+            .iter()
+            .skip(1)
             .take_while(|s| *s != "--")
+            .map(|s| s.to_string())
             .collect();
         rustc_args.insert(0, "".to_owned());
     }
@@ -122,9 +122,9 @@ fn get_compiler_args(args: &Vec<String>) -> Vec<String> {
     // this conditional check for the --sysroot flag is there so users can call
     // `clippy_driver` directly
     // without having to pass --sysroot or anything
-    if !have_sys_root_arg {
+    if !have_sys_root {
         rustc_args.push("--sysroot".to_owned());
-        rustc_args.push(sys_root);
+        rustc_args.push(get_sys_root());
     }
     rustc_args.push("--allow".to_owned());
     rustc_args.push("dead_code".to_owned());
@@ -141,9 +141,9 @@ pub fn main() {
     rustc_driver::install_ice_hook();
     exit(
         rustc_driver::catch_fatal_errors(move || {
-            let std_env_args = std::env::args().collect();
-            let rustc_args = get_compiler_args(&std_env_args);
-            let refactor_args = get_refactor_args(&std_env_args);
+            let std_env_args = &std::env::args().collect::<Vec<_>>();
+            let rustc_args = get_compiler_args(std_env_args);
+            let refactor_args = get_refactor_args(std_env_args);
             // let mut default = rustc_driver::DefaultCallbacks;
             let my_refactor_res =
                 my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_args);
