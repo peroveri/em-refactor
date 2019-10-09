@@ -7,6 +7,6 @@
     },
     "expected": {
         "code": 1,
-        "stderr": "error: 15:16 is not a valid selection!\n\nerror: aborting due to previous error\n\n"
+        "stderr": "15:16 is not a valid selection!\n"
     }
 }

@@ -138,3 +138,11 @@ fn failure_selection_empty() {
 fn failure_selection_unbalanced() {
     run_testcase("failure_selection_unbalanced").unwrap();
 }
+#[test]
+fn extract_method_breaks_code() {
+    run_testcase("extract_method_breaks_code").unwrap();
+}
+#[test]
+fn already_broken_code() {
+    run_testcase("already_broken_code").unwrap();
+}

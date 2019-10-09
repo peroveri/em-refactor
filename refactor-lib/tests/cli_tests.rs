@@ -14,8 +14,8 @@ fn missing_args_should_output_nicely() {
         .arg("nested_block.rs")
         .arg("--")
         .assert()
-        .success()
-        .stdout("Expected --refactoring\n");
+        .code(3)
+        .stderr("Expected --refactoring\n");
 }
 
 #[test]
@@ -30,6 +30,6 @@ fn unknown_refactoring() {
         .arg("--new_function=a")
         .arg("--selection=0:0")
         .assert()
-        .failure()
-        .stderr("error: Unknown refactoring: invalid_refactoring_name\n\nerror: aborting due to previous error\n\n");
+        .code(3)
+        .stderr("Unknown refactoring: invalid_refactoring_name\n");
 }

@@ -1,0 +1,12 @@
+{
+    "file": "already_broken_code.rs",
+    "args": {
+        "refactoring": "extract-method",
+        "selection": "16:28",
+        "new_function": "foo"
+    },
+    "expected": {
+        "code": 1,
+        "stderr": "failed during refactoring\n"
+    }
+}

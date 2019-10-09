@@ -121,15 +121,21 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Result<Vec<Change>
         let si_start = stmts.stmts.first().unwrap().span.lo().0;
         let si_end = stmts.stmts.last().unwrap().span.hi().0;
 
+        let file_name = syntax::source_map::FileName::Real(std::path::PathBuf::from(args.file.to_string()));
+        let source_file = ty.sess.source_map().get_source_file(&file_name).unwrap();
+
+
         Ok(vec![
             Change {
                 file_name: args.file.to_string(),
+                file_start_pos: source_file.start_pos.0 as u32,
                 start: stmts.fn_decl_pos,
                 end: stmts.fn_decl_pos,
                 replacement: new_fn,
             },
             Change {
                 file_name: args.file.to_string(),
+                file_start_pos: source_file.start_pos.0 as u32,
                 start: si_start,
                 end: si_end,
                 replacement: fn_call,

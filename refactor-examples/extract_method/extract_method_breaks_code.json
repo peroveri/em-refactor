@@ -1,0 +1,12 @@
+{
+    "file": "extract_method_breaks_code.rs",
+    "args": {
+        "refactoring": "extract-method",
+        "selection": "39:49",
+        "new_function": "foo"
+    },
+    "expected": {
+        "code": 2,
+        "stderr": "The refactoring broke the code\n"
+    }
+}

@@ -15,9 +15,18 @@ use std::path::{Path, PathBuf};
 use std::process::{exit, Command};
 
 mod change;
+mod file_loader;
 mod my_refactor_callbacks;
 mod refactor_args;
 mod refactorings;
+
+enum RefactorErrorCodes {
+    Success = 0,
+    InputDoesNotCompile = 1,
+    RefactoringProcucedBrokenCode = 2,
+    BadFormatOnInput = 3,
+
+}
 
 fn arg_value<'a>(
     args: impl IntoIterator<Item = &'a String>,
@@ -137,31 +146,69 @@ fn get_compiler_args(args: &[String]) -> Vec<String> {
     rustc_args
 }
 
-fn run_rustc() -> Result<(), rustc::util::common::ErrorReported> {
+fn run_rustc() -> Result<(), i32> {
     let std_env_args = &std::env::args().collect::<Vec<_>>();
     let rustc_args = get_compiler_args(std_env_args);
     let refactor_args = get_refactor_args(std_env_args);
-    // let mut default = rustc_driver::DefaultCallbacks;
     let my_refactor_res = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_args);
 
     if let Err(msg) = my_refactor_res {
-        println!("{}", msg);
-        return Ok(());
+        eprintln!("{}", msg);
+        return Err(RefactorErrorCodes::BadFormatOnInput as i32);
     }
     let mut my_refactor = my_refactor_res.unwrap();
 
     let callbacks: &mut (dyn rustc_driver::Callbacks + Send) = &mut my_refactor;
 
     std::env::set_var("RUST_BACKTRACE", "1");
-    rustc_driver::run_compiler(&rustc_args, callbacks, None, None)
+
+    let emitter = Box::new(Vec::new());
+    // TODO: looks like the errors are not caught here?
+    // Should set own errors on the Callbacks struct
+    let err = rustc_driver::run_compiler(&rustc_args, callbacks, None, Some(emitter));
+    // let err = rustc_driver::catch_fatal_errors(|| {
+    //     rustc_driver::run_compiler(&rustc_args, callbacks, None, Some(emitter))
+    // });
+    if err.is_err() {
+        if let Some(msg) = my_refactor.content {
+            eprintln!("{}", msg);
+        } else {
+            eprintln!("failed during refactoring");
+        }
+        return Err(RefactorErrorCodes::InputDoesNotCompile as i32);
+    }
+
+    let content = my_refactor.content.clone().unwrap_or_else(|| "".to_owned());
+
+    let mut default = rustc_driver::DefaultCallbacks;
+
+    let mut file_loader = Box::new(file_loader::InMemoryFileLoader::new(
+        syntax::source_map::RealFileLoader,
+    ));
+    file_loader.add_changes(my_refactor.changes.clone());
+
+    let emitter = Box::new(Vec::new());
+    let err = rustc_driver::run_compiler(&rustc_args, &mut default, Some(file_loader), Some(emitter));
+    // let err = rustc_driver::catch_fatal_errors(|| {
+    //     let err = rustc_driver::run_compiler(&rustc_args, &mut default, Some(file_loader), Some(emitter));
+    //     if let Err(err) = err {
+    //         return Err(err);
+    //     }
+    //     err
+    // });
+
+    if err.is_err() {
+        eprintln!("The refactoring broke the code");
+        return Err(RefactorErrorCodes::RefactoringProcucedBrokenCode as i32);
+    }
+    // TODO: output message / status that the code was broken after refactoring
+    print!("{}", content);
+
+    Ok(())
 }
 
 pub fn main() {
     rustc_driver::init_rustc_env_logger();
     rustc_driver::install_ice_hook();
-    exit(
-        rustc_driver::catch_fatal_errors(run_rustc)
-            .and_then(|result| result)
-            .is_err() as i32,
-    )
+    exit(run_rustc().err().unwrap_or(0))
 }
