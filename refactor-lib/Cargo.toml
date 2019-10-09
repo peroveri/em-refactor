@@ -16,9 +16,6 @@ name = "my-refactor-driver"
 test = true
 path = "src/driver.rs"
 
-[lib]
-name = "my_refactor_lib"
-
 [dependencies]
 
 [dev-dependencies]
