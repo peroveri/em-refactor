@@ -7,6 +7,12 @@ use rustc_interface::interface;
 use std::path::PathBuf;
 use syntax::source_map::FileName;
 
+/// 
+/// Handles callbacks from the compiler
+/// after_parsing: AST
+/// after_expansion: AST but macros have been expanded
+/// after_analysis: HIR (desugared AST) after typechecking
+/// 
 pub struct MyRefactorCallbacks {
     pub args: RefactorArgs,
     pub result: Result<Vec<Change>, String>,
@@ -17,7 +23,7 @@ impl MyRefactorCallbacks {
     pub fn from_arg(arg: String) -> Result<MyRefactorCallbacks, String> {
         Ok(MyRefactorCallbacks {
             args: RefactorArgs::parse(arg)?,
-            result: Err("".to_owned()),
+            result: Err("".to_owned()), // shouldnt be Err by default, but something like None
             content: None,
         })
     }

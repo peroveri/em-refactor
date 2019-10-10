@@ -1,3 +1,6 @@
+/// 
+/// Represents a file change applied by the refactorings
+/// 
 #[derive(Debug, Clone)]
 pub struct Change {
     pub file_name: String,

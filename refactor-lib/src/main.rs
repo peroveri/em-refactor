@@ -1,5 +1,9 @@
 static DRIVER_NAME: &str = "my-refactor-driver";
 
+/// 
+/// Wrapper binary which invokes cargo check with the RUSTC_WRAPPER env var set to the binary produced by driver.rs
+/// This will cause cargo to invoke the driver.rs binary with the same arguments as if the driver.rs binary was rustc. 
+/// 
 pub fn main() {
     if let Err(code) = process(std::env::args().skip(2)) {
         std::process::exit(code);

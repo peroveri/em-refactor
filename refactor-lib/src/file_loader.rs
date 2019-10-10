@@ -1,9 +1,11 @@
-use std::collections::HashMap;
 use std::io;
 use std::path::{Path, PathBuf};
 use syntax::source_map::{FileLoader};
 use crate::change::Change;
 
+///
+/// Used for running the compiler with modified files without having to write the modifications to the filesystem.
+/// 
 #[derive(Clone)]
 pub(crate) struct InMemoryFileLoader<T: FileLoader + Send + Sync> {
     inner_file_loader: T,
