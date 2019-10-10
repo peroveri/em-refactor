@@ -18,6 +18,7 @@ mod change;
 mod file_loader;
 mod my_refactor_callbacks;
 mod refactor_args;
+mod refactor_args_parser;
 mod refactorings;
 
 enum RefactorErrorCodes {
@@ -25,7 +26,6 @@ enum RefactorErrorCodes {
     InputDoesNotCompile = 1,
     RefactoringProcucedBrokenCode = 2,
     BadFormatOnInput = 3,
-
 }
 
 fn arg_value<'a>(
@@ -60,9 +60,13 @@ fn is_wrapper_mode(args: &[String]) -> bool {
 fn get_file_path(args: &[String]) -> Option<&String> {
     args.iter().find(|s| !s.starts_with('-'))
 }
-fn get_refactor_args(args: &[String]) -> String {
+fn get_refactor_args(args: &[String]) -> Vec<String> {
     if is_wrapper_mode(&args) {
-        std::env::var("MY_REFACTOR_ARGS").unwrap()
+        std::env::var("MY_REFACTOR_ARGS")
+            .unwrap()
+            .split(';')
+            .map(|s| s.to_string())
+            .collect()
     } else {
         let mut ret = args
             .iter()
@@ -72,7 +76,7 @@ fn get_refactor_args(args: &[String]) -> String {
             .collect::<Vec<_>>();
 
         ret.push(format!("--file={}", get_file_path(args).unwrap()));
-        ret.join(";")
+        ret
     }
 }
 
@@ -147,16 +151,16 @@ fn get_compiler_args(args: &[String]) -> Vec<String> {
 }
 
 fn run_rustc() -> Result<(), i32> {
-    let std_env_args = &std::env::args().collect::<Vec<_>>();
-    let rustc_args = get_compiler_args(std_env_args);
-    let refactor_args = get_refactor_args(std_env_args);
-    let my_refactor_res = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_args);
-
-    if let Err(msg) = my_refactor_res {
-        eprintln!("{}", msg);
+    let std_env_args = std::env::args().collect::<Vec<_>>();
+    let rustc_args = get_compiler_args(&std_env_args);
+    let refactor_args = get_refactor_args(&std_env_args);
+    let refactor_def = refactor_args_parser::argument_list_to_refactor_def(&refactor_args);
+    if let Err(err) = refactor_def {
+        eprintln!("{}", err);
         return Err(RefactorErrorCodes::BadFormatOnInput as i32);
     }
-    let mut my_refactor = my_refactor_res.unwrap();
+    let refactor_def = refactor_def.unwrap();
+    let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_def);
 
     let callbacks: &mut (dyn rustc_driver::Callbacks + Send) = &mut my_refactor;
 
@@ -192,7 +196,8 @@ fn run_rustc() -> Result<(), i32> {
     file_loader.add_changes(my_refactor.result.clone().unwrap());
 
     let emitter = Box::new(Vec::new());
-    let err = rustc_driver::run_compiler(&rustc_args, &mut default, Some(file_loader), Some(emitter));
+    let err =
+        rustc_driver::run_compiler(&rustc_args, &mut default, Some(file_loader), Some(emitter));
     // let err = rustc_driver::catch_fatal_errors(|| {
     //     let err = rustc_driver::run_compiler(&rustc_args, &mut default, Some(file_loader), Some(emitter));
     //     if let Err(err) = err {

@@ -1,14 +1,9 @@
 use crate::change::Change;
-use crate::refactor_args::RefactorArgs;
+use crate::refactor_args::SourceCodeRange;
 use crate::refactorings::expr_use_visit::CollectVarsArgs;
 use crate::refactorings::stmts_visitor::visit_stmts;
 use rustc::ty;
 use syntax::source_map::{BytePos, Span};
-
-fn get_selection(s: &str) -> (u32, u32) {
-    let vs = s.split(':').collect::<Vec<_>>();
-    (vs[0].parse().unwrap(), vs[1].parse().unwrap())
-}
 
 /**
  * rewrites: places in the source code where deref * needs to be added
@@ -76,11 +71,15 @@ fn map_to_span(
  *
  */
 
-pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Result<Vec<Change>, String> {
+pub fn do_refactoring(
+    ty: ty::TyCtxt,
+    range: &SourceCodeRange,
+    new_function: &str,
+) -> Result<Vec<Change>, String> {
     let spi = map_to_span(
         ty.sess.source_map(),
-        get_selection(&args.selection),
-        &args.file,
+        (range.from, range.to),
+        &range.file_name,
     );
 
     let stmts_visit_res = visit_stmts(ty, spi);
@@ -105,7 +104,7 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Result<Vec<Change>
 
         let new_fn = format!(
             "fn {}({}) {{\n{}\n}}\n",
-            args.new_function,
+            new_function,
             params,
             get_stmts_source(ty.sess.source_map(), spi, &vars_used.get_rewrites())
         );
@@ -117,24 +116,25 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Result<Vec<Change>
             .collect::<Vec<_>>()
             .join(", ");
 
-        let fn_call = format!("{}({});", args.new_function, arguments);
+        let fn_call = format!("{}({});", new_function, arguments);
         let si_start = stmts.stmts.first().unwrap().span.lo().0;
         let si_end = stmts.stmts.last().unwrap().span.hi().0;
 
-        let file_name = syntax::source_map::FileName::Real(std::path::PathBuf::from(args.file.to_string()));
+        let file_name = syntax::source_map::FileName::Real(std::path::PathBuf::from(
+            range.file_name.to_string(),
+        ));
         let source_file = ty.sess.source_map().get_source_file(&file_name).unwrap();
-
 
         Ok(vec![
             Change {
-                file_name: args.file.to_string(),
+                file_name: range.file_name.to_string(),
                 file_start_pos: source_file.start_pos.0 as u32,
                 start: stmts.fn_decl_pos,
                 end: stmts.fn_decl_pos,
                 replacement: new_fn,
             },
             Change {
-                file_name: args.file.to_string(),
+                file_name: range.file_name.to_string(),
                 file_start_pos: source_file.start_pos.0 as u32,
                 start: si_start,
                 end: si_end,
@@ -142,7 +142,10 @@ pub fn do_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Result<Vec<Change>
             },
         ])
     } else {
-        Err(format!("{} is not a valid selection!", args.selection))
+        Err(format!(
+            "{}:{} is not a valid selection!",
+            range.from, range.to
+        ))
     }
 }
 

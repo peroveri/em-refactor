@@ -1,5 +1,5 @@
 use crate::change::Change;
-use crate::refactor_args::RefactorArgs;
+use crate::refactor_args::RefactorDefinition;
 use crate::refactorings::extract_method;
 use rustc::ty;
 use rustc_driver;
@@ -7,25 +7,25 @@ use rustc_interface::interface;
 use std::path::PathBuf;
 use syntax::source_map::FileName;
 
-/// 
+///
 /// Handles callbacks from the compiler
 /// after_parsing: AST
 /// after_expansion: AST but macros have been expanded
 /// after_analysis: HIR (desugared AST) after typechecking
-/// 
+///
 pub struct MyRefactorCallbacks {
-    pub args: RefactorArgs,
+    pub args: RefactorDefinition,
     pub result: Result<Vec<Change>, String>,
     pub content: Option<String>,
 }
 
 impl MyRefactorCallbacks {
-    pub fn from_arg(arg: String) -> Result<MyRefactorCallbacks, String> {
-        Ok(MyRefactorCallbacks {
-            args: RefactorArgs::parse(arg)?,
+    pub fn from_arg(arg: RefactorDefinition) -> MyRefactorCallbacks {
+        MyRefactorCallbacks {
+            args: arg,
             result: Err("".to_owned()), // shouldnt be Err by default, but something like None
             content: None,
-        })
+        }
     }
 
     fn output_changes(&mut self, tcx: ty::TyCtxt, changes: &[Change]) {
@@ -59,11 +59,11 @@ impl MyRefactorCallbacks {
     }
 }
 
-fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorArgs) -> Result<Vec<Change>, String> {
-    if args.refactoring == "extract-method" {
-        extract_method::do_refactoring(ty, args)
-    } else {
-        Err(format!("Unknown refactoring: {}", &args.refactoring))
+fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Vec<Change>, String> {
+    match args {
+        RefactorDefinition::ExtractMethod(range, new_function) => {
+            extract_method::do_refactoring(ty, range, new_function)
+        }
     }
 }
 
