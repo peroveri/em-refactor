@@ -6,8 +6,8 @@ mod extract_method;
 
 pub fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Vec<Change>, String> {
     match args {
-        RefactorDefinition::ExtractMethod(range, new_function) => {
-            extract_method::do_refactoring(ty, range, new_function)
+        RefactorDefinition::ExtractMethod(args) => {
+            extract_method::do_refactoring(ty, &args.range, &args.new_function)
         }
     }
 }

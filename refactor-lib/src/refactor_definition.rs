@@ -3,11 +3,17 @@
 ///
 #[derive(PartialEq, Debug)]
 pub enum RefactorDefinition {
-    ExtractMethod(SourceCodeRange, String),
+    ExtractMethod(ExtractMethodArgs),
     // ExtractBlock(SourceCodeRange),
     // IntroduceClosure(SourceCodeRange),
     // CloseOverVariables(SourceCodeRange),
     // LiftClosure(SourceCodeRange),
+}
+
+#[derive(PartialEq, Debug)]
+pub struct ExtractMethodArgs {
+    pub range: SourceCodeRange,
+    pub new_function: String,
 }
 
 ///

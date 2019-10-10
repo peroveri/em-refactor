@@ -1,4 +1,4 @@
-use crate::refactor_definition::{RefactorDefinition, SourceCodeRange};
+use crate::refactor_definition::{ExtractMethodArgs, RefactorDefinition, SourceCodeRange};
 
 ///
 /// converts an argument list to a refactoring definition
@@ -15,10 +15,10 @@ struct RefactorArgsParser<'a> {
 impl RefactorArgsParser<'_> {
     pub fn from_args(&self) -> Result<RefactorDefinition, String> {
         match self.get_param("--refactoring")? {
-            "extract-method" => Ok(RefactorDefinition::ExtractMethod(
-                self.parse_range()?,
-                self.get_param("--new_function")?.to_owned(),
-            )),
+            "extract-method" => Ok(RefactorDefinition::ExtractMethod(ExtractMethodArgs {
+                range: self.parse_range()?,
+                new_function: self.get_param("--new_function")?.to_owned(),
+            })),
             s => Err(format!("Unknown refactoring: {}", s)),
         }
     }
@@ -66,12 +66,15 @@ mod test {
             "--selection=1:2".to_owned(),
             "--new_function=foo".to_owned(),
         ];
-        let scr = SourceCodeRange {
+        let range = SourceCodeRange {
             from: 1,
             to: 2,
             file_name: "main.rs".to_owned(),
         };
-        let rd = RefactorDefinition::ExtractMethod(scr, "foo".to_owned());
+        let rd = RefactorDefinition::ExtractMethod(ExtractMethodArgs {
+            range,
+            new_function: "foo".to_owned(),
+        });
         let expected = Ok(rd);
 
         let actual = argument_list_to_refactor_def(&args);
