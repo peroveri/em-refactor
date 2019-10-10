@@ -112,6 +112,9 @@ fn get_sys_root() -> String {
         )
 }
 
+/// 
+/// Collect all arguments until '--', which should be passed to rustc
+/// 
 fn get_compiler_args(args: &[String]) -> Vec<String> {
     let have_sys_root = arg_value(args, "--sysroot", |_| true).is_some();
     // Setting RUSTC_WRAPPER causes Cargo to pass 'rustc' as the first argument.
