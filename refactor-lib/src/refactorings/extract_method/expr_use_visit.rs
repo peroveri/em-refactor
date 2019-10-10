@@ -14,7 +14,14 @@ struct VariableCollectorDelegate<'tcx> {
 }
 
 impl<'tcx> VariableCollectorDelegate<'tcx> {
-    fn var_used(&mut self, sp: Span, cat: &Categorization, ty: ty::Ty<'tcx>, is_consumed: bool, is_mutated: bool) {
+    fn var_used(
+        &mut self,
+        sp: Span,
+        cat: &Categorization,
+        ty: ty::Ty<'tcx>,
+        is_consumed: bool,
+        is_mutated: bool,
+    ) {
         if let Categorization::Local(lid) = cat {
             let decl_span = self.tcx.hir().span(*lid);
             let node = self.tcx.hir().get(*lid);
@@ -27,12 +34,12 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
             if self.args.spi.contains(sp) && !self.args.spi.contains(decl_span) {
                 // should be arg
                 self.ct.arguments.push(VariableUsage {
-                    ident, 
+                    ident,
                     ty,
                     borrows: vec![],
                     was_borrow: Some(sp.lo().0),
                     is_mutated,
-                    is_consumed
+                    is_consumed,
                 });
             } else if !self.args.spi.contains(sp) && self.args.spi.contains(decl_span) {
                 // should be ret val
@@ -44,7 +51,11 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
 
 impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
     fn consume(&mut self, _: HirId, sp: Span, cmt: &cmt_<'tcx>, cm: ConsumeMode) {
-        let is_consumed = if let ConsumeMode::Move(_) = cm { true} else {false};
+        let is_consumed = if let ConsumeMode::Move(_) = cm {
+            true
+        } else {
+            false
+        };
         self.var_used(sp, &cmt.cat, cmt.ty, is_consumed, false);
     }
 
@@ -97,7 +108,8 @@ impl ExtractMethodContext<'_> {
             return_values: vec![],
         }
     }
-    pub fn get_arguments(&self) -> Vec<VariableUsage> { // iter?
+    pub fn get_arguments(&self) -> Vec<VariableUsage> {
+        // iter?
         let mut map: HashMap<String, VariableUsage> = HashMap::new();
 
         for arg in self.arguments.iter() {
@@ -116,20 +128,29 @@ impl ExtractMethodContext<'_> {
             }
         }
 
-        map.into_iter().map(|(_, v)| v).collect::<Vec<VariableUsage>>()
+        map.into_iter()
+            .map(|(_, v)| v)
+            .collect::<Vec<VariableUsage>>()
     }
     pub fn get_rewrites(&self) -> Vec<u32> {
-        self.get_arguments().iter().filter(|u| !u.is_consumed).flat_map(|u| u.borrows.clone()).collect()
+        self.get_arguments()
+            .iter()
+            .filter(|u| !u.is_consumed)
+            .flat_map(|u| u.borrows.clone())
+            .collect()
     }
     pub fn get_return_values(&self) -> Vec<VariableUsage> {
-        self.return_values.iter().map(|(id, ty)| VariableUsage {
-            was_borrow: None,
-            borrows: vec![],
-            is_consumed: false,
-            is_mutated: false,
-            ident: id.to_string(),
-            ty
-        }).collect()
+        self.return_values
+            .iter()
+            .map(|(id, ty)| VariableUsage {
+                was_borrow: None,
+                borrows: vec![],
+                is_consumed: false,
+                is_mutated: false,
+                ident: id.to_string(),
+                ty,
+            })
+            .collect()
     }
 }
 #[derive(Clone)]
@@ -139,18 +160,18 @@ pub struct VariableUsage<'tcx> {
     pub was_borrow: Option<u32>, // TODO: name
     pub borrows: Vec<u32>,
     pub ident: String,
-    pub ty: ty::Ty<'tcx>
+    pub ty: ty::Ty<'tcx>,
 }
 impl VariableUsage<'_> {
     pub fn as_param(&self) -> String {
-        let mut_ = (if self.is_mutated {"mut "} else {""}).to_string();
-        let borrow = (if self.is_consumed {""} else {"&"}).to_string();
+        let mut_ = (if self.is_mutated { "mut " } else { "" }).to_string();
+        let borrow = (if self.is_consumed { "" } else { "&" }).to_string();
 
         format!("{}: {}{}{:?}", self.ident, borrow, mut_, self.ty)
     }
     pub fn as_arg(&self) -> String {
-        let mut_ = (if self.is_mutated {"mut "} else {""}).to_string();
-        let borrow = (if self.is_consumed {""} else {"&"}).to_string();
+        let mut_ = (if self.is_mutated { "mut " } else { "" }).to_string();
+        let borrow = (if self.is_consumed { "" } else { "&" }).to_string();
 
         format!("{}{}{}", borrow, mut_, self.ident)
     }

@@ -1,6 +1,6 @@
 use crate::change::Change;
 use crate::refactor_args::RefactorDefinition;
-use crate::refactorings::extract_method;
+use crate::refactorings::do_ty_refactoring;
 use rustc::ty;
 use rustc_driver;
 use rustc_interface::interface;
@@ -56,14 +56,6 @@ impl MyRefactorCallbacks {
         }
 
         self.content = Some(content);
-    }
-}
-
-fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Vec<Change>, String> {
-    match args {
-        RefactorDefinition::ExtractMethod(range, new_function) => {
-            extract_method::do_refactoring(ty, range, new_function)
-        }
     }
 }
 

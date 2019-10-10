@@ -1,3 +1,13 @@
-mod stmts_visitor;
-mod expr_use_visit;
-pub mod extract_method;
+use crate::change::Change;
+use crate::refactor_args::RefactorDefinition;
+use rustc::ty;
+
+mod extract_method;
+
+pub fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Vec<Change>, String> {
+    match args {
+        RefactorDefinition::ExtractMethod(range, new_function) => {
+            extract_method::do_refactoring(ty, range, new_function)
+        }
+    }
+}

@@ -1,9 +1,12 @@
+use self::expr_use_visit::{collect_vars, CollectVarsArgs};
+use self::stmts_visitor::visit_stmts;
 use crate::change::Change;
 use crate::refactor_args::SourceCodeRange;
-use crate::refactorings::expr_use_visit::CollectVarsArgs;
-use crate::refactorings::stmts_visitor::visit_stmts;
 use rustc::ty;
 use syntax::source_map::{BytePos, Span};
+
+mod expr_use_visit;
+mod stmts_visitor;
 
 /**
  * rewrites: places in the source code where deref * needs to be added
@@ -89,7 +92,7 @@ pub fn do_refactoring(
             body_id: stmts.fn_body_id,
             spi,
         };
-        let vars_used = crate::refactorings::expr_use_visit::collect_vars(ty, collect_args);
+        let vars_used = collect_vars(ty, collect_args);
 
         if vars_used.get_return_values().len() > 1 {
             return Err("Multiple returnvalues not implemented".to_owned());
