@@ -1,7 +1,7 @@
 use self::expr_use_visit::{collect_vars, CollectVarsArgs};
 use self::stmts_visitor::visit_stmts;
 use crate::change::Change;
-use crate::refactor_args::SourceCodeRange;
+use crate::refactor_definition::SourceCodeRange;
 use rustc::ty;
 use syntax::source_map::{BytePos, Span};
 

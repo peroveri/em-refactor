@@ -1,5 +1,5 @@
 use crate::change::Change;
-use crate::refactor_args::RefactorDefinition;
+use crate::refactor_definition::RefactorDefinition;
 use crate::refactorings::do_ty_refactoring;
 use rustc::ty;
 use rustc_driver;

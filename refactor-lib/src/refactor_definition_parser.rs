@@ -1,4 +1,4 @@
-use crate::refactor_args::{RefactorDefinition, SourceCodeRange};
+use crate::refactor_definition::{RefactorDefinition, SourceCodeRange};
 
 ///
 /// converts an argument list to a refactoring definition

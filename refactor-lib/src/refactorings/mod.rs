@@ -1,5 +1,5 @@
 use crate::change::Change;
-use crate::refactor_args::RefactorDefinition;
+use crate::refactor_definition::RefactorDefinition;
 use rustc::ty;
 
 mod extract_method;

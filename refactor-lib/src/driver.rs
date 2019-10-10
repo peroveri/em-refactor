@@ -17,8 +17,8 @@ use std::process::{exit, Command};
 mod change;
 mod file_loader;
 mod my_refactor_callbacks;
-mod refactor_args;
-mod refactor_args_parser;
+mod refactor_definition;
+mod refactor_definition_parser;
 mod refactorings;
 
 enum RefactorErrorCodes {
@@ -157,7 +157,7 @@ fn run_rustc() -> Result<(), i32> {
     let std_env_args = std::env::args().collect::<Vec<_>>();
     let rustc_args = get_compiler_args(&std_env_args);
     let refactor_args = get_refactor_args(&std_env_args);
-    let refactor_def = refactor_args_parser::argument_list_to_refactor_def(&refactor_args);
+    let refactor_def = refactor_definition_parser::argument_list_to_refactor_def(&refactor_args);
     if let Err(err) = refactor_def {
         eprintln!("{}", err);
         return Err(RefactorErrorCodes::BadFormatOnInput as i32);
