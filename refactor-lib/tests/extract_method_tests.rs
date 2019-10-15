@@ -51,3 +51,12 @@ fn extract_method_breaks_code() {
 fn already_broken_code() {
     run_testcase("already_broken_code").unwrap();
 }
+/* Extract block */
+#[test]
+fn extract_block_1() {
+    run_testcase("extract_block_1").unwrap();
+}
+#[test]
+fn extract_block_with_expr() {
+    run_testcase("extract_block_with_expr").unwrap();
+}
