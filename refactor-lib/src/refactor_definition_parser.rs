@@ -19,6 +19,7 @@ impl RefactorArgsParser<'_> {
                 range: self.parse_range()?,
                 new_function: self.get_param("--new_function")?.to_owned(),
             })),
+            "extract-block" => Ok(RefactorDefinition::ExtractBlock(self.parse_range()?)),
             s => Err(format!("Unknown refactoring: {}", s)),
         }
     }

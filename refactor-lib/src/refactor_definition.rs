@@ -4,7 +4,7 @@
 #[derive(PartialEq, Debug)]
 pub enum RefactorDefinition {
     ExtractMethod(ExtractMethodArgs),
-    // ExtractBlock(SourceCodeRange),
+    ExtractBlock(SourceCodeRange),
     // IntroduceClosure(SourceCodeRange),
     // CloseOverVariables(SourceCodeRange),
     // LiftClosure(SourceCodeRange),

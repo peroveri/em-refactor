@@ -31,7 +31,7 @@ fn get_stmts_source(
     source
 }
 
-fn map_to_span(
+pub fn map_to_span(
     source_map: &syntax::source_map::SourceMap,
     selection: (u32, u32),
     file: &str,

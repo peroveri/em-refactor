@@ -71,7 +71,7 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
                 self.output_changes(tcx, &changes);
             }
         });
-        rustc_driver::Compilation::Continue
+        rustc_driver::Compilation::Stop
     }
 }
 
