@@ -2,8 +2,9 @@ use self::expr_use_visit::{collect_vars, CollectVarsArgs};
 use self::stmts_visitor::visit_stmts;
 use crate::change::Change;
 use crate::refactor_definition::SourceCodeRange;
+use crate::refactorings::utils::map_range_to_span;
 use rustc::ty;
-use syntax::source_map::{BytePos, Span};
+use syntax::source_map::Span;
 
 pub mod expr_use_visit;
 mod stmts_visitor;
@@ -29,19 +30,6 @@ fn get_stmts_source(
     }
 
     source
-}
-
-pub fn map_to_span(
-    source_map: &syntax::source_map::SourceMap,
-    selection: (u32, u32),
-    file: &str,
-) -> Span {
-    let filename = syntax::source_map::FileName::Real(std::path::PathBuf::from(file));
-    let source_file = source_map.get_source_file(&filename).unwrap();
-    Span::with_root_ctxt(
-        BytePos(selection.0 + source_file.start_pos.0),
-        BytePos(selection.1 + source_file.start_pos.0),
-    )
 }
 
 /**
@@ -79,12 +67,7 @@ pub fn do_refactoring(
     range: &SourceCodeRange,
     new_function: &str,
 ) -> Result<Vec<Change>, String> {
-    let spi = map_to_span(
-        ty.sess.source_map(),
-        (range.from, range.to),
-        &range.file_name,
-    );
-
+    let spi = map_range_to_span(ty, &range);
     let stmts_visit_res = visit_stmts(ty, spi);
 
     if let Some(stmts) = stmts_visit_res {

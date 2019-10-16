@@ -4,6 +4,7 @@ use rustc::ty;
 
 mod extract_block;
 mod extract_method;
+pub mod utils;
 
 pub fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Vec<Change>, String> {
     match args {
