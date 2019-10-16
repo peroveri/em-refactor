@@ -1,3 +1,4 @@
+use crate::change::Change;
 use crate::refactor_definition::SourceCodeRange;
 use rustc::ty::TyCtxt;
 use std::path::PathBuf;
@@ -29,4 +30,14 @@ pub fn map_range_to_span(tcx: TyCtxt, range: &SourceCodeRange) -> Span {
         (range.from, range.to),
         &range.file_name,
     )
+}
+
+pub fn map_change(tcx: TyCtxt, range: &SourceCodeRange, replacement: String) -> Change {
+    Change {
+        file_name: range.file_name.to_string(),
+        file_start_pos: get_file_offset(tcx, &range.file_name),
+        start: range.from,
+        end: range.to,
+        replacement,
+    }
 }

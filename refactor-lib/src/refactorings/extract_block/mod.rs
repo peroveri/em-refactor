@@ -1,7 +1,7 @@
 use crate::change::Change;
 use crate::refactor_definition::SourceCodeRange;
 use crate::refactorings::extract_block::block_collector::collect_block;
-use crate::refactorings::utils::{get_file_offset, map_range_to_span};
+use crate::refactorings::utils::{map_change, map_range_to_span};
 use rustc::hir;
 use rustc::ty::TyCtxt;
 use syntax_pos::Span;
@@ -37,29 +37,19 @@ fn extract_block(
 /// b. add declaration and assign at start of block + add var in expression at end of block
 pub fn do_refactoring(tcx: TyCtxt, range: &SourceCodeRange) -> Result<Vec<Change>, String> {
     let span = map_range_to_span(tcx, range);
-    let file_offset = get_file_offset(tcx, &range.file_name);
-    let block = collect_block(tcx, span);
 
-    if let Some((block, body_id)) = block {
+    if let Some((block, body_id)) = collect_block(tcx, span) {
         let source = tcx.sess.source_map().span_to_snippet(span).unwrap();
         if let Some(expr) = &block.expr {
             if span.contains(expr.span) {
-                return Ok(vec![Change {
-                    file_name: range.file_name.to_string(),
-                    file_start_pos: file_offset,
-                    start: range.from,
-                    end: range.to,
-                    replacement: format!("{{\n{}\n}}", source),
-                }]);
+                return Ok(vec![map_change(tcx, &range, format!("{{\n{}\n}}", source))]);
             }
         }
-        Ok(vec![Change {
-            file_name: range.file_name.to_string(),
-            file_start_pos: file_offset,
-            start: range.from,
-            end: range.to,
-            replacement: extract_block(tcx, body_id, span, source)?,
-        }])
+        Ok(vec![map_change(
+            tcx,
+            &range,
+            extract_block(tcx, body_id, span, source)?,
+        )])
     } else {
         Err(format!( // do this on a higher level?
             "{}:{} is not a valid selection!",
