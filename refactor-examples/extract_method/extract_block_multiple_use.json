@@ -1,0 +1,11 @@
+{
+    "file": "extract_block_multiple_use.rs",
+    "args": {
+        "refactoring": "extract-block",
+        "selection": "46:71"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "extract_block_multiple_use_after.rs"
+    }
+}

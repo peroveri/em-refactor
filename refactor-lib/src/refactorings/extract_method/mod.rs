@@ -5,7 +5,7 @@ use crate::refactor_definition::SourceCodeRange;
 use rustc::ty;
 use syntax::source_map::{BytePos, Span};
 
-mod expr_use_visit;
+pub mod expr_use_visit;
 mod stmts_visitor;
 
 /**

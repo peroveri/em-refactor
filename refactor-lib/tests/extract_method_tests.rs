@@ -60,3 +60,11 @@ fn extract_block_1() {
 fn extract_block_with_expr() {
     run_testcase("extract_block_with_expr").unwrap();
 }
+#[test]
+fn extract_block_mut() {
+    run_testcase("extract_block_mut").unwrap();
+}
+#[test]
+fn extract_block_multiple_use() {
+    run_testcase("extract_block_multiple_use").unwrap();
+}

@@ -10,22 +10,40 @@ struct BlockCollector<'v> {
     tcx: TyCtxt<'v>,
     pos: Span,
     block: Option<&'v hir::Block>,
+    body_id: Option<hir::BodyId>,
 }
 
-pub fn collect_block(tcx: TyCtxt, pos: Span) -> Option<&hir::Block> {
+pub fn collect_block(tcx: TyCtxt, pos: Span) -> Option<(&hir::Block, hir::BodyId)> {
     let mut v = BlockCollector {
         tcx,
         pos,
         block: None,
+        body_id: None,
     };
 
     intravisit::walk_crate(&mut v, tcx.hir().krate());
-    v.block
+
+    if v.block.is_some() && v.body_id.is_some() {
+        Some((v.block.unwrap(), v.body_id.unwrap()))
+    } else {
+        None
+    }
 }
 
 impl<'v> intravisit::Visitor<'v> for BlockCollector<'v> {
     fn nested_visit_map<'this>(&'this mut self) -> intravisit::NestedVisitorMap<'this, 'v> {
         intravisit::NestedVisitorMap::All(&self.tcx.hir())
+    }
+    fn visit_fn(
+        &mut self,
+        fk: intravisit::FnKind<'v>,
+        fd: &'v hir::FnDecl,
+        b: hir::BodyId,
+        s: Span,
+        id: hir::HirId,
+    ) {
+        self.body_id = Some(b);
+        intravisit::walk_fn(self, fk, fd, b, s, id);
     }
 
     fn visit_block(&mut self, body: &'v hir::Block) {
