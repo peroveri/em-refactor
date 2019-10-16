@@ -36,14 +36,15 @@ pub fn do_refactoring(tcx: ty::TyCtxt, range: &SourceCodeRange) -> Result<Vec<Ch
                 }]);
             }
         }
-        let ids = push_stmt_into_block::push_stmts_into_block(tcx, body_id, span)?;
+        let (decls, ids) = push_stmt_into_block::push_stmts_into_block(tcx, body_id, span)?;
+        let decls_fmt = decls.join(", ");
         let ids_fmt = ids.join(", ");
 
         let (let_b, expr, end) = match ids.len() {
             0 => ("".to_owned(), "".to_owned(), "".to_owned()),
-            1 => (format!("let {} = \n", ids_fmt), ids_fmt, ";".to_owned()),
+            1 => (format!("let {} = \n", decls_fmt), ids_fmt, ";".to_owned()),
             _ => (
-                format!("let ({}) = \n", ids_fmt),
+                format!("let ({}) = \n", decls_fmt),
                 format!("({})", ids_fmt),
                 ";".to_owned(),
             ),

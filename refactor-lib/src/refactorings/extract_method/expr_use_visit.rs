@@ -43,7 +43,14 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
                 });
             } else if !self.args.spi.contains(sp) && self.args.spi.contains(decl_span) {
                 // should be ret val
-                self.ct.return_values.push((ident, ty));
+                self.ct.return_values.push(VariableUsage {
+                    ident,
+                    ty,
+                    borrows: vec![],
+                    was_borrow: Some(sp.lo().0),
+                    is_mutated,
+                    is_consumed,
+                });
             }
         }
     }
@@ -99,7 +106,7 @@ pub struct ExtractMethodContext<'tcx> {
     /**
      * Variables declared in Si, used in Sj
      */
-    return_values: Vec<(String, ty::Ty<'tcx>)>,
+    return_values: Vec<VariableUsage<'tcx>>,
 }
 impl ExtractMethodContext<'_> {
     fn new() -> Self {
@@ -140,17 +147,47 @@ impl ExtractMethodContext<'_> {
             .collect()
     }
     pub fn get_return_values(&self) -> Vec<VariableUsage> {
-        self.return_values
-            .iter()
-            .map(|(id, ty)| VariableUsage {
-                was_borrow: None,
-                borrows: vec![],
-                is_consumed: false,
-                is_mutated: false,
-                ident: id.to_string(),
-                ty,
-            })
-            .collect()
+        let mut map: HashMap<String, VariableUsage> = HashMap::new();
+
+        let mut ids = vec![]; // HashMap doesnt preserve order
+
+        for rv in self.return_values.iter() {
+            if !ids.contains(&rv.ident) {
+                ids.push(rv.ident.to_string());
+            }
+            if let Some(entry) = map.get_mut(&rv.ident) {
+                entry.is_consumed = entry.is_consumed || rv.is_consumed;
+                entry.is_mutated = entry.is_mutated || rv.is_mutated;
+                if let Some(idx) = rv.was_borrow {
+                    entry.borrows.push(idx);
+                }
+            } else {
+                let mut e = rv.clone();
+                if let Some(idx) = rv.was_borrow {
+                    e.borrows.push(idx);
+                }
+                map.insert(rv.ident.clone(), e);
+            }
+        }
+
+        ids.iter()
+            .map(|id| map.get(id).unwrap().clone())
+            .collect::<Vec<_>>()
+
+        // map.into_iter()
+        //     .map(|(_, v)| v)
+        //     .collect::<Vec<VariableUsage>>()
+        // self.return_values
+        //     .iter()
+        //     .map(|(id, ty)| VariableUsage {
+        //         was_borrow: None,
+        //         borrows: vec![],
+        //         is_consumed: false,
+        //         is_mutated: false,
+        //         ident: id.to_string(),
+        //         ty,
+        //     })
+        //     .collect()
     }
 }
 #[derive(Clone)]
