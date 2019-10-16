@@ -3,7 +3,7 @@ use crate::refactor_definition::SourceCodeRange;
 use crate::refactorings::extract_block::block_collector::collect_block;
 use crate::refactorings::utils::{get_file_offset, map_range_to_span};
 use rustc::hir;
-use rustc::ty::{self, TyCtxt};
+use rustc::ty::TyCtxt;
 use syntax_pos::Span;
 
 mod block_collector;
@@ -35,7 +35,7 @@ fn extract_block(
 /// how should it be moved?
 /// a. identical (cut & paste)
 /// b. add declaration and assign at start of block + add var in expression at end of block
-pub fn do_refactoring(tcx: ty::TyCtxt, range: &SourceCodeRange) -> Result<Vec<Change>, String> {
+pub fn do_refactoring(tcx: TyCtxt, range: &SourceCodeRange) -> Result<Vec<Change>, String> {
     let span = map_range_to_span(tcx, range);
     let file_offset = get_file_offset(tcx, &range.file_name);
     let block = collect_block(tcx, span);
