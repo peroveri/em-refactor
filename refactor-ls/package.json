@@ -1,6 +1,6 @@
 {
-	"name": "lsp-sample",
-	"description": "A language server example",
+	"name": "lsp-refactoring-sample",
+	"description": "A language server refactoring example",
 	"author": "Microsoft Corporation",
 	"license": "MIT",
 	"version": "1.0.0",
@@ -8,7 +8,7 @@
 		"type": "git",
 		"url": "https://github.com/Microsoft/vscode-extension-samples"
 	},
-	"publisher": "vscode-samples",
+	"publisher": "test-publisher",
 	"categories": [],
 	"keywords": [
 		"multi-root ready"
@@ -50,7 +50,10 @@
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
-		"test": "sh ./scripts/e2e.sh"
+		"test": "sh ./scripts/e2e.sh",
+		"vscode-package": "vsce package",
+		"vscode-install": "code --install-extension lsp-refactoring-sample-1.0.0.vsix",
+		"vscode-uninstall": "code --uninstall-extension lsp-refactoring-sample-1.0.0.vsix"
 	},
 	"devDependencies": {
 		"@types/mocha": "^5.2.0",
