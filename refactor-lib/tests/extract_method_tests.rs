@@ -68,3 +68,7 @@ fn extract_block_mut() {
 fn extract_block_multiple_use() {
     run_testcase("extract_block_multiple_use").unwrap();
 }
+#[test]
+fn extract_block_field_used_later() {
+    run_testcase("extract_block_field_used_later").unwrap();
+}
