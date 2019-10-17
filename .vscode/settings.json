@@ -5,7 +5,8 @@
         "**/.hg": true,
         "**/CVS": true,
         "**/.DS_Store": true,
-        "refactor-cli/target": true,
-        "refactor-lib/target": true,
+        "refactor-ls": true,
+        "target": true,
+        "tmp": true,
     }
 }
