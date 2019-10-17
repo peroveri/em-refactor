@@ -267,7 +267,7 @@ const getRelativePath = (workspaceUri: string, fileUri: string) => {
 }
 
 const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, new_fn: string | null) => {
-	const refactorManifestPath = '/home/perove/dev/github.uio.no/refactor-rust/Cargo.toml';
+	const refactorManifestPath = '/home/perove/dev/github.uio.no/refactor-rust/Cargo.toml'; // TODO: hardcoded path to refactoring project
 	const refactorArgs = `--output-changes-as-json --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`);
 
 	const rustcArgs = relativeFilePath;
