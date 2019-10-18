@@ -1,7 +1,7 @@
+use self::block_collector::collect_block;
+use super::utils::{map_change, map_range_to_span};
 use crate::change::Change;
 use crate::refactor_definition::SourceCodeRange;
-use crate::refactorings::extract_block::block_collector::collect_block;
-use crate::refactorings::utils::{map_change, map_range_to_span};
 use rustc::hir;
 use rustc::ty::TyCtxt;
 use syntax_pos::Span;

@@ -10,7 +10,6 @@ extern crate rustc_interface;
 extern crate syntax;
 #[allow(unused_extern_crates)]
 extern crate syntax_pos;
-extern crate serde;
 
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command};

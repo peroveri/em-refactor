@@ -1,8 +1,8 @@
 use self::expr_use_visit::{collect_vars, CollectVarsArgs};
 use self::stmts_visitor::visit_stmts;
+use super::utils::{get_file_offset, map_range_to_span};
 use crate::change::Change;
 use crate::refactor_definition::SourceCodeRange;
-use crate::refactorings::utils::{map_range_to_span, get_file_offset};
 use rustc::ty;
 use syntax::source_map::Span;
 
