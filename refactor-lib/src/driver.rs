@@ -1,15 +1,10 @@
 #![feature(rustc_private)]
 
 // Need to add compiler dependencies, as they are not listed in Cargo.toml
-#[allow(unused_extern_crates)]
 extern crate rustc;
-#[allow(unused_extern_crates)]
 extern crate rustc_driver;
-#[allow(unused_extern_crates)]
 extern crate rustc_interface;
-#[allow(unused_extern_crates)]
 extern crate syntax;
-#[allow(unused_extern_crates)]
 extern crate syntax_pos;
 
 use std::path::{Path, PathBuf};
