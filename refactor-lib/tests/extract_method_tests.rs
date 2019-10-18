@@ -1,4 +1,3 @@
-extern crate assert_cmd;
 use crate::test_case::run_testcase;
 
 mod test_case;
