@@ -1,5 +1,6 @@
 #![feature(rustc_private)]
 
+// Need to add compiler dependencies, as they are not listed in Cargo.toml
 #[allow(unused_extern_crates)]
 extern crate rustc;
 #[allow(unused_extern_crates)]
