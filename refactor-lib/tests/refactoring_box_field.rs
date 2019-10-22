@@ -14,3 +14,7 @@ fn assignment_and_access_should_be_wrapped() {
 fn field_should_be_boxed() {
     run_test("field_should_be_boxed");
 }
+#[test]
+fn tuple_struct_field_should_be_boxed() {
+    run_test("tuple_struct_field_should_be_boxed");
+}

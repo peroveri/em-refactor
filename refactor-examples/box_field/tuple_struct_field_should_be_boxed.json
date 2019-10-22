@@ -1,0 +1,11 @@
+{
+    "file": "tuple_struct_field_should_be_boxed.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "9:12"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "tuple_struct_field_should_be_boxed_after.rs"
+    }
+}
