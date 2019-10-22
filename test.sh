@@ -1,0 +1,1 @@
+cargo test --no-fail-fast -- --test-threads=1
