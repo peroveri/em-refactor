@@ -32,6 +32,5 @@ impl<'v> intravisit::Visitor<'v> for FieldCollector<'v> {
         if s.ident.span.eq(&self.span) {
             self.field = Some(s);
         }
-        eprintln!("{:?}", s.span);
     }
 }
