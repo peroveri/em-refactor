@@ -5,6 +5,7 @@
 pub enum RefactorDefinition {
     ExtractMethod(ExtractMethodArgs),
     ExtractBlock(SourceCodeRange),
+    BoxField(SourceCodeRange),
     // IntroduceClosure(SourceCodeRange),
     // CloseOverVariables(SourceCodeRange),
     // LiftClosure(SourceCodeRange),

@@ -41,3 +41,19 @@ pub fn map_change(tcx: TyCtxt, range: &SourceCodeRange, replacement: String) -> 
         replacement,
     }
 }
+
+pub fn map_change_from_span(
+    tcx: TyCtxt,
+    span: Span,
+    file_name: &str,
+    replacement: String,
+) -> Change {
+    let file_offset = get_file_offset(tcx, &file_name);
+    Change {
+        file_name: file_name.to_string(),
+        file_start_pos: file_offset,
+        start: span.lo().0 - file_offset,
+        end: span.hi().0 - file_offset,
+        replacement,
+    }
+}

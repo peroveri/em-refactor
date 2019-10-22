@@ -15,11 +15,12 @@ struct RefactorArgsParser<'a> {
 impl RefactorArgsParser<'_> {
     pub fn from_args(&self) -> Result<RefactorDefinition, String> {
         match self.get_param("--refactoring")? {
+            "box-field" => Ok(RefactorDefinition::BoxField(self.parse_range()?)),
+            "extract-block" => Ok(RefactorDefinition::ExtractBlock(self.parse_range()?)),
             "extract-method" => Ok(RefactorDefinition::ExtractMethod(ExtractMethodArgs {
                 range: self.parse_range()?,
                 new_function: self.get_param("--new_function")?.to_owned(),
             })),
-            "extract-block" => Ok(RefactorDefinition::ExtractBlock(self.parse_range()?)),
             s => Err(format!("Unknown refactoring: {}", s)),
         }
     }
