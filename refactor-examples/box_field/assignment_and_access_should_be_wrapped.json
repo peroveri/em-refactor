@@ -1,0 +1,11 @@
+{
+    "file": "assignment_and_access_should_be_wrapped.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "15:20"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "assignment_and_access_should_be_wrapped_after.rs"
+    }
+}
