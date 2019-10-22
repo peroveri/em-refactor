@@ -8,7 +8,7 @@ use std::process::Command;
 // These tests are currently not thread safe for multiple tests on a single .rs file
 // run single threaded with: cargo test -- --test-threads=1
 
-static TEST_CASE_PATH: &str = "../refactor-examples/extract_method";
+static TEST_CASE_PATH: &str = "../refactor-examples";
 
 struct TestCase {
     file: String,
@@ -56,29 +56,29 @@ impl TestCase {
     }
 }
 
-fn read_test_file(file_path: &str) -> std::io::Result<String> {
-    let mut path = PathBuf::from(TEST_CASE_PATH);
-    path.push(file_path);
+fn read_test_file(folder: &str, file_name: &str) -> std::io::Result<String> {
+    let path: PathBuf = [TEST_CASE_PATH, folder, file_name].iter().collect();
     let mut file = File::open(path)?;
     let mut file_content = String::new();
     file.read_to_string(&mut file_content)?;
     Ok(file_content)
 }
 
-pub fn run_testcase(name: &str) -> std::io::Result<()> {
-    let json_content = read_test_file(&format!("{}.json", name))?;
+pub fn run_testcase(folder: &str, name: &str) -> std::io::Result<()> {
+    let json_content = read_test_file(folder, &format!("{}.json", name))?;
     let mut test = TestCase::from_json(&json_content)?;
     if let Some(ref f) = test.expected.stdout_file {
         // read expected output from file if set
-        test.expected.stdout = Some(read_test_file(&f)?);
+        test.expected.stdout = Some(read_test_file(folder, &f)?);
     }
-    run_tool_and_assert(test)
+    run_tool_and_assert(test, folder)
 }
 
-fn run_tool_and_assert(test: TestCase) -> std::io::Result<()> {
+fn run_tool_and_assert(test: TestCase, folder: &str) -> std::io::Result<()> {
+    let path: PathBuf = [TEST_CASE_PATH, folder].iter().collect();
     let mut assert = Command::cargo_bin("my-refactor-driver")
         .unwrap()
-        .current_dir(TEST_CASE_PATH)
+        .current_dir(path)
         .arg("--out-dir=../../tmp")
         .arg(&test.file)
         .arg("--")

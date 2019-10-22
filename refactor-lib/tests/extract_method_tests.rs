@@ -2,72 +2,76 @@ use crate::test_case::run_testcase;
 
 mod test_case;
 
+fn run_test(name: &str) {
+    run_testcase("extract_method", name).unwrap();
+}
+
 #[test]
 fn extract_method_owned_mut_value() {
-    run_testcase("owned_mut_value").unwrap();
+    run_test("owned_mut_value");
 }
 #[test]
 fn extract_method_borrowed_mut_value() {
-    run_testcase("borrowed_mut_value").unwrap();
+    run_test("borrowed_mut_value");
 }
 #[test]
 fn extract_method_owned_value() {
-    run_testcase("owned_value").unwrap();
+    run_test("owned_value");
 }
 #[test]
 fn extract_method_failure_borrow_used_later() {
-    run_testcase("failure_borrow_used_later").unwrap();
+    run_test("failure_borrow_used_later");
 }
 #[test]
 fn nested_block() {
-    run_testcase("nested_block").unwrap();
+    run_test("nested_block");
 }
 #[test]
 fn while_loop_inside() {
-    run_testcase("while_loop_inside").unwrap();
+    run_test("while_loop_inside");
 }
 #[test]
 fn while_loop_outside() {
-    run_testcase("while_loop_outside").unwrap();
+    run_test("while_loop_outside");
 }
 #[test]
 fn failure_selection_break_id() {
-    run_testcase("failure_selection_break_id").unwrap();
+    run_test("failure_selection_break_id");
 }
 #[test]
 fn failure_selection_empty() {
-    run_testcase("failure_selection_empty").unwrap();
+    run_test("failure_selection_empty");
 }
 #[test]
 fn failure_selection_unbalanced() {
-    run_testcase("failure_selection_unbalanced").unwrap();
+    run_test("failure_selection_unbalanced");
 }
 #[test]
 fn extract_method_breaks_code() {
-    run_testcase("extract_method_breaks_code").unwrap();
+    run_test("extract_method_breaks_code");
 }
 #[test]
 fn already_broken_code() {
-    run_testcase("already_broken_code").unwrap();
+    run_test("already_broken_code");
 }
 /* Extract block */
 #[test]
 fn extract_block_1() {
-    run_testcase("extract_block_1").unwrap();
+    run_test("extract_block_1");
 }
 #[test]
 fn extract_block_with_expr() {
-    run_testcase("extract_block_with_expr").unwrap();
+    run_test("extract_block_with_expr");
 }
 #[test]
 fn extract_block_mut() {
-    run_testcase("extract_block_mut").unwrap();
+    run_test("extract_block_mut");
 }
 #[test]
 fn extract_block_multiple_use() {
-    run_testcase("extract_block_multiple_use").unwrap();
+    run_test("extract_block_multiple_use");
 }
 #[test]
 fn extract_block_field_used_later() {
-    run_testcase("extract_block_field_used_later").unwrap();
+    run_test("extract_block_field_used_later");
 }
