@@ -1,10 +1,10 @@
 struct S {
-    field: Box<i32>
+    field: i32
 }
 fn main() {
-    let mut s = S{field: Box::new(0)};
-    s.field = Box::new(1);
-    println!("{}", *s.field);
+    let mut s = S{field: 0};
+    s.field = 1;
+    println!("{}", s.field);
 }
 /*
  * Here we test that line 2, 5 and 6 should be modified.
