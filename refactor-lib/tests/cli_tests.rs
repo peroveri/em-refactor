@@ -1,7 +1,7 @@
 use assert_cmd::prelude::*;
 use std::process::Command;
 
-static TEST_CASE_PATH: &str = "../refactor-examples/extract_method";
+static TEST_CASE_PATH: &str = "../refactor-examples/extract_block";
 
 #[test]
 fn missing_args_should_output_nicely() {
