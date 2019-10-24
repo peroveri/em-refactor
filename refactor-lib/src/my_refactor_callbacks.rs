@@ -16,7 +16,8 @@ use syntax::source_map::FileName;
 pub struct MyRefactorCallbacks {
     pub args: RefactorDefinition,
     pub result: Result<Vec<Change>, String>,
-    pub content: Option<String>,
+    pub content: Option<String>, // TODO: remove content and multiple_files fields
+    pub multiple_files: bool
 }
 
 impl MyRefactorCallbacks {
@@ -25,6 +26,7 @@ impl MyRefactorCallbacks {
             args: arg,
             result: Err("".to_owned()), // shouldnt be Err by default, but something like None
             content: None,
+            multiple_files: false
         }
     }
 
@@ -32,10 +34,11 @@ impl MyRefactorCallbacks {
         if changes.is_empty() {
             return;
         }
-        if contains_multiple_files(changes) {
-            // TODO: figure out how the output should be
-            panic!("changes in multiple files not currently supported");
+        self.multiple_files = contains_multiple_files(changes);
+        if self.multiple_files {
+            return;
         }
+        
         let mut changes = changes.to_owned();
         changes.sort_by_key(|c| c.start);
         changes.reverse();
@@ -48,10 +51,9 @@ impl MyRefactorCallbacks {
             panic!("")
         };
 
-        let file_start_pos = source_file.start_pos.0 as u32;
         for change in &changes {
-            let s1 = &content[..(change.start - file_start_pos) as usize];
-            let s2 = &content[(change.end - file_start_pos) as usize..];
+            let s1 = &content[..(change.start) as usize];
+            let s2 = &content[(change.end) as usize..];
             content = format!("{}{}{}", s1, change.replacement, s2);
         }
 

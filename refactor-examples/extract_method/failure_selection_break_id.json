@@ -6,7 +6,7 @@
         "new_function": "inc"
     },
     "expected": {
-        "code": 1,
+        "code": 6,
         "stderr": "29:107 is not a valid selection!\n"
     }
 }

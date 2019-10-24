@@ -9,25 +9,21 @@ use syntax_pos::Span;
 struct BlockCollector<'v> {
     tcx: TyCtxt<'v>,
     pos: Span,
-    block: Option<&'v hir::Block>,
     body_id: Option<hir::BodyId>,
+    result: Option<(&'v hir::Block, hir::BodyId)>
 }
 
 pub fn collect_block(tcx: TyCtxt, pos: Span) -> Option<(&hir::Block, hir::BodyId)> {
     let mut v = BlockCollector {
         tcx,
         pos,
-        block: None,
         body_id: None,
+        result: None
     };
 
     intravisit::walk_crate(&mut v, tcx.hir().krate());
 
-    if v.block.is_some() && v.body_id.is_some() {
-        Some((v.block.unwrap(), v.body_id.unwrap()))
-    } else {
-        None
-    }
+    v.result
 }
 
 impl<'v> intravisit::Visitor<'v> for BlockCollector<'v> {
@@ -70,6 +66,6 @@ impl<'v> intravisit::Visitor<'v> for BlockCollector<'v> {
             return;
         }
 
-        self.block = Some(body);
+        self.result = Some((body, self.body_id.unwrap()));
     }
 }

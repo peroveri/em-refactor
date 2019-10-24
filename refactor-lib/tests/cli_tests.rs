@@ -2,6 +2,7 @@ use assert_cmd::prelude::*;
 use std::process::Command;
 
 static TEST_CASE_PATH: &str = "../refactor-examples/extract_block";
+static TEST_PROJECT_PATH: &str = "../refactor-examples/project";
 
 #[test]
 fn missing_args_should_output_nicely() {
@@ -49,5 +50,39 @@ fn output_json() {
         .assert()
         .code(0)
         .stdout(expected);
+}
+
+#[test]
+fn project_example() {
+    Command::cargo_bin("cargo-my-refactor")
+        .unwrap()
+        .current_dir(TEST_PROJECT_PATH)
+        .arg("--")
+        .arg("--")
+        .arg("--out-dir=../../tmp")
+        .arg("--")
+        .arg("--refactoring=box-field")
+        .arg("--selection=18:19")
+        .arg("--file=src/mod1.rs")
+        .arg("--output-changes-as-json")
+        .assert()
+        .code(0)
+        .stdout("asd");
+}
+
+#[test]
+fn project_example_extract_block() {
+    Command::cargo_bin("cargo-my-refactor")
+        .unwrap()
+        .current_dir(TEST_PROJECT_PATH)
+        .arg("--")
+        .arg("--")
+        // .arg("--out-dir=../../tmp")
+        .arg("--")
+        .arg("--refactoring=extract-block")
+        .arg("--selection=42:52")
+        .arg("--file=src/mod1.rs")
+        .assert()
+        .code(0);
 }
 

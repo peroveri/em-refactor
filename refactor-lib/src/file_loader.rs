@@ -41,8 +41,8 @@ impl<T: FileLoader + Send + Sync> FileLoader for InMemoryFileLoader<T> {
         changes.reverse();
         for change in changes {
             if change.file_name == path.file_name().unwrap().to_str().unwrap() || change.file_name == path.to_str().unwrap() {
-                let s1 = &content[..(change.start - change.file_start_pos) as usize];
-                let s2 = &content[(change.end - change.file_start_pos) as usize..];
+                let s1 = &content[..(change.start) as usize];
+                let s2 = &content[(change.end) as usize..];
                 content = format!("{}{}{}", s1, change.replacement, s2);
             }
         }

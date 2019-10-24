@@ -24,6 +24,8 @@ enum RefactorErrorCodes {
     RefactoringProcucedBrokenCode = 2,
     BadFormatOnInput = 3,
     // Serializing = 4,
+    RustcPassFailed = 5,
+    InternalRefactoringError = 6
 }
 
 fn arg_value<'a>(
@@ -159,6 +161,13 @@ fn run_rustc() -> Result<(), i32> {
     // get compiler and refactoring args from input and environment
     let std_env_args = std::env::args().collect::<Vec<_>>();
     let rustc_args = get_compiler_args(&std_env_args);
+
+    if rustc_args.contains(&"--print=cfg".to_owned()) {
+        let mut default = rustc_driver::DefaultCallbacks;
+        let err = rustc_driver::run_compiler(&rustc_args, &mut default, None, None);
+        return if err.is_err() {Err(RefactorErrorCodes::RustcPassFailed as i32)} else {Ok(())};
+    }
+
     let refactor_args = get_refactor_args(&std_env_args);
     let refactor_def = refactor_definition_parser::argument_list_to_refactor_def(&refactor_args);
     if let Err(err) = refactor_def {
@@ -196,7 +205,7 @@ fn run_rustc() -> Result<(), i32> {
 
     if let Err(err) = my_refactor.result {
         eprintln!("{}", err);
-        return Err(1);
+        return Err(RefactorErrorCodes::InternalRefactoringError as i32);
     }
 
     if !refactor_args.contains(&"--unsafe".to_owned()) {

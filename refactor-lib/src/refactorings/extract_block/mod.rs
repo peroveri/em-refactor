@@ -1,6 +1,5 @@
-use super::utils::{map_change, map_range_to_span};
+use super::utils::{map_change_from_span};
 use crate::change::Change;
-use crate::refactor_definition::SourceCodeRange;
 use block_collector::collect_block;
 use rustc::hir;
 use rustc::ty::TyCtxt;
@@ -37,25 +36,23 @@ fn extract_block(
 /// how should it be moved?
 /// a. identical (cut & paste)
 /// b. add declaration and assign at start of block + add var in expression at end of block
-pub fn do_refactoring(tcx: TyCtxt, range: &SourceCodeRange) -> Result<Vec<Change>, String> {
-    let span = map_range_to_span(tcx, range);
-
+pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, String> {
     if let Some((block, body_id)) = collect_block(tcx, span) {
         let source = tcx.sess.source_map().span_to_snippet(span).unwrap();
         if let Some(expr) = &block.expr {
             if span.contains(expr.span) {
-                return Ok(vec![map_change(tcx, &range, format!("{{\n{}\n}}", source))]);
+                return Ok(vec![map_change_from_span(tcx, span, format!("{{\n{}\n}}", source))]);
             }
         }
-        Ok(vec![map_change(
+        Ok(vec![map_change_from_span(
             tcx,
-            &range,
+            span,
             extract_block(tcx, body_id, span, source)?,
         )])
     } else {
         Err(format!( // do this on a higher level?
             "{}:{} is not a valid selection!",
-            range.from, range.to
+            span.lo().0, span.hi().0
         ))
     }
 }
