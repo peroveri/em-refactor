@@ -1,0 +1,1 @@
+pub struct S {pub f: i32 }
