@@ -183,10 +183,19 @@ interface RefactorArgs {
 function listActionsForRange(doc: TextDocument, range: ByteRange): (Command | CodeAction)[] {
 	return [
 		{
+			title: `Refactor - Box field: ${range.toString()}`,
+			command: {
+				title: 'refactor',
+				command: CodeActionKind.RefactorExtract + '.function', // TODO: this should be something else
+				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'box-field' }]
+			},
+			kind: CodeActionKind.RefactorExtract + '.function'
+		},
+		{
 			title: `Refactor - Extract block: ${range.toString()}`,
 			command: {
 				title: 'refactor',
-				command: CodeActionKind.RefactorExtract + '.function',
+				command: CodeActionKind.RefactorExtract + '.function', // TODO: this should be something else
 				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'extract-block' }]
 			},
 			kind: CodeActionKind.RefactorExtract + '.function'
