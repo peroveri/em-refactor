@@ -51,7 +51,6 @@ fn get_use_changes<'tcx>(
             map_change_from_span(tcx, *write, file_name, get_write_change(tcx, *write))
         }),
     );
-    eprintln!("{:?}", r);
     r
 }
 
