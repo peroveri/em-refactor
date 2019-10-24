@@ -19,7 +19,7 @@ mod refactor_definition_parser;
 mod refactorings;
 
 enum RefactorErrorCodes {
-    Success = 0,
+    _Success = 0,
     InputDoesNotCompile = 1,
     RefactoringProcucedBrokenCode = 2,
     BadFormatOnInput = 3,
@@ -110,9 +110,9 @@ fn get_sys_root() -> String {
         )
 }
 
-/// 
+///
 /// Collect all arguments until '--', which should be passed to rustc
-/// 
+///
 fn get_compiler_args(args: &[String]) -> Vec<String> {
     let have_sys_root = arg_value(args, "--sysroot", |_| true).is_some();
     // Setting RUSTC_WRAPPER causes Cargo to pass 'rustc' as the first argument.
@@ -151,12 +151,11 @@ fn get_compiler_args(args: &[String]) -> Vec<String> {
     rustc_args
 }
 
-/// 
+///
 /// 1. Run rustc with refactoring callbacks
 /// 2. Run rustc with no callbacks, but with changes applied by the refactorings
-/// 
+///
 fn run_rustc() -> Result<(), i32> {
-
     // get compiler and refactoring args from input and environment
     let std_env_args = std::env::args().collect::<Vec<_>>();
     let rustc_args = get_compiler_args(&std_env_args);
@@ -169,7 +168,6 @@ fn run_rustc() -> Result<(), i32> {
     let refactor_def = refactor_def.unwrap();
     let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_def);
 
-    
     // 1. Run refactoring callbacks
     let callbacks: &mut (dyn rustc_driver::Callbacks + Send) = &mut my_refactor;
 
@@ -190,7 +188,6 @@ fn run_rustc() -> Result<(), i32> {
         }
         return Err(RefactorErrorCodes::InputDoesNotCompile as i32);
     }
-
 
     // 2. Rerun the compiler to check if any errors were introduced
     // Runs with default callbacks

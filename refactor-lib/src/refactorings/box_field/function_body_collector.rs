@@ -10,7 +10,7 @@ struct FunctionBodyCollector<'tcx> {
     body_ids: Vec<hir::BodyId>,
 }
 
-pub fn collect_function_bodies<'tcx>(tcx: TyCtxt<'tcx>) -> Vec<hir::BodyId> {
+pub fn collect_function_bodies(tcx: TyCtxt) -> Vec<hir::BodyId> {
     let mut v = FunctionBodyCollector {
         tcx,
         body_ids: vec![],

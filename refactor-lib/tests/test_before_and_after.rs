@@ -15,8 +15,8 @@ use std::process::Command;
  */
 
 static TEST_CASE_PATH: &str = "../refactor-examples/extract_method";
-static TEST_TMP_PATH: &str = "../tmp";
-static TEST_TMP_PROJECT_NAME: &str = "tmp_project";
+static _TEST_TMP_PATH: &str = "../tmp";
+static _TEST_TMP_PROJECT_NAME: &str = "tmp_project";
 static TEST_TMP_PROJECT_DIR: &str = "../tmp/tmp_project";
 
 fn list_tests(dir: &Path) -> std::io::Result<Vec<String>> {

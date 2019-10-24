@@ -106,7 +106,7 @@ pub fn do_refactoring(
         let si_start = stmts.stmts.first().unwrap().span.lo().0;
         let si_end = stmts.stmts.last().unwrap().span.hi().0;
 
-        let file_offset = get_file_offset(&ty, &range.file_name);
+        let file_offset = get_file_offset(ty, &range.file_name);
 
         Ok(vec![
             Change {

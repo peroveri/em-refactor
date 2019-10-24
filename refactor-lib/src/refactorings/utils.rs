@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use syntax::source_map::FileName;
 use syntax_pos::{BytePos, Span};
 
-pub fn get_file_offset(tcx: &TyCtxt, file_name: &str) -> u32 {
+pub fn get_file_offset(tcx: TyCtxt, file_name: &str) -> u32 {
     let file_name = FileName::Real(PathBuf::from(file_name.to_string()));
     let source_file = tcx.sess.source_map().get_source_file(&file_name).unwrap();
     source_file.start_pos.0 as u32
@@ -35,7 +35,7 @@ pub fn map_range_to_span(tcx: TyCtxt, range: &SourceCodeRange) -> Span {
 pub fn map_change(tcx: TyCtxt, range: &SourceCodeRange, replacement: String) -> Change {
     Change {
         file_name: range.file_name.to_string(),
-        file_start_pos: get_file_offset(&tcx, &range.file_name),
+        file_start_pos: get_file_offset(tcx, &range.file_name),
         start: range.from,
         end: range.to,
         replacement,
@@ -43,7 +43,7 @@ pub fn map_change(tcx: TyCtxt, range: &SourceCodeRange, replacement: String) -> 
 }
 
 pub fn map_change_from_span(
-    tcx: &TyCtxt,
+    tcx: TyCtxt,
     span: Span,
     file_name: &str,
     replacement: String,
@@ -58,6 +58,6 @@ pub fn map_change_from_span(
     }
 }
 
-pub fn get_source(tcx: &TyCtxt, span: Span) -> String {
+pub fn get_source(tcx: TyCtxt, span: Span) -> String {
     tcx.sess.source_map().span_to_snippet(span).unwrap()
 }

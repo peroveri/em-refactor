@@ -1,5 +1,5 @@
-use rustc::hir::{BodyId, HirId, Node, Pat};
-use rustc::middle::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, MutateMode};
+use rustc::hir::{BodyId, Node};
+use rustc::middle::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor};
 use rustc::middle::mem_categorization::{cmt_, Categorization};
 use rustc::ty::{self, TyCtxt};
 use std::collections::HashMap;
@@ -214,7 +214,7 @@ pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, args: CollectVarsArgs) -> Extrac
         def_id,
         tcx.param_env(def_id),
         tcx.region_scope_tree(def_id),
-        tcx.body_tables(body_id)
+        tcx.body_tables(body_id),
     )
     .consume_body(tcx.hir().body(body_id));
 
