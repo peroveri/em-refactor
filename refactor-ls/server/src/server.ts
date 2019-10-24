@@ -29,7 +29,6 @@ import {
 	TextEdit,
 	WorkspaceFolder
 } from 'vscode-languageserver';
-import { uriToFilePath } from 'vscode-languageserver/lib/files';
 
 let shell = require('shelljs');
 
@@ -259,7 +258,7 @@ const isValidArgs = (args: RefactorArgs) => {
 	return args && args.file;
 }
 
-const mapResultToWorkspaceEdit = (arg: RefactorArgs, stdout: string, doc: TextDocument) => {
+const mapResultToWorkspaceEdit = (arg: RefactorArgs, stdout: string, workspace_uri: string) => {
 	let res = JSON.parse(stdout) as [{
 		file_name: string;
 		start: number;
@@ -267,19 +266,30 @@ const mapResultToWorkspaceEdit = (arg: RefactorArgs, stdout: string, doc: TextDo
 		replacement: string;
 	}];
 
-	let edits = res.map(change => ({
-		newText: change.replacement,
-		range: {
-			start: doc.positionAt(change.start),
-			end: doc.positionAt(change.end)
+	let documentChanges: TextDocumentEdit[] = [];
+	res.forEach(change => {
+		let doc_uri = workspace_uri + "/" + change.file_name; // TODO: combine properly
+
+		const doc = documents.get(doc_uri);
+		if (doc === undefined) return [];
+
+		let documentChange = documentChanges.find(doc => doc.textDocument.uri === doc_uri);
+		if(documentChange === undefined) {
+			documentChange = {
+				textDocument: { uri: doc.uri, version: null },
+				edits: []
+			};
+			documentChanges.push(documentChange);
 		}
-	} as TextEdit));
-	let documentChanges: TextDocumentEdit[] = [
-		{
-			textDocument: { uri: arg.file, version: arg.version },
-			edits: edits
-		}
-	];
+		documentChange.edits.push({
+			newText: change.replacement,
+			range: {
+				start: doc.positionAt(change.start),
+				end: doc.positionAt(change.end)
+			}
+		});
+	});
+	console.log("changes: ", documentChanges);
 	return {
 		edit: {
 			documentChanges: documentChanges
@@ -307,9 +317,9 @@ const convertToCmd = (relativeFilePath: string, refactoring: string, selection: 
 	const refactorManifestPath = '/home/perove/dev/github.uio.no/refactor-rust/Cargo.toml'; // TODO: hardcoded path to refactoring project
 	const refactorArgs = `--output-changes-as-json --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`) + (unsafe ? ' --unsafe' : '');
 
-	const rustcArgs = relativeFilePath;
+	const rustcArgs = "";
 
-	return `cargo run --bin my-refactor-driver --manifest-path=${refactorManifestPath} -- ${rustcArgs} -- ${refactorArgs}`;
+	return `cargo run --bin cargo-my-refactor --manifest-path=${refactorManifestPath} -- -- ${rustcArgs} -- ${refactorArgs}`;
 }
 
 async function handleExecuteCommand(params: ExecuteCommandParams): Promise<void> {
@@ -320,7 +330,8 @@ async function handleExecuteCommand(params: ExecuteCommandParams): Promise<void>
 
 		let w = await connection.workspace.getWorkspaceFolders();
 		let relativeFilePath = getFileRelativePath(arg.file, w);
-		if (relativeFilePath === undefined) return Promise.resolve();
+		if (relativeFilePath === undefined || w === null) return Promise.resolve();
+		let workspace_uri = w[0].uri;
 
 		let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.refactoring === 'extract-method' ? 'foo' : null, arg.unsafe);
 
@@ -328,10 +339,8 @@ async function handleExecuteCommand(params: ExecuteCommandParams): Promise<void>
 
 		if (result.code === 0) {
 
-			const doc = documents.get(arg.file);
-			if (doc === undefined) return Promise.resolve();
-
-			connection.workspace.applyEdit(mapResultToWorkspaceEdit(arg, result.stdout, doc));
+			console.log(result.stdout);
+			connection.workspace.applyEdit(mapResultToWorkspaceEdit(arg, result.stdout, workspace_uri));
 			connection.sendNotification(ShowMessageNotification.type, {
 				message: `Applied: ${arg.refactoring}`, type: MessageType.Info,
 			});
