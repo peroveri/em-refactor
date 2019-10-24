@@ -87,7 +87,6 @@ impl<'a, 'tcx> Delegate<'tcx> for BindsToFieldCollectorDelegate<'tcx> {
                         self.inits.push(field.expr.span);
                     }
                 }
-
             }
         }
     }
