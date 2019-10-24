@@ -1,7 +1,5 @@
 use rustc::hir::{BodyId, HirId, Node, Pat};
-use rustc::middle::expr_use_visitor::{
-    ConsumeMode, Delegate, ExprUseVisitor, LoanCause, MatchMode, MutateMode,
-};
+use rustc::middle::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, MutateMode};
 use rustc::middle::mem_categorization::{cmt_, Categorization};
 use rustc::ty::{self, TyCtxt};
 use std::collections::HashMap;
@@ -57,44 +55,26 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
 }
 
 impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
-    fn consume(&mut self, _: HirId, sp: Span, cmt: &cmt_<'tcx>, cm: ConsumeMode) {
-        let is_consumed = if let ConsumeMode::Move(_) = cm {
+    fn consume(&mut self, cmt: &cmt_<'tcx>, cm: ConsumeMode) {
+        let is_consumed = if let ConsumeMode::Move = cm {
             true
         } else {
             false
         };
-        self.var_used(sp, &cmt.cat, cmt.ty, is_consumed, false);
+        self.var_used(cmt.span, &cmt.cat, cmt.ty, is_consumed, false);
     }
 
-    fn matched_pat(&mut self, _: &Pat, _: &cmt_<'tcx>, _: MatchMode) {}
-
-    fn consume_pat(&mut self, _: &Pat, cmt: &cmt_<'tcx>, _: ConsumeMode) {
-        if let Categorization::Local(_) = cmt.cat {
-            self.var_used(cmt.span, &cmt.cat, cmt.ty, true, false);
-        }
-    }
-
-    fn borrow(
-        &mut self,
-        _: HirId,
-        sp: Span,
-        cmt: &cmt_<'tcx>,
-        _: ty::Region<'_>,
-        bk: ty::BorrowKind,
-        _: LoanCause,
-    ) {
+    fn borrow(&mut self, cmt: &cmt_<'tcx>, bk: ty::BorrowKind) {
         let is_mutated = ty::BorrowKind::MutBorrow == bk;
-        self.var_used(sp, &cmt.cat, cmt.ty, false, is_mutated);
+        self.var_used(cmt.span, &cmt.cat, cmt.ty, false, is_mutated);
     }
 
-    fn mutate(&mut self, _: HirId, sp: Span, cmt: &cmt_<'tcx>, mode: MutateMode) {
-        if mode == MutateMode::Init {
-            return;
-        }
-        self.var_used(sp, &cmt.cat, cmt.ty, false, true);
+    fn mutate(&mut self, cmt: &cmt_<'tcx>) {
+        // if mode == MutateMode::Init {
+        //     return;
+        // }
+        self.var_used(cmt.span, &cmt.cat, cmt.ty, false, true);
     }
-
-    fn decl_without_init(&mut self, _: HirId, _: Span) {}
 }
 
 // find a name
@@ -234,8 +214,7 @@ pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, args: CollectVarsArgs) -> Extrac
         def_id,
         tcx.param_env(def_id),
         tcx.region_scope_tree(def_id),
-        tcx.body_tables(body_id),
-        None,
+        tcx.body_tables(body_id)
     )
     .consume_body(tcx.hir().body(body_id));
 
