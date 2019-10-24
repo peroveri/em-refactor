@@ -194,33 +194,36 @@ fn run_rustc() -> Result<(), i32> {
     let changes = my_refactor.result.clone().ok().unwrap_or_else(|| vec![]);
     let content = my_refactor.content.clone().unwrap_or_else(|| "".to_owned());
 
-    let mut default = rustc_driver::DefaultCallbacks;
-
-    let mut file_loader = Box::new(file_loader::InMemoryFileLoader::new(
-        syntax::source_map::RealFileLoader,
-    ));
     if let Err(err) = my_refactor.result {
         eprintln!("{}", err);
         return Err(1);
     }
-    file_loader.add_changes(my_refactor.result.clone().unwrap());
 
-    let emitter = Box::new(Vec::new());
-    let err =
-        rustc_driver::run_compiler(&rustc_args, &mut default, Some(file_loader), Some(emitter));
-    // let err = rustc_driver::catch_fatal_errors(|| {
-    //     let err = rustc_driver::run_compiler(&rustc_args, &mut default, Some(file_loader), Some(emitter));
-    //     if let Err(err) = err {
-    //         return Err(err);
-    //     }
-    //     err
-    // });
+    if !refactor_args.contains(&"--unsafe".to_owned()) {
+        let mut default = rustc_driver::DefaultCallbacks;
 
-    if err.is_err() {
-        eprintln!("The refactoring broke the code");
-        return Err(RefactorErrorCodes::RefactoringProcucedBrokenCode as i32);
+        let mut file_loader = Box::new(file_loader::InMemoryFileLoader::new(
+            syntax::source_map::RealFileLoader,
+        ));
+        file_loader.add_changes(my_refactor.result.clone().unwrap());
+
+        let emitter = Box::new(Vec::new());
+        let err =
+            rustc_driver::run_compiler(&rustc_args, &mut default, Some(file_loader), Some(emitter));
+        // let err = rustc_driver::catch_fatal_errors(|| {
+        //     let err = rustc_driver::run_compiler(&rustc_args, &mut default, Some(file_loader), Some(emitter));
+        //     if let Err(err) = err {
+        //         return Err(err);
+        //     }
+        //     err
+        // });
+
+        if err.is_err() {
+            eprintln!("The refactoring broke the code");
+            return Err(RefactorErrorCodes::RefactoringProcucedBrokenCode as i32);
+        }
+        // TODO: output message / status that the code was broken after refactoring
     }
-    // TODO: output message / status that the code was broken after refactoring
 
     if refactor_args.contains(&"--output-changes-as-json".to_owned()) {
         print!("{}", change_serialize::serialize_changes(changes)?);
