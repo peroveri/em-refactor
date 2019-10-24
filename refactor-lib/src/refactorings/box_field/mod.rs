@@ -21,7 +21,7 @@ fn get_field_change(tcx: TyCtxt, range: &SourceCodeRange, field: &hir::StructFie
 
 fn get_read_change(tcx: TyCtxt, span: Span) -> String {
     let original = get_source(tcx, span);
-    format!("*{}", original)
+    format!("(*{})", original)
 }
 fn get_write_change(tcx: TyCtxt, span: Span) -> String {
     let original = get_source(tcx, span);
