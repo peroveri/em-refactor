@@ -74,11 +74,8 @@ impl<'tcx> BindsToFieldCollectorDelegate<'tcx> {
             self.references.push(cmt.span);
         }
     }
-}
-
-impl<'a, 'tcx> Delegate<'tcx> for BindsToFieldCollectorDelegate<'tcx> {
-    fn consume(&mut self, cmt: &cmt_<'tcx>, _cm: ConsumeMode) {
-        self.add_ref_if_is_field(cmt);
+    fn add_init_if_is_struct(&mut self, cmt: &cmt_) {
+        // TODO: check where it is used, shouldn't add box::new in pattern matching
         if self.is_struct(&cmt.ty) {
             let expr = self.tcx.hir().expect_expr(cmt.hir_id);
             if let hir::ExprKind::Struct(_, fields, _) =  &expr.kind {
@@ -89,6 +86,13 @@ impl<'a, 'tcx> Delegate<'tcx> for BindsToFieldCollectorDelegate<'tcx> {
                 }
             }
         }
+    }
+}
+
+impl<'a, 'tcx> Delegate<'tcx> for BindsToFieldCollectorDelegate<'tcx> {
+    fn consume(&mut self, cmt: &cmt_<'tcx>, _cm: ConsumeMode) {
+        self.add_ref_if_is_field(cmt);
+        self.add_init_if_is_struct(cmt);
     }
 
     fn borrow(&mut self, cmt: &cmt_<'tcx>, _bk: ty::BorrowKind) {
