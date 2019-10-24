@@ -3,8 +3,8 @@ struct S {
 }
 fn main() {
     let mut s = S{field: Box::new(0)};
-    *s.field = 1;
-    println!("{}", *s.field);
+    (*s.field) = 1;
+    println!("{}", (*s.field));
 }
 /*
  * Here we test that line 2, 5 and 6 should be modified.
