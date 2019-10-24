@@ -15,6 +15,10 @@ fn field_should_be_boxed() {
     run_test("field_should_be_boxed");
 }
 #[test]
+fn match_as_ref() {
+    run_test("match_as_ref");
+}
+#[test]
 fn tuple_struct_field_should_be_boxed() {
     run_test("tuple_struct_field_should_be_boxed");
 }

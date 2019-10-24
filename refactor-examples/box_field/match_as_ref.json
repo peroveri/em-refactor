@@ -1,0 +1,11 @@
+{
+    "file": "match_as_ref.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "10:15"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "match_as_ref_after.rs"
+    }
+}
