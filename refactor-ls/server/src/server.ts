@@ -175,6 +175,7 @@ interface RefactorArgs {
 	version: number;
 	refactoring: string;
 	selection: string;
+	unsafe: boolean;
 }
 
 /**
@@ -187,7 +188,7 @@ function listActionsForRange(doc: TextDocument, range: ByteRange): (Command | Co
 			command: {
 				title: 'refactor',
 				command: CodeActionKind.RefactorExtract + '.function', // TODO: this should be something else
-				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'box-field' }]
+				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'box-field', unsafe: false }]
 			},
 			kind: CodeActionKind.RefactorExtract + '.function'
 		},
@@ -196,7 +197,7 @@ function listActionsForRange(doc: TextDocument, range: ByteRange): (Command | Co
 			command: {
 				title: 'refactor',
 				command: CodeActionKind.RefactorExtract + '.function', // TODO: this should be something else
-				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'extract-block' }]
+				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'extract-block', unsafe: false }]
 			},
 			kind: CodeActionKind.RefactorExtract + '.function'
 		},
@@ -205,7 +206,34 @@ function listActionsForRange(doc: TextDocument, range: ByteRange): (Command | Co
 			command: {
 				title: 'refactor',
 				command: CodeActionKind.RefactorExtract + '.function',
-				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'extract-method' }]
+				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'extract-method', unsafe: false }]
+			},
+			kind: CodeActionKind.RefactorExtract + '.function'
+		},
+		{
+			title: `Refactor - Box field: ${range.toString()} (unsafe)`,
+			command: {
+				title: 'refactor',
+				command: CodeActionKind.RefactorExtract + '.function', // TODO: this should be something else
+				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'box-field', unsafe: true }]
+			},
+			kind: CodeActionKind.RefactorExtract + '.function'
+		},
+		{
+			title: `Refactor - Extract block: ${range.toString()} (unsafe)`,
+			command: {
+				title: 'refactor',
+				command: CodeActionKind.RefactorExtract + '.function', // TODO: this should be something else
+				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'extract-block', unsafe: true }]
+			},
+			kind: CodeActionKind.RefactorExtract + '.function'
+		},
+		{
+			title: `Refactor - Extract method: ${range.toString()} (unsafe)`,
+			command: {
+				title: 'refactor',
+				command: CodeActionKind.RefactorExtract + '.function',
+				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'extract-method', unsafe: true }]
 			},
 			kind: CodeActionKind.RefactorExtract + '.function'
 		}
@@ -275,9 +303,9 @@ const getRelativePath = (workspaceUri: string, fileUri: string) => {
 	return undefined;
 }
 
-const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, new_fn: string | null) => {
+const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, new_fn: string | null, unsafe: boolean) => {
 	const refactorManifestPath = '/home/perove/dev/github.uio.no/refactor-rust/Cargo.toml'; // TODO: hardcoded path to refactoring project
-	const refactorArgs = `--output-changes-as-json --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`);
+	const refactorArgs = `--output-changes-as-json --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`) + (unsafe ? ' --unsafe' : '');
 
 	const rustcArgs = relativeFilePath;
 
@@ -294,7 +322,7 @@ async function handleExecuteCommand(params: ExecuteCommandParams): Promise<void>
 		let relativeFilePath = getFileRelativePath(arg.file, w);
 		if (relativeFilePath === undefined) return Promise.resolve();
 
-		let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.refactoring === 'extract-method' ? 'foo' : null);
+		let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.refactoring === 'extract-method' ? 'foo' : null, arg.unsafe);
 
 		let result = shell.exec(cmd);
 
