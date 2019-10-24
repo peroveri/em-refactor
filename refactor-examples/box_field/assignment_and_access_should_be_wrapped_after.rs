@@ -3,7 +3,7 @@ struct S {
 }
 fn main() {
     let mut s = S{field: Box::new(0)};
-    s.field = Box::new(1);
+    *s.field = 1;
     println!("{}", *s.field);
 }
 /*
