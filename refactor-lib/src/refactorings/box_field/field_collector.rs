@@ -27,7 +27,6 @@ impl<'v> intravisit::Visitor<'v> for FieldCollector<'v> {
     fn nested_visit_map<'this>(&'this mut self) -> intravisit::NestedVisitorMap<'this, 'v> {
         intravisit::NestedVisitorMap::All(&self.tcx.hir())
     }
-
     fn visit_struct_field(&mut self, s: &'v hir::StructField) {
         if s.ident.span.eq(&self.span) {
             self.field = Some(s);
