@@ -1,5 +1,5 @@
 // Either "add decl" or "just cut & paste"
-use crate::refactorings::extract_method::expr_use_visit::{collect_vars, CollectVarsArgs};
+use super::expr_use_visit::{collect_vars};
 use rustc::hir::BodyId;
 use rustc::ty::TyCtxt;
 use syntax::source_map::Span;
@@ -9,15 +9,13 @@ pub fn push_stmts_into_block(
     body_id: BodyId,
     span: Span,
 ) -> Result<(Vec<String>, Vec<String>), String> {
-    let res = collect_vars(tcx, CollectVarsArgs { body_id, spi: span });
+    let rvs = collect_vars(tcx, body_id, span).get_return_values();
 
-    let idents = res
-        .get_return_values()
+    let idents = rvs
         .iter()
         .map(|rv| rv.ident.to_string())
         .collect::<Vec<_>>();
-    let decls = res
-        .get_return_values()
+    let decls = rvs
         .iter()
         .map(|rv| format!("{}{}", if rv.is_mutated { "mut " } else { "" }, rv.ident))
         .collect::<Vec<_>>();

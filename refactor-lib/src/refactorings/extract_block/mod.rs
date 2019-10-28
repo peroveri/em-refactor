@@ -6,6 +6,7 @@ use rustc::ty::TyCtxt;
 use syntax_pos::Span;
 
 mod block_collector;
+mod expr_use_visit;
 mod push_stmt_into_block;
 
 fn extract_block(
