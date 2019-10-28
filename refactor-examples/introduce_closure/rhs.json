@@ -1,0 +1,11 @@
+{
+    "file": "rhs.rs",
+    "args": {
+        "refactoring": "introduce-closure",
+        "selection": "31:86"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "rhs_after.rs"
+    }
+}
