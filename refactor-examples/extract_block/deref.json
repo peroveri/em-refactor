@@ -1,0 +1,11 @@
+{
+    "file": "deref.rs",
+    "args": {
+        "refactoring": "extract-block",
+        "selection": "49:63"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "deref_after.rs"
+    }
+}
