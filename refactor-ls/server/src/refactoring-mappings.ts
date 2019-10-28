@@ -11,6 +11,8 @@ import {
     ApplyWorkspaceEditParams,
 } from 'vscode-languageserver';
 
+import config from './config';
+
 export interface RefactorArgs {
     file: string;
     version: number;
@@ -83,7 +85,7 @@ const concatUris = (uri: string, relativePath: string) =>
     uri + "/" + relativePath; // TODO: combine properly
 
 const mapChange = (doc: TextDocument | undefined, change: Change): TextEdit => {
-    if (doc === undefined) throw "document was undefined"; // TOOD
+    if (doc === undefined) throw "document was undefined"; // doc shouldn't be undefined here
     return {
         newText: change.replacement,
         range: {
@@ -132,10 +134,10 @@ const getRelativePath = (workspaceUri: string, fileUri: string) => {
 }
 
 export const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, new_fn: string | null, unsafe: boolean) => {
-    const refactorManifestPath = '/home/perove/dev/github.uio.no/refactor-rust/Cargo.toml'; // TODO: hardcoded path to refactoring project
+    const refactorToolManifestPath = config.refactorToolManifestPath; // TODO: hardcoded path to refactoring project
     const refactorArgs = `--output-changes-as-json --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`) + (unsafe ? ' --unsafe' : '');
 
     const rustcArgs = "";
 
-    return `cargo run --bin cargo-my-refactor --manifest-path=${refactorManifestPath} -- -- ${rustcArgs} -- ${refactorArgs}`;
+    return `cargo run --bin cargo-my-refactor --manifest-path=${refactorToolManifestPath} -- -- ${rustcArgs} -- ${refactorArgs}`;
 }
