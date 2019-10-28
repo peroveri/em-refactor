@@ -6,29 +6,25 @@
 import {
 	createConnection,
 	TextDocuments,
-	// TextDocument,
-	// Diagnostic,
-	// DiagnosticSeverity,
 	ProposedFeatures,
 	InitializeParams,
 	DidChangeConfigurationNotification,
 	ShowMessageNotification,
-	// CompletionItem,
-	// CompletionItemKind,
-	// TextDocumentPositionParams,
 	CodeActionKind,
 	CodeAction,
 	Command,
 	CodeActionParams,
 	ExecuteCommandParams,
 	MessageType,
-	TextDocumentEdit,
-	Range,
-	TextDocument,
-	Position,
-	TextEdit,
-	WorkspaceFolder
 } from 'vscode-languageserver';
+
+import {
+	convertToCmd,
+	getFileRelativePath,
+	listActionsForRange,
+	mapRefactorResultToWorkspaceEdit,
+	RefactorArgs,
+} from './refactoring-mappings';
 
 let shell = require('shelljs');
 
@@ -149,177 +145,18 @@ connection.onInitialized(() => {
 connection.onCodeAction(handleCodeAction);
 connection.onExecuteCommand(handleExecuteCommand);
 
-class ByteRange {
-	constructor(public start: Number, public end: Number) { }
-	isRange = () => this.start >= 0 && this.end >= 0;
-	isEmpty = () => this.start === this.end;
-	toString() {
-		return `${this.start}:${this.end}`;
-	}
-	static Empty = () => new ByteRange(0, 0);
-	static Null = () => new ByteRange(-1, -1);
-	static fromRange(range: Range, doc: TextDocument): ByteRange {
-		const hasSelection = range && range.start && range.end;
-		if (!hasSelection || doc === undefined) return this.Null();
-
-		if (range.start.character === range.end.character && range.start.line === range.end.line) return this.Empty();
-		return new ByteRange(doc.offsetAt(range.start), doc.offsetAt(range.end))
-	}
-}
-
-
-
-interface RefactorArgs {
-	file: string;
-	version: number;
-	refactoring: string;
-	selection: string;
-	unsafe: boolean;
-}
-
-/**
- * TODO: Query the refactoring tool for possible refactorings at a given range.
- */
-function listActionsForRange(doc: TextDocument, range: ByteRange): (Command | CodeAction)[] {
-	return [
-		{
-			title: `Refactor - Box field: ${range.toString()}`,
-			command: {
-				title: 'refactor',
-				command: CodeActionKind.RefactorExtract + '.function', // TODO: this should be something else
-				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'box-field', unsafe: false }]
-			},
-			kind: CodeActionKind.RefactorExtract + '.function'
-		},
-		{
-			title: `Refactor - Extract block: ${range.toString()}`,
-			command: {
-				title: 'refactor',
-				command: CodeActionKind.RefactorExtract + '.function', // TODO: this should be something else
-				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'extract-block', unsafe: false }]
-			},
-			kind: CodeActionKind.RefactorExtract + '.function'
-		},
-		{
-			title: `Refactor - Extract method: ${range.toString()}`,
-			command: {
-				title: 'refactor',
-				command: CodeActionKind.RefactorExtract + '.function',
-				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'extract-method', unsafe: false }]
-			},
-			kind: CodeActionKind.RefactorExtract + '.function'
-		},
-		{
-			title: `Refactor - Box field: ${range.toString()} (unsafe)`,
-			command: {
-				title: 'refactor',
-				command: CodeActionKind.RefactorExtract + '.function', // TODO: this should be something else
-				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'box-field', unsafe: true }]
-			},
-			kind: CodeActionKind.RefactorExtract + '.function'
-		},
-		{
-			title: `Refactor - Extract block: ${range.toString()} (unsafe)`,
-			command: {
-				title: 'refactor',
-				command: CodeActionKind.RefactorExtract + '.function', // TODO: this should be something else
-				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'extract-block', unsafe: true }]
-			},
-			kind: CodeActionKind.RefactorExtract + '.function'
-		},
-		{
-			title: `Refactor - Extract method: ${range.toString()} (unsafe)`,
-			command: {
-				title: 'refactor',
-				command: CodeActionKind.RefactorExtract + '.function',
-				arguments: [{ file: doc.uri, version: doc.version, selection: range.toString(), refactoring: 'extract-method', unsafe: true }]
-			},
-			kind: CodeActionKind.RefactorExtract + '.function'
-		}
-	];
-}
-
 function handleCodeAction(params: CodeActionParams): Promise<(Command | CodeAction)[]> {
 
 	const doc = documents.get(params.textDocument.uri);
 	if (doc === undefined) {
 		return Promise.resolve([]);
 	}
-	const range = ByteRange.fromRange(params.range, doc);
 
-	if (!range.isRange() || range.isEmpty()) {
-		return Promise.resolve([]);
-	}
-
-	return Promise.resolve(listActionsForRange(doc, range));
+	return Promise.resolve(listActionsForRange(doc, params.range));
 }
 
 const isValidArgs = (args: RefactorArgs) => {
 	return args && args.file;
-}
-
-const mapResultToWorkspaceEdit = (arg: RefactorArgs, stdout: string, workspace_uri: string) => {
-	let res = JSON.parse(stdout) as [{
-		file_name: string;
-		start: number;
-		end: number;
-		replacement: string;
-	}];
-
-	let documentChanges: TextDocumentEdit[] = [];
-	res.forEach(change => {
-		let doc_uri = workspace_uri + "/" + change.file_name; // TODO: combine properly
-
-		const doc = documents.get(doc_uri);
-		if (doc === undefined) return [];
-
-		let documentChange = documentChanges.find(doc => doc.textDocument.uri === doc_uri);
-		if(documentChange === undefined) {
-			documentChange = {
-				textDocument: { uri: doc.uri, version: null },
-				edits: []
-			};
-			documentChanges.push(documentChange);
-		}
-		documentChange.edits.push({
-			newText: change.replacement,
-			range: {
-				start: doc.positionAt(change.start),
-				end: doc.positionAt(change.end)
-			}
-		});
-	});
-	console.log("changes: ", documentChanges);
-	return {
-		edit: {
-			documentChanges: documentChanges
-		},
-		label: arg.refactoring
-	};
-}
-
-const getFileRelativePath = (fileUri: string, workspace: WorkspaceFolder[] | null) => {
-	if (workspace === null || workspace.length === 0) return undefined;
-	let workspaceUri = workspace[0].uri;
-	return getRelativePath(workspaceUri, fileUri);
-}
-
-const getRelativePath = (workspaceUri: string, fileUri: string) => {
-	if (fileUri.startsWith(workspaceUri)) {
-		let sub = fileUri.substring(workspaceUri.length);
-		if (sub.startsWith("/")) sub = sub.substring(1);
-		return sub;
-	}
-	return undefined;
-}
-
-const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, new_fn: string | null, unsafe: boolean) => {
-	const refactorManifestPath = '/home/perove/dev/github.uio.no/refactor-rust/Cargo.toml'; // TODO: hardcoded path to refactoring project
-	const refactorArgs = `--output-changes-as-json --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`) + (unsafe ? ' --unsafe' : '');
-
-	const rustcArgs = "";
-
-	return `cargo run --bin cargo-my-refactor --manifest-path=${refactorManifestPath} -- -- ${rustcArgs} -- ${refactorArgs}`;
 }
 
 async function handleExecuteCommand(params: ExecuteCommandParams): Promise<void> {
@@ -328,10 +165,10 @@ async function handleExecuteCommand(params: ExecuteCommandParams): Promise<void>
 		let arg = params.arguments[0] as RefactorArgs;
 		if (!isValidArgs(arg)) return Promise.resolve();
 
-		let w = await connection.workspace.getWorkspaceFolders();
-		let relativeFilePath = getFileRelativePath(arg.file, w);
-		if (relativeFilePath === undefined || w === null) return Promise.resolve();
-		let workspace_uri = w[0].uri;
+		let workspaceFolders = await connection.workspace.getWorkspaceFolders();
+		let relativeFilePath = getFileRelativePath(arg.file, workspaceFolders);
+		if (relativeFilePath === undefined || workspaceFolders === null) return Promise.resolve();
+		let workspace_uri = workspaceFolders[0].uri;
 
 		let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.refactoring === 'extract-method' ? 'foo' : null, arg.unsafe);
 
@@ -340,7 +177,7 @@ async function handleExecuteCommand(params: ExecuteCommandParams): Promise<void>
 		if (result.code === 0) {
 
 			console.log(result.stdout);
-			connection.workspace.applyEdit(mapResultToWorkspaceEdit(arg, result.stdout, workspace_uri));
+			connection.workspace.applyEdit(mapRefactorResultToWorkspaceEdit(arg, result.stdout, workspace_uri, documents));
 			connection.sendNotification(ShowMessageNotification.type, {
 				message: `Applied: ${arg.refactoring}`, type: MessageType.Info,
 			});
