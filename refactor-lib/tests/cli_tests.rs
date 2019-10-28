@@ -52,23 +52,24 @@ fn output_json() {
         .stdout(expected);
 }
 
-#[test]
-fn project_example() {
-    Command::cargo_bin("cargo-my-refactor")
-        .unwrap()
-        .current_dir(TEST_PROJECT_PATH)
-        .arg("--")
-        .arg("--")
-        .arg("--out-dir=../../tmp")
-        .arg("--")
-        .arg("--refactoring=box-field")
-        .arg("--selection=18:19")
-        .arg("--file=src/mod1.rs")
-        .arg("--output-changes-as-json")
-        .assert()
-        .code(0)
-        .stdout("asd");
-}
+// #[test]
+// fn project_example() {
+//     Command::new("touch -c src/mod1.rs").current_dir(TEST_PROJECT_PATH).spawn().unwrap();
+//     Command::cargo_bin("cargo-my-refactor")
+//         .unwrap()
+//         .current_dir(TEST_PROJECT_PATH)
+//         .arg("--")
+//         .arg("--")
+//         .arg("--out-dir=../../tmp")
+//         .arg("--")
+//         .arg("--refactoring=box-field")
+//         .arg("--selection=18:19")
+//         .arg("--file=src/mod1.rs")
+//         .arg("--output-changes-as-json")
+//         .assert()
+//         .code(0)
+//         .stdout("asd");
+// }
 
 #[test]
 fn project_example_extract_block() {
