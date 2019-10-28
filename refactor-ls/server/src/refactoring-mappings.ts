@@ -75,9 +75,11 @@ export function listActionsForRange(doc: TextDocument, range: Range): (Command |
         mapToCodeAction(byteRange, 'box-field', doc, false),
         mapToCodeAction(byteRange, 'extract-block', doc, false),
         mapToCodeAction(byteRange, 'extract-function', doc, false),
+        mapToCodeAction(byteRange, 'introduce-closure', doc, false),
         mapToCodeAction(byteRange, 'box-field', doc, true),
         mapToCodeAction(byteRange, 'extract-block', doc, true),
         mapToCodeAction(byteRange, 'extract-function', doc, true),
+        mapToCodeAction(byteRange, 'introduce-closure', doc, true),
     ];
 }
 
