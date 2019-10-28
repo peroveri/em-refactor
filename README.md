@@ -27,4 +27,10 @@ The tool can be invoked like this:
 `cargo run --bin my-refactor-driver refactor-examples/extract_method/owned_mut_value.rs  -- --refactoring=extract-method --selection=39:46 --new_function=foo`
 
 ## [refactor-ls -- LSP client and server](./refactor-ls)
-TODO: add LSP client and server. Could use the example at https://github.com/Microsoft/vscode-extension-samples/tree/master/lsp-sample as a starting point.
+Run ```npm install``` in the ./refactor-ls folder
+
+Open Visual Studio Code in the ./refactor-ls folder: ```code refactor-ls```
+
+Run the build task (Ctrl+Shift+B)
+
+Debug the extension (Debug View -> Launch client)
