@@ -7,7 +7,7 @@ Requirements:
 
 Steps:
 - Compile the refactoring tool by running ```cargo build``` in the root folder
-- Update refactorToolManifestPath in ./refactor-ls/server/src/config.ts so that it points to the Cargo.toml file in the root folder
+- Update refactorToolManifestPath in [./refactor-ls/server/src/config.ts](./refactor-ls/server/src/config.ts) so that it points to the Cargo.toml file in the root folder
 - Run ```npm install``` in the ./refactor-ls folder
 - Open Visual Studio Code in the ./refactor-ls folder: ```code refactor-ls```
 - Run the build task (Ctrl+Shift+B)
