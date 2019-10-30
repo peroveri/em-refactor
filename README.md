@@ -28,6 +28,12 @@ The tool can be invoked like this:
 
 ## [refactor-ls -- LSP client and server](./refactor-ls)
 ### How to run the language server locally
+Requirements:
+- Node.js - https://nodejs.org/en/
+- Rust - https://www.rust-lang.org/tools/install
+- Visual Studio Code - https://code.visualstudio.com
+
+Steps:
 - Compile the refactoring tool by running ```cargo build``` in the root folder
 - Update refactorToolManifestPath in ./refactor-ls/server/src/config.ts so that it points to the Cargo.toml file in the root folder
 - Run ```npm install``` in the ./refactor-ls folder
