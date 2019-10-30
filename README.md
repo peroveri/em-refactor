@@ -1,3 +1,18 @@
+## [refactor-ls -- LSP client and server](./refactor-ls)
+### How to run the language server locally
+Requirements:
+- Node.js - https://nodejs.org/en/
+- Rust - https://www.rust-lang.org/tools/install
+- Visual Studio Code - https://code.visualstudio.com
+
+Steps:
+- Compile the refactoring tool by running ```cargo build``` in the root folder
+- Update refactorToolManifestPath in ./refactor-ls/server/src/config.ts so that it points to the Cargo.toml file in the root folder
+- Run ```npm install``` in the ./refactor-ls folder
+- Open Visual Studio Code in the ./refactor-ls folder: ```code refactor-ls```
+- Run the build task (Ctrl+Shift+B)
+- Debug the extension (Debug View -> Launch client)
+
 ## [./refactor-examples -- Examples in rust](./refactor-examples)
 This project should contain a list of valid refactorings that can be used for unit tests.
 
@@ -25,18 +40,3 @@ main.rs calls ```cargo check``` with the executable from driver.rs as argument. 
 The tool can be invoked like this:
 
 `cargo run --bin my-refactor-driver refactor-examples/extract_method/owned_mut_value.rs  -- --refactoring=extract-method --selection=39:46 --new_function=foo`
-
-## [refactor-ls -- LSP client and server](./refactor-ls)
-### How to run the language server locally
-Requirements:
-- Node.js - https://nodejs.org/en/
-- Rust - https://www.rust-lang.org/tools/install
-- Visual Studio Code - https://code.visualstudio.com
-
-Steps:
-- Compile the refactoring tool by running ```cargo build``` in the root folder
-- Update refactorToolManifestPath in ./refactor-ls/server/src/config.ts so that it points to the Cargo.toml file in the root folder
-- Run ```npm install``` in the ./refactor-ls folder
-- Open Visual Studio Code in the ./refactor-ls folder: ```code refactor-ls```
-- Run the build task (Ctrl+Shift+B)
-- Debug the extension (Debug View -> Launch client)
