@@ -1,19 +1,25 @@
 use rustc::hir::{
     self,
-    intravisit::{NestedVisitorMap, Visitor, walk_crate},
+    intravisit::{walk_crate, NestedVisitorMap, Visitor},
 };
 use rustc::ty::TyCtxt;
 use syntax_pos::Span;
 
-/**
- * Given a selection the field of a struct where the identifier has the same span as 'span'
- */
-struct FieldCollector<'v> {
-    tcx: TyCtxt<'v>,
-    span: Span,
-    field: Option<&'v hir::StructField>,
-}
-
+///
+/// Given a byte range, this functions returns the corresponding StructField declaration
+///
+/// # Grammar
+/// ```
+/// StructStruct:
+///   struct IDENTIFIER  Generics? WhereClause? ( { StructFields? } | ; )
+/// StructFields :
+///   StructField (, StructField)\* ,?
+/// StructField :
+///   OuterAttribute\* Visibility? IDENTIFIER : Type
+/// ```
+/// [Structs grammar](https://doc.rust-lang.org/stable/reference/items/structs.html)
+/// 
+/// TODO: Is is possible to query this directly in some way?
 pub fn collect_field(tcx: TyCtxt, span: Span) -> Option<(&hir::StructField)> {
     let mut v = FieldCollector {
         tcx,
@@ -24,6 +30,12 @@ pub fn collect_field(tcx: TyCtxt, span: Span) -> Option<(&hir::StructField)> {
     walk_crate(&mut v, tcx.hir().krate());
 
     v.field
+}
+
+struct FieldCollector<'v> {
+    tcx: TyCtxt<'v>,
+    span: Span,
+    field: Option<&'v hir::StructField>,
 }
 
 impl<'v> Visitor<'v> for FieldCollector<'v> {
