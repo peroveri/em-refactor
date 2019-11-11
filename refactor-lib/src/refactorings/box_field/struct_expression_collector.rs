@@ -103,6 +103,7 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
 mod test {
     use super::*;
     use crate::{create_test_span, run_test};
+    use super::super::super::utils::get_source;
     use quote::quote;
 
     fn create_program_match_1() -> quote::__rt::TokenStream {
@@ -127,7 +128,7 @@ mod test {
             struct S { foo: u32 }
             fn foo() {
                 let _ = S { foo: 0 };
-                let _ = S { foo: 0 };
+                let _ = S { foo: 1 };
             }
         }
     }
@@ -146,6 +147,7 @@ mod test {
             let fields = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
 
             assert_eq!(fields.len(), 1);
+            assert_eq!(get_source(tcx, fields[0]), "0");
         });
     }
     #[test]
@@ -164,6 +166,8 @@ mod test {
             let fields = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
 
             assert_eq!(fields.len(), 2);
+            assert_eq!(get_source(tcx, fields[0]), "0");
+            assert_eq!(get_source(tcx, fields[1]), "1");
         });
     }
 }
