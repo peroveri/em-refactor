@@ -11,6 +11,7 @@ mod binds_to_field_collector;
 mod function_body_collector;
 mod struct_def_field_collector;
 mod struct_expression_collector;
+mod struct_field_access_expression_collector;
 mod struct_pattern_collector;
 
 /// Box field refactoring
