@@ -1,6 +1,6 @@
 use super::utils::{map_change_from_span};
 use crate::change::Change;
-use field_collector::collect_field;
+use struct_field_collector::collect_field;
 use rustc::hir;
 use rustc::ty::TyCtxt;
 use syntax_pos::Span;
@@ -8,7 +8,7 @@ use syntax_pos::Span;
 use super::utils::get_source;
 
 mod binds_to_field_collector;
-mod field_collector;
+mod struct_field_collector;
 mod function_body_collector;
 
 fn get_field_change(tcx: TyCtxt, field: &hir::StructField) -> Change {
