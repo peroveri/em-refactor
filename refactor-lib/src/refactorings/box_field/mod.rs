@@ -2,14 +2,14 @@ use super::utils::map_change_from_span;
 use crate::change::Change;
 use rustc::hir;
 use rustc::ty::TyCtxt;
-use struct_field_collector::collect_field;
+use struct_def_field_collector::collect_field;
 use syntax_pos::Span;
 
 use super::utils::get_source;
 
 mod binds_to_field_collector;
 mod function_body_collector;
-mod struct_field_collector;
+mod struct_def_field_collector;
 mod struct_pattern_collector;
 
 /// Box field refactoring
