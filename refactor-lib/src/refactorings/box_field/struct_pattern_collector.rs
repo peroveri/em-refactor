@@ -11,12 +11,15 @@ use syntax_pos::Span;
 /// We collect spans of all StructPatternFields where PathInExpression has the same type as `struct_hir_id` and StructPatternField is `field_ident`
 /// 
 /// # Example
-/// 
+/// given:
 /// ```
 /// match (foo) {
-///   /* start */ S {field: 0} /* end */ => {}
+///   S {field: 0} => {}
+///   |          |
+///   x          y
 /// }
 /// ```
+/// then `collect_struct_patterns(S, "ident")` would return a single byte range `(x, y)`
 /// 
 /// # Grammar
 /// ```
