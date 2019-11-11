@@ -7,7 +7,30 @@ use syntax_pos::Span;
 
 ///
 /// Collect all places where a given struct occurs in a pattern. Field_ident should also occur in the pattern.
-///
+/// 
+/// We collect spans of all StructPatternFields where PathInExpression has the same type as `struct_hir_id` and StructPatternField is `field_ident`
+/// 
+/// # Example
+/// 
+/// ```
+/// match (foo) {
+///   /* start */ S {field: 0} /* end */ => {}
+/// }
+/// ```
+/// 
+/// # Grammar
+/// ```
+/// StructPattern :
+///   PathInExpression {
+///      StructPatternElements ?
+///   }
+/// StructPatternElements :
+///      StructPatternFields (, | , StructPatternEtCetera)?
+///   | StructPatternEtCetera
+/// StructPatternFields :
+///   StructPatternField (, StructPatternField) \*
+/// ```
+/// [Struct pattern grammar](https://doc.rust-lang.org/stable/reference/patterns.html#struct-patterns)
 pub fn collect_struct_patterns(
     tcx: TyCtxt,
     struct_hir_id: hir::HirId,
