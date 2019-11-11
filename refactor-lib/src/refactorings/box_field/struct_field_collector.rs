@@ -6,8 +6,18 @@ use rustc::ty::TyCtxt;
 use syntax_pos::Span;
 
 ///
-/// Given a byte range, this functions returns the corresponding StructField declaration
-///
+/// Returns the corresponding `StructField` in a struct definition if the `span` is equal to the `StructField`'s `span`
+/// 
+/// # Example
+/// Given the program: 
+/// 
+/// ```
+/// struct S {foo: u32}
+///           | |
+///           x y
+/// ```
+/// then `collect_field(x, y)` would return the `StructField` of `foo`
+/// 
 /// # Grammar
 /// ```
 /// StructStruct:
@@ -63,7 +73,7 @@ mod test {
     }
 
     #[test]
-    fn struct_field_collector_should_collect_field_declaration() {
+    fn struct_field_collector_should_collect_field_definition() {
         run_test(create_program(), |tcx| {
             let field = collect_field(tcx, create_test_span(56, 61));
 
