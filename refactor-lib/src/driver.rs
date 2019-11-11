@@ -18,6 +18,11 @@ mod refactor_definition;
 mod refactor_definition_parser;
 mod refactorings;
 
+#[cfg(test)]
+mod test_utils;
+#[cfg(test)]
+use test_utils::{run_test, create_test_span};
+
 enum RefactorErrorCodes {
     _Success = 0,
     InputDoesNotCompile = 1,
