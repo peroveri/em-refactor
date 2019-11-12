@@ -20,21 +20,20 @@ fn get_filename(tcx: TyCtxt, span: Span) -> String {
     panic!("unexpected file type: {:?}", filename);
 }
 
-pub fn map_range_to_span(tcx: TyCtxt, range: &SourceCodeRange) -> Span {
-    let source_map = tcx.sess.source_map();
+pub fn map_range_to_span(tcx: TyCtxt, range: &SourceCodeRange) -> Result<Span, String> {
     let filename = FileName::Real(std::path::PathBuf::from(&range.file_name));
-    let source_file = source_map.get_source_file(&filename).unwrap();
-    Span::with_root_ctxt(
-        BytePos(range.from + source_file.start_pos.0),
-        BytePos(range.to + source_file.start_pos.0),
-    )
+    let source_map = tcx.sess.source_map();
+    if let Some(source_file) = source_map.get_source_file(&filename) {
+        Ok(Span::with_root_ctxt(
+            BytePos(range.from + source_file.start_pos.0),
+            BytePos(range.to + source_file.start_pos.0),
+        ))
+    } else {
+        Err(format!("Couldn't find file: {}", range.file_name))
+    }
 }
 
-pub fn map_change_from_span(
-    tcx: TyCtxt,
-    span: Span,
-    replacement: String,
-) -> Change {
+pub fn map_change_from_span(tcx: TyCtxt, span: Span, replacement: String) -> Change {
     let filename = get_filename(tcx, span);
     let file_offset = get_file_offset(tcx, &filename);
     Change {

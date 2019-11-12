@@ -67,7 +67,7 @@ pub fn do_refactoring(
     range: &SourceCodeRange,
     new_function: &str,
 ) -> Result<Vec<Change>, String> {
-    let spi = map_range_to_span(ty, &range);
+    let spi = map_range_to_span(ty, &range)?;
     let stmts_visit_res = visit_stmts(ty, spi);
 
     if let Some(stmts) = stmts_visit_res {
