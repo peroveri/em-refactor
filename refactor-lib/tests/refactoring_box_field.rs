@@ -7,22 +7,22 @@ fn run_test(name: &str) {
 }
 
 #[test]
-fn assignment_and_access_should_be_wrapped() {
+fn box_field_assignment_and_access_should_be_wrapped() {
     run_test("assignment_and_access_should_be_wrapped");
 }
 #[test]
-fn field_should_be_boxed() {
+fn box_field_field_should_be_boxed() {
     run_test("field_should_be_boxed");
 }
 #[test]
-fn match_as_ref() {
+fn box_field_match_as_ref() {
     run_test("match_as_ref");
 }
 #[test]
-fn new_binding() {
+fn box_field_new_binding() {
     run_test("new_binding");
 }
 #[test]
-fn tuple_struct_field_should_be_boxed() {
+fn box_field_tuple_struct_field_should_be_boxed() {
     run_test("tuple_struct_field_should_be_boxed");
 }
