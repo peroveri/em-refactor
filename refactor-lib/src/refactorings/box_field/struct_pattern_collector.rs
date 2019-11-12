@@ -38,24 +38,32 @@ pub fn collect_struct_patterns(
     tcx: TyCtxt,
     struct_hir_id: hir::HirId,
     field_ident: String,
-) -> Vec<Span> {
+) -> StructPatternCollection {
     let mut v = StructPatternCollector {
         tcx,
         struct_hir_id,
-        field: vec![],
+        patterns: StructPatternCollection {
+            new_bindings: vec![],
+            other: vec![]
+        },
         field_ident,
         body_id: None,
     };
 
     walk_crate(&mut v, tcx.hir().krate());
 
-    v.field
+    v.patterns
+}
+
+pub struct StructPatternCollection {
+    pub new_bindings: Vec<hir::HirId>,
+    pub other: Vec<Span>
 }
 
 struct StructPatternCollector<'v> {
     tcx: TyCtxt<'v>,
     struct_hir_id: hir::HirId,
-    field: Vec<Span>,
+    patterns: StructPatternCollection,
     field_ident: String,
     body_id: Option<hir::BodyId>,
 }
@@ -96,7 +104,13 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
             if self.path_resolves_to_struct(qpath, p.hir_id) {
                 for fp in fields {
                     if format!("{}", fp.ident) == self.field_ident {
-                        self.field.push(fp.span);
+                        if let hir::PatKind::Wild = fp.pat.kind {
+                            // Wildcard patterns match anything, so no changes are needed
+                        } else if let hir::PatKind::Binding(_, hir_id, ..) = fp.pat.kind {
+                            self.patterns.new_bindings.push(hir_id);
+                        } else {
+                            self.patterns.other.push(fp.span);
+                        }
                     }
                 }
             }
@@ -157,7 +171,7 @@ mod test {
             let hir_id = get_struct_hir_id(tcx);
             let fields = collect_struct_patterns(tcx, hir_id, "field".to_owned());
 
-            assert_eq!(fields.len(), 1);
+            assert_eq!(fields.other.len(), 1);
         });
     }
     #[test]
@@ -166,7 +180,7 @@ mod test {
             let hir_id = get_struct_hir_id(tcx);
             let fields = collect_struct_patterns(tcx, hir_id, "field".to_owned());
 
-            assert_eq!(fields.len(), 1);
+            assert_eq!(fields.other.len(), 1);
         });
     }
     #[test]
@@ -175,7 +189,7 @@ mod test {
             let struct_hir_id = get_struct_hir_id(tcx);
             let fields = collect_struct_patterns(tcx, struct_hir_id, "field".to_owned());
 
-            assert_eq!(fields.len(), 0);
+            assert_eq!(fields.other.len(), 0);
         });
     }
 }
