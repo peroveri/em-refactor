@@ -87,9 +87,10 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, String> {
     } else {
         Err(format!(
             // do this on a higher level?
-            "{}:{} is not a valid selection!",
+            "{}:{} is not a valid selection! `{}`",
             span.lo().0,
-            span.hi().0
+            span.hi().0,
+            get_source(tcx, span)
         ))
     }
 }

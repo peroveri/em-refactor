@@ -21,16 +21,16 @@ mod refactorings;
 #[cfg(test)]
 mod test_utils;
 #[cfg(test)]
-use test_utils::{run_test, create_test_span};
+use test_utils::{create_test_span, run_test};
 
-enum RefactorErrorCodes {
-    _Success = 0,
+enum RefactorStatusCodes {
+    Success = 0,
     InputDoesNotCompile = 1,
     RefactoringProcucedBrokenCode = 2,
     BadFormatOnInput = 3,
     // Serializing = 4,
     RustcPassFailed = 5,
-    InternalRefactoringError = 6
+    InternalRefactoringError = 6,
 }
 
 fn arg_value<'a>(
@@ -158,6 +158,16 @@ fn get_compiler_args(args: &[String]) -> Vec<String> {
     rustc_args
 }
 
+/// Using Rerast's solution
+/// https://github.com/google/rerast/blob/46dacd520f6bc63f4c37d9593b1b5163fc81611c/src/lib.rs
+fn is_compiling_dependency(args: &[String]) -> bool {
+    if let Some(path) = args.iter().find(|arg| arg.ends_with(".rs")) {
+        Path::new(path).is_absolute()
+    } else {
+        false
+    }
+}
+
 ///
 /// 1. Run rustc with refactoring callbacks
 /// 2. Run rustc with no callbacks, but with changes applied by the refactorings
@@ -166,18 +176,22 @@ fn run_rustc() -> Result<(), i32> {
     // get compiler and refactoring args from input and environment
     let std_env_args = std::env::args().collect::<Vec<_>>();
     let rustc_args = get_compiler_args(&std_env_args);
-
-    if rustc_args.contains(&"--print=cfg".to_owned()) {
+    if rustc_args.contains(&"--print=cfg".to_owned()) || is_compiling_dependency(&rustc_args) {
         let mut default = rustc_driver::DefaultCallbacks;
-        let err = rustc_driver::run_compiler(&rustc_args, &mut default, None, None);
-        return if err.is_err() {Err(RefactorErrorCodes::RustcPassFailed as i32)} else {Ok(())};
+        let err = rustc_driver::run_compiler(&rustc_args, &mut default, None, None); /* Some(Box::new(Vec::new())) */
+        return if err.is_err() {
+            Err(RefactorStatusCodes::RustcPassFailed as i32)
+        } else {
+            Ok(())
+        };
     }
 
     let refactor_args = get_refactor_args(&std_env_args);
+
     let refactor_def = refactor_definition_parser::argument_list_to_refactor_def(&refactor_args);
     if let Err(err) = refactor_def {
         eprintln!("{}", err);
-        return Err(RefactorErrorCodes::BadFormatOnInput as i32);
+        return Err(RefactorStatusCodes::BadFormatOnInput as i32);
     }
     let refactor_def = refactor_def.unwrap();
     let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_def);
@@ -200,7 +214,7 @@ fn run_rustc() -> Result<(), i32> {
         } else {
             eprintln!("failed during refactoring");
         }
-        return Err(RefactorErrorCodes::InputDoesNotCompile as i32);
+        return Err(RefactorStatusCodes::InputDoesNotCompile as i32);
     }
 
     // 2. Rerun the compiler to check if any errors were introduced
@@ -210,7 +224,7 @@ fn run_rustc() -> Result<(), i32> {
 
     if let Err(err) = my_refactor.result {
         eprintln!("{}", err);
-        return Err(RefactorErrorCodes::InternalRefactoringError as i32);
+        return Err(RefactorStatusCodes::InternalRefactoringError as i32);
     }
 
     if !refactor_args.contains(&"--unsafe".to_owned()) {
@@ -234,7 +248,7 @@ fn run_rustc() -> Result<(), i32> {
 
         if err.is_err() {
             eprintln!("The refactoring broke the code");
-            return Err(RefactorErrorCodes::RefactoringProcucedBrokenCode as i32);
+            return Err(RefactorStatusCodes::RefactoringProcucedBrokenCode as i32);
         }
         // TODO: output message / status that the code was broken after refactoring
     }
@@ -251,5 +265,9 @@ fn run_rustc() -> Result<(), i32> {
 pub fn main() {
     rustc_driver::init_rustc_env_logger();
     rustc_driver::install_ice_hook();
-    exit(run_rustc().err().unwrap_or(0))
+    exit(
+        run_rustc()
+            .err()
+            .unwrap_or(RefactorStatusCodes::Success as i32),
+    )
 }

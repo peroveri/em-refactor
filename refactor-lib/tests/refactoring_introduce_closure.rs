@@ -6,10 +6,10 @@ fn run_test(name: &str) {
     run_testcase("introduce_closure", name).unwrap();
 }
 
-#[test]
-fn mut_() {
-    run_test("mut");
-}
+// #[test]
+// fn mut_() {
+//     run_test("mut");
+// }
 #[test]
 fn rhs() {
     run_test("rhs");

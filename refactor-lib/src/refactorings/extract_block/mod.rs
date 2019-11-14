@@ -1,4 +1,4 @@
-use super::utils::{map_change_from_span};
+use super::utils::{map_change_from_span, get_source};
 use crate::change::Change;
 use block_collector::collect_block;
 use rustc::hir;
@@ -51,9 +51,12 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, String> {
             extract_block(tcx, body_id, span, source)?,
         )])
     } else {
-        Err(format!( // do this on a higher level?
-            "{}:{} is not a valid selection!",
-            span.lo().0, span.hi().0
+        Err(format!(
+            // do this on a higher level?
+            "{}:{} is not a valid selection! `{}`",
+            span.lo().0,
+            span.hi().0,
+            get_source(tcx, span)
         ))
     }
 }
