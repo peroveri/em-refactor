@@ -172,6 +172,10 @@ async function handleExecuteCommand(params: ExecuteCommandParams): Promise<void>
 
 		let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.refactoring === 'extract-method' ? 'foo' : null, arg.unsafe);
 
+		/* https://github.com/shelljs/shelljs/wiki/Electron-compatibility */
+		if(shell.config.execPath === null) {
+			shell.config.execPath = shell.which('node').toString();
+		}
 		let result = shell.exec(cmd);
 
 		if (result.code === 0) {

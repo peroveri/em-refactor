@@ -139,7 +139,6 @@ export const convertToCmd = (relativeFilePath: string, refactoring: string, sele
     const refactorToolManifestPath = config.refactorToolManifestPath; // TODO: hardcoded path to refactoring project
     const refactorArgs = `--output-changes-as-json --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`) + (unsafe ? ' --unsafe' : '');
 
-    const rustcArgs = "";
-
-    return `cargo run --bin cargo-my-refactor --manifest-path=${refactorToolManifestPath} -- -- ${rustcArgs} -- ${refactorArgs}`;
+    // The +nightly version should match the one used in the refactoring crate
+    return `cargo +nightly-2019-10-23 run --bin cargo-my-refactor --manifest-path=${refactorToolManifestPath} -- ${refactorArgs}`;
 }
