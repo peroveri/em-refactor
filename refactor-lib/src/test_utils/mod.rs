@@ -1,14 +1,14 @@
 use rustc::ty::TyCtxt;
 use rustc_interface::interface;
-use std::env::{current_dir, set_current_dir};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use syntax_pos::{BytePos, Span};
+use tempdir::TempDir;
 
 /**
- * Function that can be used to run unit tests. 
+ * Function that can be used to run unit tests.
  * Accepts a TokenStream (from quote) and a function with a single parameter TyCtxt.
  */
 #[allow(unused)]
@@ -77,24 +77,21 @@ where
     }
 }
 
-fn change_dir() -> std::io::Result<()> {
-    set_current_dir(current_dir()?.join("../tmp"))?;
-    Ok(())
-}
-
 fn run_test_on_str<F>(program: &str, func: F)
 where
     F: Fn(TyCtxt<'_>) -> (),
     F: Send,
 {
-    change_dir().unwrap();
-    set_main_rs(program).unwrap();
+    let tmp_dir =
+        TempDir::new("my_refactoring_tool").unwrap_or_else(|_| panic!("failed to create tmp dir"));
+    let tmp_dir_path = tmp_dir.path();
+    set_main_rs(tmp_dir_path, program).unwrap_or_else(|_| panic!("failed to set main rs"));
 
     let rustc_args = [
         ".".to_owned(),
         "--sysroot".to_owned(),
         get_sys_root(),
-        "unit_test.rs".to_owned(),
+        tmp_dir_path.join("main.rs").to_str().unwrap().to_string(),
         "--allow".to_owned(),
         "dead_code".to_owned(),
         "--allow".to_owned(),
@@ -103,6 +100,7 @@ where
         "unused".to_owned(),
         "--crate-type".to_owned(),
         "lib".to_owned(),
+        format!("--out-dir={}", tmp_dir_path.to_str().unwrap()),
     ];
     let mut callbacks = RustcTestCallbacks(func);
 
@@ -112,11 +110,13 @@ where
     let err = rustc_driver::run_compiler(&rustc_args, &mut callbacks, None, None);
     err.unwrap();
 }
-fn set_main_rs(content: &str) -> std::io::Result<()> {
-    let path = Path::new("./unit_test.rs");
-    if !path.is_file() {
-        panic!("file didnt exist: {}", path.to_str().unwrap());
-    }
+fn set_main_rs(path: &Path, content: &str) -> std::io::Result<()> {
+    let path = path.join("./main.rs");
+    assert!(
+        !path.exists(),
+        "main.rs already existed: {}",
+        path.to_str().unwrap()
+    );
     let mut file = File::create(path)?;
     file.write_all(content.as_bytes())?;
     Ok(())

@@ -1,8 +1,0 @@
-[workspace]
-
-members = [
-	"refactor-lib"
-]
-exclude = [
-	"refactor-examples", "tmp"
-]

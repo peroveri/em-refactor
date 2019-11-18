@@ -1,17 +1,23 @@
 use assert_cmd::prelude::*;
 use predicates::prelude::predicate;
 use std::process::Command;
+use tempdir::TempDir;
+
+const WORKSPACE_ARG: &str = "--workspace-root=./tests/data/crates/hello_world";
 
 fn cargo_my_refactor() -> Command {
     Command::cargo_bin("cargo-my-refactor").unwrap()
 }
 
-fn touch_main_rs() {
-    Command::new("touch")
-        .arg("-c")
-        .arg("/home/perove/dev/github.uio.no/refactor-rust/tmp/hello_world/src/main.rs")
-        .spawn()
-        .unwrap();
+fn create_tmp_dir() -> TempDir {
+    let tmp_dir = TempDir::new("my_refactoring_tool").unwrap();
+    let tmp_dir_path = tmp_dir.path();
+    assert!(
+        tmp_dir_path.is_dir(),
+        "failed to create tmp dir: {}",
+        tmp_dir_path.to_str().unwrap_or("")
+    );
+    tmp_dir
 }
 
 #[test]
@@ -35,9 +41,13 @@ fn cli_should_display_version() {
 
 #[test]
 fn cli_missing_args_should_output_nicely() {
-    touch_main_rs();
     cargo_my_refactor()
-        .arg("--workspace-root=../tmp/hello_world")
+        .arg(WORKSPACE_ARG)
+        .arg("--")
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
         .assert()
         .failure()
         .stderr(predicate::str::starts_with("Expected --refactoring\n"));
@@ -45,47 +55,38 @@ fn cli_missing_args_should_output_nicely() {
 
 #[test]
 fn cli_unknown_refactoring() {
-    touch_main_rs();
     cargo_my_refactor()
-        .arg("--workspace-root=../tmp/hello_world")
+        .arg(WORKSPACE_ARG)
         .arg("--refactoring=invalid_refactoring_name")
+        .arg("--")
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
         .assert()
         .failure()
-        .stderr(predicate::str::starts_with("Unknown refactoring: invalid_refactoring_name\n"));
+        .stderr(predicate::str::starts_with(
+            "Unknown refactoring: invalid_refactoring_name\n",
+        ));
 }
 
 #[test]
 fn cli_output_json() {
-    touch_main_rs();
-    let expected = r#"[{"file_name":"src/main.rs","file_start_pos":0,"start":16,"end":26,"replacement":"{\nlet i = 0;\n}"}]
+    let expected = r#"[{"file_name":"src/main.rs","file_start_pos":0,"start":16,"end":40,"replacement":"let s = \n{\nlet s = \"Hello, world!\";\ns};"}]
 "#;
 
     cargo_my_refactor()
-        .arg("--workspace-root=../tmp/hello_world")
+        .arg(WORKSPACE_ARG)
         .arg("--output-changes-as-json")
         .arg("--refactoring=extract-block")
-        .arg("--selection=16:26")
+        .arg("--selection=16:40")
         .arg("--file=src/main.rs")
+        .arg("--")
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
         .assert()
         .success()
         .stdout(expected);
 }
-
-// #[test]
-// fn project_example() {
-//     Command::new("touch -c src/mod1.rs").current_dir(TEST_PROJECT_PATH).spawn().unwrap();
-//     Command::cargo_bin("cargo-my-refactor")
-//         .unwrap()
-//         .current_dir(TEST_PROJECT_PATH)
-//         .arg("--")
-//         .arg("--")
-//         .arg("--out-dir=../../tmp")
-//         .arg("--")
-//         .arg("--refactoring=box-field")
-//         .arg("--selection=18:19")
-//         .arg("--file=src/mod1.rs")
-//         .arg("--output-changes-as-json")
-//         .assert()
-//         .code(0)
-//         .stdout("asd");
-// }

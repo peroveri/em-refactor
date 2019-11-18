@@ -4,11 +4,12 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::process::Command;
+use tempdir::TempDir;
 
 // These tests are currently not thread safe for multiple tests on a single .rs file
 // run single threaded with: cargo test -- --test-threads=1
 
-static TEST_CASE_PATH: &str = "../refactor-examples";
+static TEST_CASE_PATH: &str = "./tests/data";
 
 struct TestCase {
     file: String,
@@ -46,7 +47,10 @@ impl TestCase {
     fn json_str_to_param_vec(v: &Value) -> serde_json::Result<Vec<String>> {
         let args_serde = &v["args"];
         let mut args = vec![
-            format!("--refactoring={}", args_serde["refactoring"].as_str().unwrap()),
+            format!(
+                "--refactoring={}",
+                args_serde["refactoring"].as_str().unwrap()
+            ),
             format!("--selection={}", args_serde["selection"].as_str().unwrap()),
         ];
         if let Some(new_fn) = args_serde["new_function"].as_str() {
@@ -58,6 +62,11 @@ impl TestCase {
 
 fn read_test_file(folder: &str, file_name: &str) -> std::io::Result<String> {
     let path: PathBuf = [TEST_CASE_PATH, folder, file_name].iter().collect();
+    assert!(
+        path.is_file(),
+        "path should be a file, but isn't: {}",
+        path.to_str().unwrap_or("")
+    );
     let mut file = File::open(path)?;
     let mut file_content = String::new();
     file.read_to_string(&mut file_content)?;
@@ -76,10 +85,17 @@ pub fn run_testcase(folder: &str, name: &str) -> std::io::Result<()> {
 
 fn run_tool_and_assert(test: TestCase, folder: &str) -> std::io::Result<()> {
     let path: PathBuf = [TEST_CASE_PATH, folder].iter().collect();
+    let tmp_dir = TempDir::new("my_refactoring_tool")?;
+    let tmp_dir_path = tmp_dir.path();
+    assert!(
+        tmp_dir_path.is_dir(),
+        "failed to create tmp dir: {}",
+        tmp_dir_path.to_str().unwrap_or("")
+    );
     let mut assert = Command::cargo_bin("my-refactor-driver")
         .unwrap()
         .current_dir(path)
-        .arg("--out-dir=../../tmp")
+        .arg(format!("--out-dir={}", tmp_dir_path.to_str().unwrap()))
         .arg(&test.file)
         .arg("--")
         .args(test.args)
