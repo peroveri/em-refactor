@@ -13,7 +13,7 @@ Steps:
 - Run the build task (Ctrl+Shift+B)
 - Debug the extension (Debug View -> Launch client)
 
-## [./refactor-examples -- Examples in rust](./refactor-examples)
+## [./refactor-lib/tests/data -- Examples in rust](./refactor-lib/tests/data)
 This project should contain a list of valid refactorings that can be used for unit tests.
 
 Each refactoring example should contain the code before, after and the arguments passed to the refactoring tool. The arguments must contain refactoring definition name (e.g. 'extract-method') and selection (from and to). Other arguments might be required depending on the actual refactoring.
