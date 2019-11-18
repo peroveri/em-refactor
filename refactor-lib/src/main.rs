@@ -84,6 +84,13 @@ where
         my_refactor_args.retain(|s| !s.starts_with("--workspace-root"));
     }
 
+    // Clean local targets
+    // This might cause the local cargo index to be locked, so we cannot run multiple tests on the same project in parallell.
+    // might be fixed?
+    // https://github.com/rust-lang/cargo/issues/7490
+    //
+    clean_local_targets(get_option(&args, "--target-dir=")).unwrap();
+
     let exit_status = std::process::Command::new("cargo")
         .args(&args)
         .env("RUSTC_WRAPPER", path)
@@ -98,6 +105,46 @@ where
     } else {
         Err(exit_status.code().unwrap_or(-1))
     }
+}
+
+// from Rerast
+// Queries cargo to find the name of the current crate, then runs cargo clean to
+// clean up artifacts for that package (but not dependencies). This is necessary
+// in order to ensure that all the files in the current crate actually get built
+// when we run cargo check. Hopefully eventually there'll be a nicer way to
+// integrate with cargo such that we won't need to do this.
+fn clean_local_targets(target_dir: Option<String>) -> Result<(), failure::Error> {
+    let output = std::process::Command::new("cargo")
+        .args(vec!["metadata", "--no-deps", "--format-version=1"])
+        .stdout(std::process::Stdio::piped())
+        .output()?;
+    assert!(
+        output.status.success(),
+        "cargo metadata failed:\n{}",
+        std::str::from_utf8(output.stderr.as_slice())?
+    );
+    let metadata_str = std::str::from_utf8(output.stdout.as_slice())?;
+    let parsed: serde_json::Value = match serde_json::from_str(metadata_str) {
+        Ok(v) => v,
+        Err(e) => panic!("Error parsing metadata JSON: {:?}", e),
+    };
+    for package in parsed["packages"].as_array().unwrap() {
+        if let Some(name) = package["name"].as_str() {
+            // // TODO: Remove once #10 is fixed.
+            // if std::env::var("RERAST_FULL_CARGO_CLEAN") == Ok("1".to_string()) {
+            //     std::process::Command::new("cargo")
+            //         .args(vec!["clean"])
+            //         .status()?;
+            // } else {
+            let mut args = vec!["clean".to_owned(), "--package".to_owned(), name.to_string()];
+            if let Some(dir) = &target_dir {
+                args.push(format!("--target-dir={}", dir));
+            }
+            std::process::Command::new("cargo").args(args).status()?;
+            // }
+        }
+    }
+    Ok(())
 }
 
 #[test]
