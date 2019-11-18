@@ -7,17 +7,17 @@ use syntax_pos::Span;
 
 ///
 /// Returns the corresponding `StructField` in a struct definition if the `span` is equal to the `StructField`'s `span`
-/// 
+///
 /// # Example
-/// Given the program: 
-/// 
+/// Given the program:
+///
 /// ```
 /// struct S {foo: u32}
 ///           | |
 ///           x y
 /// ```
 /// then `collect_field(x, y)` would return the `StructField` of `foo`
-/// 
+///
 /// # Grammar
 /// ```
 /// StructStruct:
@@ -28,9 +28,9 @@ use syntax_pos::Span;
 ///   OuterAttribute\* Visibility? IDENTIFIER : Type
 /// ```
 /// [Structs grammar](https://doc.rust-lang.org/stable/reference/items/structs.html)
-/// 
+///
 /// TODO: Is is possible to query this directly in some way?
-pub fn collect_field(tcx: TyCtxt, span: Span) -> Option<(&hir::StructField)> {
+pub fn collect_field(tcx: TyCtxt, span: Span) -> Option<&hir::StructField> {
     let mut v = FieldCollector {
         tcx,
         span,
