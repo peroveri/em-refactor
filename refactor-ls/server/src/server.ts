@@ -16,6 +16,7 @@ import {
 	CodeActionParams,
 	ExecuteCommandParams,
 	MessageType,
+	ApplyWorkspaceEditParams,
 } from 'vscode-languageserver';
 
 import {
@@ -159,32 +160,34 @@ const isValidArgs = (args: RefactorArgs) => {
 	return args && args.file;
 }
 
-async function handleExecuteCommand(params: ExecuteCommandParams): Promise<void> {
+async function handleExecuteCommand(params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams> {
 	console.log('handleExecuteCommand', params);
 	if (params.arguments && params.arguments[0]) {
 		let arg = params.arguments[0] as RefactorArgs;
-		if (!isValidArgs(arg)) return Promise.resolve();
+		if (!isValidArgs(arg)) return Promise.reject(`invalid args: ${JSON.stringify(params.arguments)}`);
 
 		let workspaceFolders = await connection.workspace.getWorkspaceFolders();
 		let relativeFilePath = getFileRelativePath(arg.file, workspaceFolders);
-		if (relativeFilePath === undefined || workspaceFolders === null) return Promise.resolve();
+		if (relativeFilePath === undefined || workspaceFolders === null) return Promise.reject("unknown file path");
 		let workspace_uri = workspaceFolders[0].uri;
 
 		let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.refactoring === 'extract-method' ? 'foo' : null, arg.unsafe);
 
 		/* https://github.com/shelljs/shelljs/wiki/Electron-compatibility */
-		if(shell.config.execPath === null) {
+		if (shell.config.execPath === null) {
 			shell.config.execPath = shell.which('node').toString();
 		}
 		let result = shell.exec(cmd);
 
 		if (result.code === 0) {
 
+			let edits = mapRefactorResultToWorkspaceEdit(arg, result.stdout, workspace_uri, documents);
 			console.log(result.stdout);
-			connection.workspace.applyEdit(mapRefactorResultToWorkspaceEdit(arg, result.stdout, workspace_uri, documents));
+			connection.workspace.applyEdit(edits);
 			connection.sendNotification(ShowMessageNotification.type, {
 				message: `Applied: ${arg.refactoring}`, type: MessageType.Info,
 			});
+			return Promise.resolve(edits);
 		} else {
 			connection.sendNotification(ShowMessageNotification.type, {
 				message: `Refactoring failed. \nstderr: ${result.stderr}\nstdout: ${result.stdout}`, type: MessageType.Error,
@@ -192,12 +195,12 @@ async function handleExecuteCommand(params: ExecuteCommandParams): Promise<void>
 			console.error(`Got error code: ${result.code}`);
 			console.error(cmd);
 			console.error(result);
-
+			return Promise.reject("refactoring failed")
 		}
 	}
 	// console.log(params);
 
-	return Promise.resolve();
+	return Promise.reject("empty arg list");
 }
 
 
