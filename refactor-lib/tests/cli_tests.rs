@@ -90,3 +90,23 @@ fn cli_output_json() {
         .success()
         .stdout(expected);
 }
+
+#[test]
+fn provide_type() {
+    let expected = r#"[{"type":"fn foo(i32,u32) -> (i32)"}]
+"#;
+
+    cargo_my_refactor()
+        .arg(WORKSPACE_ARG)
+        .arg("--provide-type")
+        .arg("--selection=72:72")
+        .arg("--file=src/main.rs")
+        .arg("--")
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
+        .assert()
+        .success()
+        .stdout(expected);
+}

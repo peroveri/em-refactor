@@ -12,6 +12,7 @@ use std::process::{exit, Command};
 
 mod change;
 mod change_serialize;
+mod extra;
 mod file_loader;
 mod my_refactor_callbacks;
 mod refactor_definition;
@@ -187,6 +188,16 @@ fn run_rustc() -> Result<(), i32> {
     }
 
     let refactor_args = get_refactor_args(&std_env_args);
+
+    if refactor_args.contains(&"--provide-type".to_owned()) {
+        let selection = arg_value(&refactor_args, "--selection", |_| true).unwrap();
+        let file_name = arg_value(&refactor_args, "--file", |_| true).unwrap();
+        if let Ok(()) = extra::provide_type(&rustc_args, file_name, selection) {
+            return Ok(());
+        } else {
+            return Err(RefactorStatusCodes::RustcPassFailed as i32);
+        }
+    }
 
     let refactor_def = refactor_definition_parser::argument_list_to_refactor_def(&refactor_args);
     if let Err(err) = refactor_def {
