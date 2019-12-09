@@ -18,8 +18,10 @@ use syntax_pos::Span;
 /// ```
 /// then `collect_field_access_expressions(S, "foo")` would return a single byte range `(x, y)`
 ///
-/// # Grammar
+/// # Syntax
 /// ```
+/// FieldExpression :
+///   Expression . IDENTIFIER
 /// ```
 /// [Field access expressions grammar](https://doc.rust-lang.org/stable/reference/expressions/field-expr.html)
 pub fn collect_struct_field_access_expressions(
@@ -53,7 +55,11 @@ impl StructFieldAccessExpressionCollector<'_> {
         let typecheck_table = self.tcx.typeck_tables_of(hir_id.owner_def_id());
 
         let expr_ty = typecheck_table.expr_ty(expr);
-        self.struct_hir_id.owner_def_id() == expr_ty.ty_adt_def().unwrap().did
+        if let Some(adt_def) = expr_ty.ty_adt_def() {
+            self.struct_hir_id.owner_def_id() == adt_def.did
+        } else {
+            false
+        }
     }
 }
 
