@@ -18,20 +18,26 @@ where
 {
     fn after_parsing<'tcx>(
         &mut self,
-        _compiler: &interface::Compiler
+        _compiler: &interface::Compiler,
+        _queries: &'tcx rustc_interface::Queries<'tcx>
     ) -> rustc_driver::Compilation {
         rustc_driver::Compilation::Continue
     }
     
     fn after_expansion<'tcx>(
         &mut self,
-        _compiler: &interface::Compiler
+        _compiler: &interface::Compiler,
+        _queries: &'tcx rustc_interface::Queries<'tcx>
     ) -> rustc_driver::Compilation {
         rustc_driver::Compilation::Continue
     }
-    fn after_analysis(&mut self, compiler: &interface::Compiler) -> rustc_driver::Compilation {
+    fn after_analysis<'tcx>(
+        &mut self, 
+        _compiler: &interface::Compiler,
+        queries: &'tcx rustc_interface::Queries<'tcx>
+    ) -> rustc_driver::Compilation {
         // compiler.session().abort_if_errors();
-        compiler
+        queries
             .global_ctxt()
             .unwrap()
             .peek_mut()

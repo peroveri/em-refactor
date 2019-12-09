@@ -1,7 +1,6 @@
 use rustc::hir::{BodyId, Node};
-use rustc::middle::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor};
-use rustc::middle::mem_categorization::{cmt_, Categorization};
 use rustc::ty::{self, TyCtxt};
+use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Place, PlaceBase};
 use std::collections::HashMap;
 use syntax::source_map::Span;
 
@@ -15,14 +14,14 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
     fn var_used(
         &mut self,
         sp: Span,
-        cat: &Categorization,
+        place: &Place,
         ty: ty::Ty<'tcx>,
         is_consumed: bool,
         is_mutated: bool,
     ) {
-        if let Categorization::Local(lid) = cat {
-            let decl_span = self.tcx.hir().span(*lid);
-            let node = self.tcx.hir().get(*lid);
+        if let PlaceBase::Local(lid) = place.base {
+            let decl_span = self.tcx.hir().span(lid);
+            let node = self.tcx.hir().get(lid);
             let ident = if let Node::Binding(pat) = node {
                 format!("{}", pat.simple_ident().unwrap())
             } else {
@@ -55,25 +54,25 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
 }
 
 impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
-    fn consume(&mut self, cmt: &cmt_<'tcx>, cm: ConsumeMode) {
+    fn consume(&mut self, place: &Place<'tcx>, cm: ConsumeMode) {
         let is_consumed = if let ConsumeMode::Move = cm {
             true
         } else {
             false
         };
-        self.var_used(cmt.span, &cmt.cat, cmt.ty, is_consumed, false);
+        self.var_used(place.span, &place, place.ty, is_consumed, false);
     }
 
-    fn borrow(&mut self, cmt: &cmt_<'tcx>, bk: ty::BorrowKind) {
+    fn borrow(&mut self, place: &Place<'tcx>, bk: ty::BorrowKind) {
         let is_mutated = ty::BorrowKind::MutBorrow == bk;
-        self.var_used(cmt.span, &cmt.cat, cmt.ty, false, is_mutated);
+        self.var_used(place.span, &place, place.ty, false, is_mutated);
     }
 
-    fn mutate(&mut self, cmt: &cmt_<'tcx>) {
+    fn mutate(&mut self, place: &Place<'tcx>) {
         // if mode == MutateMode::Init {
         //     return;
         // }
-        self.var_used(cmt.span, &cmt.cat, cmt.ty, false, true);
+        self.var_used(place.span, &place, place.ty, false, true);
     }
 }
 
@@ -203,20 +202,22 @@ pub struct CollectVarsArgs {
 pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, args: CollectVarsArgs) -> ExtractMethodContext<'_> {
     let body_id = args.body_id;
     let def_id = body_id.hir_id.owner_def_id();
-    let mut v = VariableCollectorDelegate {
-        tcx,
-        args,
-        ct: ExtractMethodContext::new(),
-    };
-    ExprUseVisitor::new(
-        &mut v,
-        tcx,
-        def_id,
-        tcx.param_env(def_id),
-        tcx.region_scope_tree(def_id),
-        tcx.body_tables(body_id),
-    )
-    .consume_body(tcx.hir().body(body_id));
+    tcx.infer_ctxt().enter(|inf| {
 
-    v.ct
+        let mut v = VariableCollectorDelegate {
+            tcx,
+            args,
+            ct: ExtractMethodContext::new(),
+        };
+        ExprUseVisitor::new(
+            &mut v,
+            &inf,
+            def_id,
+            tcx.param_env(def_id),
+            tcx.body_tables(body_id),
+        )
+        .consume_body(tcx.hir().body(body_id));
+
+        v.ct
+    })
 }

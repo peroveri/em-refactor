@@ -1,7 +1,6 @@
 use rustc::hir::{BodyId, Node};
-use rustc::middle::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor};
-use rustc::middle::mem_categorization::{cmt_, Categorization};
 use rustc::ty::{self, TyCtxt};
+use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Place, PlaceBase};
 use std::collections::HashMap;
 use syntax::source_map::Span;
 
@@ -12,30 +11,30 @@ struct VariableCollectorDelegate<'tcx> {
 }
 
 impl<'tcx> VariableCollectorDelegate<'tcx> {
-    fn get_ident_and_decl_span(&self, cat: &Categorization) -> Option<(String, Span)> {
-        match cat {
-            Categorization::Local(lid) => {
-                let decl_span = self.tcx.hir().span(*lid);
-                let node = self.tcx.hir().get(*lid);
+    fn get_ident_and_decl_span(&self, place: &Place) -> Option<(String, Span)> {
+        match place.base {
+            PlaceBase::Local(lid) => {
+                let decl_span = self.tcx.hir().span(lid);
+                let node = self.tcx.hir().get(lid);
                 if let Node::Binding(pat) = node {
                     Some((format!("{}", pat.simple_ident().unwrap()), decl_span))
                 } else {
                     panic!("unhandled type"); // TODO: check which types node can be here
                 }
             },
-            Categorization::Interior(cmt, ..) => {
-                self.get_ident_and_decl_span(&cmt.cat)
-            },
+            // PlaceBase::Interior(cmt, ..) => {
+            //     self.get_ident_and_decl_span(&cmt.cat)
+            // },
             _ => None,
         }
     }
     fn var_used(
         &mut self,
         used_span: Span,
-        cat: &Categorization,
+        place: &Place,
         is_mutated: bool,
     ) {
-        if let Some((ident, decl_span)) = self.get_ident_and_decl_span(cat) {
+        if let Some((ident, decl_span)) = self.get_ident_and_decl_span(place) {
             if !self.extract_span.contains(used_span) && self.extract_span.contains(decl_span) {
                 // should be ret val
                 self.usages.return_values.push(VariableUsage {
@@ -48,20 +47,20 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
 }
 
 impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
-    fn consume(&mut self, cmt: &cmt_<'tcx>, _cm: ConsumeMode) {
-        self.var_used(cmt.span, &cmt.cat, false);
+    fn consume(&mut self, place: &Place<'tcx>, _cm: ConsumeMode) {
+        self.var_used(place.span, &place, false);
     }
 
-    fn borrow(&mut self, cmt: &cmt_<'tcx>, bk: ty::BorrowKind) {
+    fn borrow(&mut self, place: &Place<'tcx>, bk: ty::BorrowKind) {
         let is_mutated = ty::BorrowKind::MutBorrow == bk;
-        self.var_used(cmt.span, &cmt.cat, is_mutated);
+        self.var_used(place.span, &place, is_mutated);
     }
 
-    fn mutate(&mut self, cmt: &cmt_<'tcx>) {
+    fn mutate(&mut self, place: &Place<'tcx>) {
         // if mode == MutateMode::Init {
         //     return;
         // }
-        self.var_used(cmt.span, &cmt.cat, true);
+        self.var_used(place.span, &place, true);
     }
 }
 
@@ -108,20 +107,21 @@ pub struct VariableUsage {
 
 pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, body_id: BodyId, span: Span) -> VariableUsages {
     let def_id = body_id.hir_id.owner_def_id();
-    let mut v = VariableCollectorDelegate {
-        tcx,
-        extract_span: span,
-        usages: VariableUsages::new(),
-    };
-    ExprUseVisitor::new(
-        &mut v,
-        tcx,
-        def_id,
-        tcx.param_env(def_id),
-        tcx.region_scope_tree(def_id),
-        tcx.body_tables(body_id),
-    )
-    .consume_body(tcx.hir().body(body_id));
+    tcx.infer_ctxt().enter(|inf| {
+        let mut v = VariableCollectorDelegate {
+            tcx,
+            extract_span: span,
+            usages: VariableUsages::new(),
+        };
+        ExprUseVisitor::new(
+            &mut v,
+            &inf,
+            def_id,
+            tcx.param_env(def_id),
+            tcx.body_tables(body_id),
+        )
+        .consume_body(tcx.hir().body(body_id));
 
-    v.usages
+        v.usages
+    })
 }

@@ -74,11 +74,11 @@ export function listActionsForRange(doc: TextDocument, range: Range): (Command |
     return [
         mapToCodeAction(byteRange, 'box-field', doc, false),
         mapToCodeAction(byteRange, 'extract-block', doc, false),
-        mapToCodeAction(byteRange, 'extract-function', doc, false),
+        mapToCodeAction(byteRange, 'extract-method', doc, false),
         mapToCodeAction(byteRange, 'introduce-closure', doc, false),
         mapToCodeAction(byteRange, 'box-field', doc, true),
         mapToCodeAction(byteRange, 'extract-block', doc, true),
-        mapToCodeAction(byteRange, 'extract-function', doc, true),
+        mapToCodeAction(byteRange, 'extract-method', doc, true),
         mapToCodeAction(byteRange, 'introduce-closure', doc, true),
     ];
 }
@@ -140,5 +140,5 @@ export const convertToCmd = (relativeFilePath: string, refactoring: string, sele
     const refactorArgs = `--output-changes-as-json --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`) + (unsafe ? ' --unsafe' : '');
 
     // The +nightly version should match the one used in the refactoring crate
-    return `cargo +nightly-2019-11-17 run --bin cargo-my-refactor --manifest-path=${refactorToolManifestPath} -- ${refactorArgs}`;
+    return `cargo +nightly-2019-12-05 run --bin cargo-my-refactor --manifest-path=${refactorToolManifestPath} -- ${refactorArgs}`;
 }
