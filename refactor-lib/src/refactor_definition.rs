@@ -26,7 +26,7 @@ pub struct ExtractMethodArgs {
 ///
 /// A range in a file. This will later be converted to syntax_pos::Span
 /// Note: could be an enum to support different types of ranges (line no, etc)
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct SourceCodeRange {
     pub file_name: String,
     pub from: u32,

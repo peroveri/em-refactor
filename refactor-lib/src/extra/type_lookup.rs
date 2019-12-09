@@ -6,10 +6,10 @@ use rustc::hir::{
     print,
     intravisit::{walk_crate, NestedVisitorMap, Visitor},
 };
-use crate::refactorings::utils::map_range_to_span;
+use crate::refactorings::utils::{map_span_from_session, map_range_to_span};
 use crate::refactor_definition::SourceCodeRange;
 
-struct RustcAfterAnalysisCallbacks<F>(F);
+struct RustcAfterAnalysisCallbacks<F>(F, SourceCodeRange);
 
 impl<F> rustc_driver::Callbacks for RustcAfterAnalysisCallbacks<F>
 where
@@ -26,10 +26,27 @@ where
     
     fn after_expansion<'tcx>(
         &mut self,
-        _compiler: &interface::Compiler,
-        _queries: &'tcx rustc_interface::Queries<'tcx>
+        compiler: &interface::Compiler,
+        queries: &'tcx rustc_interface::Queries<'tcx>
     ) -> rustc_driver::Compilation {
-        rustc_driver::Compilation::Continue
+
+        let span = map_span_from_session(compiler, &self.1);
+        if span.is_err() {
+            return rustc_driver::Compilation::Stop;
+        }
+        let span = span.unwrap();
+
+        let (crate_, _, _) = 
+        &*queries
+            .expansion()
+            .unwrap()
+            .peek_mut();
+
+        if super::macro_res::resolve(crate_, span) {
+            rustc_driver::Compilation::Stop
+        } else {
+            rustc_driver::Compilation::Continue
+        }
     }
     fn after_analysis<'tcx>(
         &mut self, 
@@ -46,7 +63,6 @@ where
     }
 }
 
-// 
 struct IdentCollector<'v> {
     tcx: TyCtxt<'v>,
     span: Span,
@@ -103,16 +119,16 @@ impl<'v> Visitor<'v> for IdentCollector<'v> {
 
 pub fn provide_type(rustc_args: &[String], file_name: &str, selection: &str) -> Result<(), String> {
 
+    let mut s = selection.split(':');
+    let (a, b) = (s.nth(0).unwrap().parse().unwrap(), s.nth(0).unwrap().parse().unwrap());
+
+    let range = SourceCodeRange {
+        file_name: file_name.to_string(),
+        from: a,
+        to: b
+    };
+    
     let mut callbacks = RustcAfterAnalysisCallbacks(|tcx: TyCtxt<'_>| {
-
-        let mut s = selection.split(':');
-        let (a, b) = (s.nth(0).unwrap().parse().unwrap(), s.nth(0).unwrap().parse().unwrap());
-
-        let range = SourceCodeRange {
-            file_name: file_name.to_string(),
-            from: a,
-            to: b
-        };
         let range = map_range_to_span(tcx, &range);
 
         if range.is_err() {
@@ -133,7 +149,7 @@ pub fn provide_type(rustc_args: &[String], file_name: &str, selection: &str) -> 
         } else {
             print!("[]");
         }
-    });
+    }, range.clone());
 
     let emitter = Box::new(Vec::new());
     std::env::set_var("RUST_BACKTRACE", "1");
