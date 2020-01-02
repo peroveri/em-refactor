@@ -69,7 +69,7 @@ mod test {
         collect_field, collect_struct_patterns, get_field_ident, get_source, get_struct_hir_id,
     };
     use super::*;
-    use crate::{create_test_span, run_test};
+    use crate::{create_test_span, run_after_analysis};
     use quote::quote;
 
     fn create_program_1() -> quote::__rt::TokenStream {
@@ -98,7 +98,7 @@ mod test {
 
     #[test]
     fn local_variable_use_collector_should_collect_uses_1() {
-        run_test(create_program_1(), |tcx| {
+        run_after_analysis(create_program_1(), |tcx| {
             let uses = collect_local_variable_use(tcx, init_test(tcx));
 
             assert_eq!(1, uses.len());

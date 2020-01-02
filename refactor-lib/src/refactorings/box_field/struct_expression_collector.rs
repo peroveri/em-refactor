@@ -102,7 +102,7 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{create_test_span, run_test};
+    use crate::{create_test_span, run_after_analysis};
     use super::super::super::utils::get_source;
     use quote::quote;
 
@@ -142,7 +142,7 @@ mod test {
 
     #[test]
     fn struct_expression_collector_should_collect_1() {
-        run_test(create_program_match_1(), |tcx| {
+        run_after_analysis(create_program_match_1(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
             let fields = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
 
@@ -152,7 +152,7 @@ mod test {
     }
     #[test]
     fn struct_expression_collector_should_collect_2() {
-        run_test(create_program_match_2(), |tcx| {
+        run_after_analysis(create_program_match_2(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
             let fields = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
 
@@ -161,7 +161,7 @@ mod test {
     }
     #[test]
     fn struct_expression_collector_should_collect_3() {
-        run_test(create_program_match_3(), |tcx| {
+        run_after_analysis(create_program_match_3(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
             let fields = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
 

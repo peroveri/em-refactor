@@ -62,7 +62,7 @@ impl<'v> Visitor<'v> for FieldCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{create_test_span, run_test};
+    use crate::{create_test_span, run_after_analysis};
     use quote::quote;
 
     fn create_program() -> quote::__rt::TokenStream {
@@ -74,7 +74,7 @@ mod test {
 
     #[test]
     fn struct_field_collector_should_collect_field_definition() {
-        run_test(create_program(), |tcx| {
+        run_after_analysis(create_program(), |tcx| {
             let field = collect_field(tcx, create_test_span(56, 61));
 
             assert!(field.is_some());

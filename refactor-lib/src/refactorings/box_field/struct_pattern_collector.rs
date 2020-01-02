@@ -122,7 +122,7 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{create_test_span, run_test};
+    use crate::{create_test_span, run_after_analysis};
     use quote::quote;
 
     fn create_program_match() -> quote::__rt::TokenStream {
@@ -167,7 +167,7 @@ mod test {
 
     #[test]
     fn struct_pattern_collector_should_collect_match_pattern() {
-        run_test(create_program_match(), |tcx| {
+        run_after_analysis(create_program_match(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
             let fields = collect_struct_patterns(tcx, hir_id, "field".to_owned());
 
@@ -176,7 +176,7 @@ mod test {
     }
     #[test]
     fn struct_pattern_collector_should_collect_if_let_pattern() {
-        run_test(create_program_if_let(), |tcx| {
+        run_after_analysis(create_program_if_let(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
             let fields = collect_struct_patterns(tcx, hir_id, "field".to_owned());
 
@@ -185,7 +185,7 @@ mod test {
     }
     #[test]
     fn struct_pattern_collector_should_not_collect_struct_without_field() {
-        run_test(create_program_match_without_field(), |tcx| {
+        run_after_analysis(create_program_match_without_field(), |tcx| {
             let struct_hir_id = get_struct_hir_id(tcx);
             let fields = collect_struct_patterns(tcx, struct_hir_id, "field".to_owned());
 

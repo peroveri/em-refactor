@@ -94,7 +94,7 @@ impl<'v> Visitor<'v> for StructFieldAccessExpressionCollector<'v> {
 mod test {
     use super::super::super::utils::get_source;
     use super::*;
-    use crate::{create_test_span, run_test};
+    use crate::{create_test_span, run_after_analysis};
     use quote::quote;
 
     fn create_program_with_field_access() -> quote::__rt::TokenStream {
@@ -116,7 +116,7 @@ mod test {
 
     #[test]
     fn struct_field_access_expression_collector_should_collect_access() {
-        run_test(create_program_with_field_access(), |tcx| {
+        run_after_analysis(create_program_with_field_access(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
             let fields = collect_struct_field_access_expressions(tcx, hir_id, "foo".to_owned());
 

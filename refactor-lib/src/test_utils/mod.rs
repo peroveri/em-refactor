@@ -12,7 +12,7 @@ use tempdir::TempDir;
  * Accepts a TokenStream (from quote) and a function with a single parameter TyCtxt.
  */
 #[allow(unused)]
-pub fn run_test<F>(program: quote::__rt::TokenStream, func: F)
+pub fn run_after_analysis<F>(program: quote::__rt::TokenStream, func: F)
 where
     F: Fn(TyCtxt<'_>) -> (),
     F: Send,
