@@ -23,7 +23,7 @@ mod refactorings;
 #[cfg(test)]
 mod test_utils;
 #[cfg(test)]
-use test_utils::{create_test_span, run_after_analysis};
+use test_utils::{create_test_span, run_after_analysis, run_after_expansion, run_after_parsing};
 
 enum RefactorStatusCodes {
     Success = 0,
