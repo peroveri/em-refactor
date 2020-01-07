@@ -3,7 +3,7 @@ use rustc::hir::{
     intravisit::{walk_crate, NestedVisitorMap, Visitor},
 };
 use rustc::ty::TyCtxt;
-use syntax_pos::Span;
+use rustc_span::Span;
 
 ///
 /// Collect all places where a given struct occurs in a pattern. Field_ident should also occur in the pattern.
@@ -102,7 +102,7 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
     fn visit_pat(&mut self, p: &'v hir::Pat) {
         if let hir::PatKind::Struct(qpath, fields, _) = &p.kind {
             if self.path_resolves_to_struct(qpath, p.hir_id) {
-                for fp in fields {
+                for fp in fields.iter() {
                     if format!("{}", fp.ident) == self.field_ident {
                         if let hir::PatKind::Wild = fp.pat.kind {
                             // Wildcard patterns match anything, so no changes are needed

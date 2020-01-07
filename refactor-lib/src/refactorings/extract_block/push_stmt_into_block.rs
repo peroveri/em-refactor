@@ -2,7 +2,7 @@
 use super::expr_use_visit::{collect_vars};
 use rustc::hir::BodyId;
 use rustc::ty::TyCtxt;
-use syntax::source_map::Span;
+use rustc_span::Span;
 
 pub fn push_stmts_into_block(
     tcx: TyCtxt,

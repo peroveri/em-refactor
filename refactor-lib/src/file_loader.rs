@@ -1,6 +1,6 @@
 use std::io;
 use std::path::{Path, PathBuf};
-use syntax::source_map::{FileLoader};
+use rustc_span::source_map::{FileLoader};
 use crate::change::Change;
 
 ///

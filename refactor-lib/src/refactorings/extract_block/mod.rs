@@ -3,7 +3,7 @@ use crate::change::Change;
 use block_collector::collect_block;
 use rustc::hir;
 use rustc::ty::TyCtxt;
-use syntax_pos::Span;
+use rustc_span::Span;
 
 mod block_collector;
 mod expr_use_visit;

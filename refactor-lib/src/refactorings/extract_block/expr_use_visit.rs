@@ -2,7 +2,7 @@ use rustc::hir::{BodyId, Node};
 use rustc::ty::{self, TyCtxt};
 use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Place, PlaceBase};
 use std::collections::HashMap;
-use syntax::source_map::Span;
+use rustc_span::Span;
 
 struct VariableCollectorDelegate<'tcx> {
     tcx: TyCtxt<'tcx>,

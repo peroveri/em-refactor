@@ -4,8 +4,8 @@ use crate::refactorings::do_ty_refactoring;
 use rustc::ty;
 use rustc_driver;
 use rustc_interface::interface;
+use rustc_span::FileName;
 use std::path::PathBuf;
-use syntax::source_map::FileName;
 
 ///
 /// Handles callbacks from the compiler

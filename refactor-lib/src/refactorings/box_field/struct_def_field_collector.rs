@@ -3,7 +3,7 @@ use rustc::hir::{
     intravisit::{walk_crate, NestedVisitorMap, Visitor},
 };
 use rustc::ty::TyCtxt;
-use syntax_pos::Span;
+use rustc_span::Span;
 
 ///
 /// Returns the corresponding `StructField` in a struct definition if the `span` is equal to the `StructField`'s `span`
@@ -45,7 +45,7 @@ pub fn collect_field(tcx: TyCtxt, span: Span) -> Option<&hir::StructField> {
 struct FieldCollector<'v> {
     tcx: TyCtxt<'v>,
     span: Span,
-    field: Option<&'v hir::StructField>,
+    field: Option<&'v hir::StructField<'v>>,
 }
 
 impl<'v> Visitor<'v> for FieldCollector<'v> {

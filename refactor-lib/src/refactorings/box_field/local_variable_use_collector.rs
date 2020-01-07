@@ -3,7 +3,7 @@ use rustc::hir::{
     intravisit::{self, walk_crate, NestedVisitorMap, Visitor},
 };
 use rustc::ty::TyCtxt;
-use syntax_pos::Span;
+use rustc_span::Span;
 
 ///
 /// Collects all uses of a local variable

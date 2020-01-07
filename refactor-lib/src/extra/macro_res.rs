@@ -1,6 +1,6 @@
+use rustc_span::Span;
 use syntax::ast::{Crate, Expr};
 use syntax::visit::Visitor;
-use syntax_pos::Span;
 
 struct MacroCollector {
     span: Span,

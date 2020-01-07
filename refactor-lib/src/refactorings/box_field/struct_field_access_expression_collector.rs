@@ -3,7 +3,7 @@ use rustc::hir::{
     intravisit::{walk_crate, NestedVisitorMap, Visitor},
 };
 use rustc::ty::TyCtxt;
-use syntax_pos::Span;
+use rustc_span::Span;
 
 ///
 /// Collect all places where a given struct occurs in a field access expression where the field is `field_ident`.

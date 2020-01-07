@@ -1,6 +1,6 @@
 use rustc::hir::{self, intravisit};
 use rustc::ty::TyCtxt;
-use syntax_pos::Span;
+use rustc_span::Span;
 
 /**
  * Given a selection (byte start, byte end) and file name, this visitor finds
@@ -10,13 +10,13 @@ struct BlockCollector<'v> {
     tcx: TyCtxt<'v>,
     pos: Span,
     body_id: Option<hir::BodyId>,
-    selected_block: Option<&'v hir::Block>
+    selected_block: Option<&'v hir::Block<'v>>
 }
 
 pub struct BlockInsideBlock<'v> {
     pub topmost_block: hir::BodyId,
     // pub selected_block_id: hir::HirId,
-    pub selected_block: &'v hir::Block
+    pub selected_block: &'v hir::Block<'v>
 }
 
 pub fn collect_block(tcx: TyCtxt, pos: Span) -> Option<BlockInsideBlock> {

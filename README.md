@@ -6,7 +6,8 @@ Requirements:
 - Visual Studio Code - https://code.visualstudio.com
 
 Steps:
-- Compile the refactoring tool by running ```cargo build``` in the root folder
+- The rustc-dev component is required, and it can be added to the nightly toolchain using: ```rustup component add --toolchain nightly rustc-dev```
+- Compile the refactoring tool by running ```cargo build``` in the [./refactor-lib](./refactor-lib) folder.
 - Update refactorToolManifestPath in [./refactor-ls/server/src/config.ts](./refactor-ls/server/src/config.ts) so that it points to the Cargo.toml file in the root folder
 - Run ```npm install``` in the ./refactor-ls folder
 - Open Visual Studio Code in the ./refactor-ls folder: ```code refactor-ls```

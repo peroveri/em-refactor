@@ -4,9 +4,9 @@
 extern crate rustc;
 extern crate rustc_driver;
 extern crate rustc_interface;
+extern crate rustc_span;
 extern crate rustc_typeck;
 extern crate syntax;
-extern crate syntax_pos;
 
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command};
@@ -243,7 +243,7 @@ fn run_rustc() -> Result<(), i32> {
         let mut default = rustc_driver::DefaultCallbacks;
 
         let mut file_loader = Box::new(file_loader::InMemoryFileLoader::new(
-            syntax::source_map::RealFileLoader,
+            rustc_span::source_map::RealFileLoader,
         ));
         file_loader.add_changes(my_refactor.result.clone().unwrap());
 

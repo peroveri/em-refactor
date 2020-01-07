@@ -1,6 +1,6 @@
 use rustc::ty::TyCtxt;
 use rustc_interface::interface;
-use syntax_pos::Span;
+use rustc_span::Span;
 use rustc::hir::{
     self,
     print,

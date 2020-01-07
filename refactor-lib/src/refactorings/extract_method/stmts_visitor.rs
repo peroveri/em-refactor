@@ -1,11 +1,11 @@
 use rustc::hir::{self, intravisit};
 use rustc::ty::TyCtxt;
-use syntax_pos::Span;
+use rustc_span::Span;
 
 pub struct ExtractMethodStatements<'v> {
-    pub mod_: &'v hir::Mod,
+    pub mod_: &'v hir::Mod<'v>,
     pub fn_body_id: hir::BodyId,
-    pub stmts: Vec<&'v hir::Stmt>,
+    pub stmts: Vec<&'v hir::Stmt<'v>>,
     pub fn_decl_pos: u32,
 }
 
@@ -18,7 +18,7 @@ struct StmtsVisitor<'v> {
     pos: Span,
     stmts: Option<ExtractMethodStatements<'v>>,
     fn_decl_pos: u32,
-    mod_: Option<&'v hir::Mod>,
+    mod_: Option<&'v hir::Mod<'v>>,
     fn_body_id: Option<hir::BodyId>,
 }
 

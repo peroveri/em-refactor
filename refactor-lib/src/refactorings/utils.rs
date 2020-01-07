@@ -1,9 +1,8 @@
 use crate::change::Change;
 use crate::refactor_definition::SourceCodeRange;
 use rustc::ty::TyCtxt;
+use rustc_span::{BytePos, FileName, Span};
 use std::path::PathBuf;
-use syntax::source_map::FileName;
-use syntax_pos::{BytePos, Span};
 
 pub fn get_file_offset(tcx: TyCtxt, file_name: &str) -> u32 {
     let file_name = FileName::Real(PathBuf::from(file_name.to_string()));

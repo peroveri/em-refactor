@@ -7,7 +7,7 @@ use struct_def_field_collector::collect_field;
 use struct_expression_collector::collect_struct_expressions;
 use struct_field_access_expression_collector::collect_struct_field_access_expressions;
 use struct_pattern_collector::collect_struct_patterns;
-use syntax_pos::Span;
+use rustc_span::Span;
 
 use super::utils::get_source;
 

@@ -1,10 +1,10 @@
 use rustc::ty::TyCtxt;
-use rustc_interface::interface;
+use rustc_interface::{interface};
+use rustc_span::{BytePos, Span};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use syntax_pos::{BytePos, Span};
 use tempdir::TempDir;
 
 /**
@@ -20,7 +20,7 @@ where
     run_test_on_str(&format!("{}", program), func);
 }
 
-pub fn create_test_span(lo: u32, hi: u32) -> syntax_pos::Span {
+pub fn create_test_span(lo: u32, hi: u32) -> Span {
     Span::with_root_ctxt(BytePos(lo), BytePos(hi))
 }
 

@@ -4,7 +4,8 @@ use crate::refactor_definition::SourceCodeRange;
 use expr_use_visit::{collect_vars, CollectVarsArgs};
 use rustc::ty;
 use stmts_visitor::visit_stmts;
-use syntax::source_map::Span;
+use rustc_span::Span;
+use rustc_span::source_map::SourceMap;
 
 pub mod expr_use_visit;
 mod stmts_visitor;
@@ -13,7 +14,7 @@ mod stmts_visitor;
  * rewrites: places in the source code where deref * needs to be added
  */
 fn get_stmts_source(
-    source_map: &syntax::source_map::SourceMap,
+    source_map: &SourceMap,
     span: Span,
     rewrites: &[u32],
 ) -> String {

@@ -2,7 +2,7 @@ use super::utils::{map_change_from_span, get_source};
 use crate::change::Change;
 use block_collector::collect_block;
 use rustc::ty::TyCtxt;
-use syntax_pos::Span;
+use rustc_span::Span;
 
 mod block_collector;
 
