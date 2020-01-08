@@ -26,3 +26,7 @@ fn box_field_new_binding() {
 fn box_field_tuple_struct_field_should_be_boxed() {
     run_test("tuple_struct_field_should_be_boxed");
 }
+#[test]
+fn box_field_struct_definition() {
+    run_test("struct_definition");
+}
