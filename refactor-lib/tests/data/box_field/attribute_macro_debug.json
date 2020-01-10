@@ -1,0 +1,11 @@
+{
+    "file": "attribute_macro_debug.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "28:33"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "attribute_macro_debug_after.rs"
+    }
+}
