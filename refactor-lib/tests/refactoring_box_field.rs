@@ -27,7 +27,7 @@ fn box_field_struct_definition_tuple() {
     run_test("struct_definition_tuple");
 }
 #[test]
-fn box_fieldsstruct_expression_fields_1() {
+fn box_field_struct_expression_fields_1() {
     run_test("struct_expression_fields_1");
 }
 #[test]
