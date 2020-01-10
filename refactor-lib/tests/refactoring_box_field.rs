@@ -19,6 +19,14 @@ fn box_field_new_binding() {
     run_test("new_binding");
 }
 #[test]
+fn box_field_assignment_expression_1() {
+    run_test("assignment_expression_1");
+}
+#[test]
+fn box_field_assignment_expression_2() {
+    run_test("assignment_expression_2");
+}
+#[test]
 fn box_field_field_access_1() {
     run_test("field_access_1");
 }
