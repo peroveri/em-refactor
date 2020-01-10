@@ -1,0 +1,11 @@
+{
+    "file": "assignment_expression_2.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "11:16"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "assignment_expression_2_after.rs"
+    }
+}
