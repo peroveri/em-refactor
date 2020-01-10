@@ -1,4 +1,6 @@
-use rustc::hir::{self, intravisit};
+use rustc_hir::{Arm, Block, BodyId, ExprKind, FnDecl, HirId, MatchSource };
+use rustc_hir::intravisit::{NestedVisitorMap, FnKind, walk_fn, walk_crate, Visitor, walk_expr, walk_block};
+use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
 
@@ -9,14 +11,14 @@ use rustc_span::Span;
 struct BlockCollector<'v> {
     tcx: TyCtxt<'v>,
     pos: Span,
-    body_id: Option<hir::BodyId>,
-    selected_block: Option<&'v hir::Block<'v>>
+    body_id: Option<BodyId>,
+    selected_block: Option<&'v Block<'v>>
 }
 
 pub struct BlockInsideBlock<'v> {
-    pub topmost_block: hir::BodyId,
-    // pub selected_block_id: hir::HirId,
-    pub selected_block: &'v hir::Block<'v>
+    pub topmost_block: BodyId,
+    // pub selected_block_id: HirId,
+    pub selected_block: &'v Block<'v>
 }
 
 pub fn collect_block(tcx: TyCtxt, pos: Span) -> Option<BlockInsideBlock> {
@@ -27,7 +29,7 @@ pub fn collect_block(tcx: TyCtxt, pos: Span) -> Option<BlockInsideBlock> {
         selected_block: None
     };
 
-    intravisit::walk_crate(&mut v, tcx.hir().krate());
+    walk_crate(&mut v, tcx.hir().krate());
 
     if let (Some(a), Some(b)) = (v.body_id, v.selected_block) {
         Some(BlockInsideBlock {
@@ -39,29 +41,30 @@ pub fn collect_block(tcx: TyCtxt, pos: Span) -> Option<BlockInsideBlock> {
     }
 }
 
-impl<'v> intravisit::Visitor<'v> for BlockCollector<'v> {
-    fn nested_visit_map<'this>(&'this mut self) -> intravisit::NestedVisitorMap<'this, 'v> {
-        intravisit::NestedVisitorMap::All(&self.tcx.hir())
+impl<'v> Visitor<'v> for BlockCollector<'v> {
+    type Map = Map<'v>;
+    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, Self::Map> {
+        NestedVisitorMap::All(&self.tcx.hir())
     }
     fn visit_fn(
         &mut self,
-        fk: intravisit::FnKind<'v>,
-        fd: &'v hir::FnDecl,
-        b: hir::BodyId,
+        fk: FnKind<'v>,
+        fd: &'v FnDecl,
+        b: BodyId,
         s: Span,
-        id: hir::HirId,
+        id: HirId,
     ) {
         self.body_id = Some(b);
-        intravisit::walk_fn(self, fk, fd, b, s, id);
+        walk_fn(self, fk, fd, b, s, id);
     }
 
-    fn visit_block(&mut self, block: &'v hir::Block) {
+    fn visit_block(&mut self, block: &'v Block) {
         if let Some(expr) = &block.expr {
-            if let hir::ExprKind::Match(_, ref arms, hir::MatchSource::WhileDesugar) = (*expr).kind
+            if let ExprKind::Match(_, ref arms, MatchSource::WhileDesugar) = (*expr).kind
             {
                 if let Some(arm) = arms.first() {
-                    let hir::Arm { body, .. } = arm;
-                    intravisit::walk_expr(self, &**body);
+                    let Arm { body, .. } = arm;
+                    walk_expr(self, &**body);
                 }
             }
         }
@@ -71,6 +74,6 @@ impl<'v> intravisit::Visitor<'v> for BlockCollector<'v> {
         if !block.span.contains(self.pos) {
             return;
         }
-        intravisit::walk_block(self, block);
+        walk_block(self, block);
     }
 }

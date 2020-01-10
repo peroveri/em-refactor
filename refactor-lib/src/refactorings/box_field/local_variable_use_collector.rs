@@ -1,7 +1,7 @@
-use rustc::hir::{
-    self,
-    intravisit::{self, walk_crate, NestedVisitorMap, Visitor},
-};
+use rustc_hir::intravisit::{walk_crate, NestedVisitorMap, Visitor, walk_expr};
+use rustc_hir::{Expr, ExprKind, HirId, QPath};
+use rustc_hir::def::Res;
+use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
 
@@ -23,7 +23,7 @@ use rustc_span::Span;
 /// ```
 /// then `collect_local_variable_use(x)` will return `(x0, x1)` and `(y0, y1)`
 ///
-pub fn collect_local_variable_use(tcx: TyCtxt, hir_id: hir::HirId) -> Vec<Span> {
+pub fn collect_local_variable_use(tcx: TyCtxt, hir_id: HirId) -> Vec<Span> {
     let mut v = LocalVariableUseCollector {
         tcx,
         hir_id,
@@ -37,21 +37,22 @@ pub fn collect_local_variable_use(tcx: TyCtxt, hir_id: hir::HirId) -> Vec<Span> 
 
 struct LocalVariableUseCollector<'v> {
     tcx: TyCtxt<'v>,
-    hir_id: hir::HirId,
+    hir_id: HirId,
     uses: Vec<Span>,
 }
 
 impl<'v> Visitor<'v> for LocalVariableUseCollector<'v> {
-    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, 'v> {
+    type Map = Map<'v>;
+    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, Self::Map> {
         NestedVisitorMap::All(&self.tcx.hir())
     }
-    fn visit_expr(&mut self, expr: &'v hir::Expr) {
+    fn visit_expr(&mut self, expr: &'v Expr) {
         if expr.hir_id == self.hir_id {
             self.uses.push(expr.span);
         }
-        if let hir::ExprKind::Path(qpath) = &expr.kind {
-            if let hir::QPath::Resolved(_, path) = qpath {
-                if let hir::def::Res::Local(hir_id) = path.res {
+        if let ExprKind::Path(qpath) = &expr.kind {
+            if let QPath::Resolved(_, path) = qpath {
+                if let Res::Local(hir_id) = path.res {
                     if hir_id == self.hir_id {
                         self.uses.push(expr.span);
                     }
@@ -59,7 +60,7 @@ impl<'v> Visitor<'v> for LocalVariableUseCollector<'v> {
             }
         }
 
-        intravisit::walk_expr(self, expr);
+        walk_expr(self, expr);
     }
 }
 
@@ -85,7 +86,7 @@ mod test {
         }
     }
 
-    fn init_test(tcx: TyCtxt<'_>) -> hir::HirId {
+    fn init_test(tcx: TyCtxt<'_>) -> HirId {
         let field = collect_field(tcx, create_test_span(11, 16));
         assert!(field.is_some());
         let field = field.unwrap();

@@ -1,11 +1,13 @@
-use rustc::hir::{self, intravisit};
+use rustc_hir::{Arm, Block, BodyId, ExprKind, FnDecl, HirId, MatchSource, Mod, Stmt};
+use rustc_hir::intravisit::{walk_block, walk_crate, Visitor, NestedVisitorMap, walk_mod, FnKind, walk_fn, walk_expr};
+use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
 
 pub struct ExtractMethodStatements<'v> {
-    pub mod_: &'v hir::Mod<'v>,
-    pub fn_body_id: hir::BodyId,
-    pub stmts: Vec<&'v hir::Stmt<'v>>,
+    pub mod_: &'v Mod<'v>,
+    pub fn_body_id: BodyId,
+    pub stmts: Vec<&'v Stmt<'v>>,
     pub fn_decl_pos: u32,
 }
 
@@ -18,8 +20,8 @@ struct StmtsVisitor<'v> {
     pos: Span,
     stmts: Option<ExtractMethodStatements<'v>>,
     fn_decl_pos: u32,
-    mod_: Option<&'v hir::Mod<'v>>,
-    fn_body_id: Option<hir::BodyId>,
+    mod_: Option<&'v Mod<'v>>,
+    fn_body_id: Option<BodyId>,
 }
 
 pub fn visit_stmts(tcx: TyCtxt, pos: Span) -> Option<ExtractMethodStatements> {
@@ -32,7 +34,7 @@ pub fn visit_stmts(tcx: TyCtxt, pos: Span) -> Option<ExtractMethodStatements> {
         fn_body_id: None,
     };
 
-    intravisit::walk_crate(&mut v, tcx.hir().krate());
+    walk_crate(&mut v, tcx.hir().krate());
     v.stmts
 }
 /**
@@ -45,36 +47,37 @@ pub fn visit_stmts(tcx: TyCtxt, pos: Span) -> Option<ExtractMethodStatements> {
  *
  */
 
-impl<'v> intravisit::Visitor<'v> for StmtsVisitor<'v> {
-    fn nested_visit_map<'this>(&'this mut self) -> intravisit::NestedVisitorMap<'this, 'v> {
-        intravisit::NestedVisitorMap::All(&self.tcx.hir())
+impl<'v> Visitor<'v> for StmtsVisitor<'v> {
+    type Map = Map<'v>;
+    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, Self::Map> {
+        NestedVisitorMap::All(&self.tcx.hir())
     }
 
-    fn visit_mod(&mut self, mod_: &'v hir::Mod, _span: Span, hir_id: hir::HirId) {
+    fn visit_mod(&mut self, mod_: &'v Mod, _span: Span, hir_id: HirId) {
         self.mod_ = Some(mod_);
-        intravisit::walk_mod(self, mod_, hir_id);
+        walk_mod(self, mod_, hir_id);
     }
 
     fn visit_fn(
         &mut self,
-        fk: intravisit::FnKind<'v>,
-        fd: &'v hir::FnDecl,
-        b: hir::BodyId,
+        fk: FnKind<'v>,
+        fd: &'v FnDecl,
+        b: BodyId,
         s: Span,
-        id: hir::HirId,
+        id: HirId,
     ) {
         self.fn_body_id = Some(b);
         self.fn_decl_pos = s.lo().0;
-        intravisit::walk_fn(self, fk, fd, b, s, id);
+        walk_fn(self, fk, fd, b, s, id);
     }
 
-    fn visit_block(&mut self, body: &'v hir::Block) {
+    fn visit_block(&mut self, body: &'v Block) {
         if let Some(expr) = &body.expr {
-            if let hir::ExprKind::Match(_, ref arms, hir::MatchSource::WhileDesugar) = (*expr).kind
+            if let ExprKind::Match(_, ref arms, MatchSource::WhileDesugar) = (*expr).kind
             {
                 if let Some(arm) = arms.first() {
-                    let hir::Arm { body, .. } = arm;
-                    intravisit::walk_expr(self, &**body);
+                    let Arm { body, .. } = arm;
+                    walk_expr(self, &**body);
                 }
             }
         }
@@ -88,7 +91,7 @@ impl<'v> intravisit::Visitor<'v> for StmtsVisitor<'v> {
             .filter(|s| self.pos.contains(s.span))
             .collect::<Vec<_>>();
         if stmts.is_empty() {
-            intravisit::walk_block(self, body);
+            walk_block(self, body);
             return;
         }
 

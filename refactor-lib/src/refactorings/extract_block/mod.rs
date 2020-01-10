@@ -1,7 +1,7 @@
 use super::utils::{map_change_from_span, get_source};
 use crate::change::Change;
 use block_collector::collect_block;
-use rustc::hir;
+use rustc_hir::{BodyId};
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
 
@@ -11,7 +11,7 @@ mod push_stmt_into_block;
 
 fn extract_block(
     tcx: TyCtxt,
-    body_id: hir::BodyId,
+    body_id: BodyId,
     span: Span,
     source: String,
 ) -> Result<String, String> {

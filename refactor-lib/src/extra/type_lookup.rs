@@ -1,11 +1,11 @@
 use rustc::ty::TyCtxt;
 use rustc_interface::interface;
 use rustc_span::Span;
-use rustc::hir::{
-    self,
-    print,
-    intravisit::{walk_crate, NestedVisitorMap, Visitor},
-};
+use rustc_hir::print;
+use rustc_hir::intravisit::{walk_crate, NestedVisitorMap, Visitor};
+use rustc_hir::{Expr, FunctionRetTy, Item, ItemKind, Stmt};
+use rustc_hir::intravisit::{walk_expr, walk_item, walk_stmt};
+use rustc::hir::map::Map;
 use crate::refactorings::utils::{map_span_from_session, map_range_to_span};
 use crate::refactor_definition::SourceCodeRange;
 
@@ -70,20 +70,21 @@ struct IdentCollector<'v> {
 }
 
 impl<'v> Visitor<'v> for IdentCollector<'v> {
-    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, 'v> {
+    type Map = Map<'v>;
+    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, Self::Map> {
         NestedVisitorMap::All(&self.tcx.hir())
     }
-    fn visit_item(&mut self, i: &'v hir::Item) {
+    fn visit_item(&mut self, i: &'v Item) {
         if !i.span.contains(self.span) {
             return;
         }
 
-        if let hir::ItemKind::Fn(sig, _, _) = &i.kind {
+        if let ItemKind::Fn(sig, _, _) = &i.kind {
             let decl = &sig.decl;
             let a = decl.inputs.iter().map(|t| 
                 print::to_string(print::NO_ANN, |s| s.print_type(t))).collect::<Vec<_>>();
             let inputs = a.join(",");
-            let output = if let hir::FunctionRetTy::Return(t) = &decl.output {
+            let output = if let FunctionRetTy::Return(t) = &decl.output {
                 print::to_string(print::NO_ANN, |s| s.print_type(t))
             } else {
                 "".to_owned()
@@ -94,25 +95,25 @@ impl<'v> Visitor<'v> for IdentCollector<'v> {
             self.res_type = Some(format!("fn {}({}) -> ({})", ident, inputs, output));
         }
         
-        hir::intravisit::walk_item(self, i);
+        walk_item(self, i);
     }
-    fn visit_expr(&mut self, expr: &'v hir::Expr) {
+    fn visit_expr(&mut self, expr: &'v Expr) {
         if !expr.span.contains(self.span) {
             return;
         }
 
         self.res_type = Some(print::to_string(print::NO_ANN, |s| s.print_expr(expr)));
 
-        hir::intravisit::walk_expr(self, expr);
+        walk_expr(self, expr);
     }
-    fn visit_stmt(&mut self, stmt: &'v hir::Stmt) {
+    fn visit_stmt(&mut self, stmt: &'v Stmt) {
         if !stmt.span.contains(self.span) {
             return;
         }
 
         self.res_type = Some(print::to_string(print::NO_ANN, |s| s.print_stmt(stmt)));
 
-        hir::intravisit::walk_stmt(self, stmt);
+        walk_stmt(self, stmt);
     }
 }
 

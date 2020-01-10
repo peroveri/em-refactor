@@ -1,8 +1,8 @@
 use super::utils::map_change_from_span;
 use crate::change::Change;
 use local_variable_use_collector::collect_local_variable_use;
-use rustc::hir;
 use rustc::ty::TyCtxt;
+use rustc_hir::{HirId, StructField};
 use struct_def_field_collector::collect_field;
 use struct_expression_collector::collect_struct_expressions;
 use struct_field_access_expression_collector::collect_struct_field_access_expressions;
@@ -17,11 +17,11 @@ mod struct_expression_collector;
 mod struct_field_access_expression_collector;
 mod struct_pattern_collector;
 
-pub fn get_struct_hir_id(tcx: TyCtxt<'_>, field: &hir::StructField) -> hir::HirId {
+pub fn get_struct_hir_id(tcx: TyCtxt<'_>, field: &StructField) -> HirId {
     let struct_def_id = field.hir_id.owner_def_id();
     tcx.hir().as_local_hir_id(struct_def_id).unwrap()
 }
-pub fn get_field_ident(field: &hir::StructField) -> String {
+pub fn get_field_ident(field: &StructField) -> String {
     format!("{}", field.ident)
 }
 

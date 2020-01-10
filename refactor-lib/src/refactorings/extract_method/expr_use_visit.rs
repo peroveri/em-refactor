@@ -1,5 +1,5 @@
-use rustc::hir::{BodyId, Node};
 use rustc::ty::{self, TyCtxt};
+use rustc_hir::{BodyId, Node};
 use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Place, PlaceBase};
 use std::collections::HashMap;
 use rustc_span::Span;

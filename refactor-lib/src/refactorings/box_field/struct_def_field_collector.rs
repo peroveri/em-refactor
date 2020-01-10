@@ -1,7 +1,6 @@
-use rustc::hir::{
-    self,
-    intravisit::{walk_crate, NestedVisitorMap, Visitor},
-};
+use rustc_hir::intravisit::{walk_crate, NestedVisitorMap, Visitor};
+use rustc_hir::{StructField};
+use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
 
@@ -30,7 +29,7 @@ use rustc_span::Span;
 /// [Structs grammar](https://doc.rust-lang.org/stable/reference/items/structs.html)
 ///
 /// TODO: Is is possible to query this directly in some way?
-pub fn collect_field(tcx: TyCtxt, span: Span) -> Option<&hir::StructField> {
+pub fn collect_field(tcx: TyCtxt, span: Span) -> Option<&StructField> {
     let mut v = FieldCollector {
         tcx,
         span,
@@ -45,14 +44,15 @@ pub fn collect_field(tcx: TyCtxt, span: Span) -> Option<&hir::StructField> {
 struct FieldCollector<'v> {
     tcx: TyCtxt<'v>,
     span: Span,
-    field: Option<&'v hir::StructField<'v>>,
+    field: Option<&'v StructField<'v>>,
 }
 
 impl<'v> Visitor<'v> for FieldCollector<'v> {
-    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, 'v> {
+    type Map = Map<'v>;
+    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, Self::Map> {
         NestedVisitorMap::All(&self.tcx.hir())
     }
-    fn visit_struct_field(&mut self, s: &'v hir::StructField) {
+    fn visit_struct_field(&mut self, s: &'v StructField) {
         if s.ident.span.eq(&self.span) {
             self.field = Some(s);
         }

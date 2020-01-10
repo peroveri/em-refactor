@@ -1,7 +1,6 @@
-use rustc::hir::{
-    self,
-    intravisit::{walk_crate, NestedVisitorMap, Visitor},
-};
+use rustc_hir::{BodyId, Expr, ExprKind, FnDecl, HirId, QPath};
+use rustc_hir::intravisit::{FnKind, walk_expr, walk_fn, walk_crate, NestedVisitorMap, Visitor};
+use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
 
@@ -30,7 +29,7 @@ use rustc_span::Span;
 /// [Struct expression grammar](https://doc.rust-lang.org/stable/reference/expressions/struct-expr.html)
 pub fn collect_struct_expressions(
     tcx: TyCtxt,
-    struct_hir_id: hir::HirId,
+    struct_hir_id: HirId,
     field_ident: String,
 ) -> Vec<Span> {
     let mut v = StructPatternCollector {
@@ -48,17 +47,17 @@ pub fn collect_struct_expressions(
 
 struct StructPatternCollector<'v> {
     tcx: TyCtxt<'v>,
-    struct_hir_id: hir::HirId,
+    struct_hir_id: HirId,
     field: Vec<Span>,
     field_ident: String,
-    body_id: Option<hir::BodyId>,
+    body_id: Option<BodyId>,
 }
 
 impl StructPatternCollector<'_> {
-    fn path_resolves_to_struct(&self, qpath: &hir::QPath, h: hir::HirId) -> bool {
+    fn path_resolves_to_struct(&self, qpath: &QPath, h: HirId) -> bool {
         let typecheck_table = self.tcx.typeck_tables_of(h.owner_def_id());
 
-        if let hir::QPath::Resolved(Some(ty), _) = qpath {
+        if let QPath::Resolved(Some(ty), _) = qpath {
             let qp_type = typecheck_table.node_type(ty.hir_id);
             let struct_type = typecheck_table.node_type(self.struct_hir_id);
             rustc::ty::TyS::same_type(struct_type, qp_type)
@@ -71,22 +70,23 @@ impl StructPatternCollector<'_> {
 }
 
 impl<'v> Visitor<'v> for StructPatternCollector<'v> {
-    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, 'v> {
+    type Map = Map<'v>;
+    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, Self::Map> {
         NestedVisitorMap::All(&self.tcx.hir())
     }
     fn visit_fn(
         &mut self,
-        fk: hir::intravisit::FnKind<'v>,
-        fd: &'v hir::FnDecl,
-        body_id: hir::BodyId,
+        fk: FnKind<'v>,
+        fd: &'v FnDecl,
+        body_id: BodyId,
         s: Span,
-        h: hir::HirId,
+        h: HirId,
     ) {
         self.body_id = Some(body_id);
-        hir::intravisit::walk_fn(self, fk, fd, body_id, s, h);
+        walk_fn(self, fk, fd, body_id, s, h);
     }
-    fn visit_expr(&mut self, expr: &'v hir::Expr) {
-        if let hir::ExprKind::Struct(qpath, fields, _) = &expr.kind {
+    fn visit_expr(&mut self, expr: &'v Expr) {
+        if let ExprKind::Struct(qpath, fields, _) = &expr.kind {
             if self.path_resolves_to_struct(qpath, expr.hir_id) {
                 for fp in fields.iter() {
                     if format!("{}", fp.ident) == self.field_ident {
@@ -95,7 +95,7 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
                 }
             }
         }
-        hir::intravisit::walk_expr(self, expr);
+        walk_expr(self, expr);
     }
 }
 
@@ -132,7 +132,7 @@ mod test {
             }
         }
     }
-    fn get_struct_hir_id(tcx: TyCtxt<'_>) -> hir::HirId {
+    fn get_struct_hir_id(tcx: TyCtxt<'_>) -> HirId {
         let field =
             super::super::struct_def_field_collector::collect_field(tcx, create_test_span(11, 14))
                 .unwrap();

@@ -3,6 +3,7 @@
 // Need to add compiler dependencies, as they are not listed in Cargo.toml
 extern crate rustc;
 extern crate rustc_driver;
+extern crate rustc_hir;
 extern crate rustc_interface;
 extern crate rustc_span;
 extern crate rustc_typeck;

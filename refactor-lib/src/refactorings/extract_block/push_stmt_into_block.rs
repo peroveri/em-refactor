@@ -1,6 +1,6 @@
 // Either "add decl" or "just cut & paste"
 use super::expr_use_visit::{collect_vars};
-use rustc::hir::BodyId;
+use rustc_hir::BodyId;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
 
