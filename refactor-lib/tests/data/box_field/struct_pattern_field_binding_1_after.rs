@@ -1,7 +1,9 @@
 struct S { field: Box<i32> }
 fn main() {
     match (S {field: Box::new(0)}) {
-        S {field: a} => {},
+        S {field: a} => {}, // new binding 'a'
+        S {..} => {}, // Et Cetera
+        S {field: _} => {}, // Wildcard
         _ => {}
     }
 }
