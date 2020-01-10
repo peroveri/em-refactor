@@ -15,10 +15,6 @@ fn box_field_match_as_ref() {
     run_test("match_as_ref");
 }
 #[test]
-fn box_field_new_binding() {
-    run_test("new_binding");
-}
-#[test]
 fn box_field_assignment_expression_1() {
     run_test("assignment_expression_1");
 }
