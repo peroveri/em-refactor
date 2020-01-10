@@ -79,6 +79,10 @@ fn box_field_struct_pattern_field_binding_cond() {
     run_test("struct_pattern_field_binding_cond");
 }
 #[test]
-fn struct_pattern_field_used() {
+fn box_field_struct_pattern_field_used() {
     run_test("struct_pattern_field_used");
+}
+#[test]
+fn box_field_trait_copy_cannot_contain_drop() {
+    run_test("trait_copy_cannot_contain_drop");
 }
