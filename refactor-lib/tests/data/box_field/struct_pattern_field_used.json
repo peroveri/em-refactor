@@ -1,0 +1,11 @@
+{
+    "file": "struct_pattern_field_used.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "11:16"
+    },
+    "expected": {
+        "code": 6,
+        "stderr": "Field: field is used in a pattern and cannot be boxed.\n"
+    }
+}

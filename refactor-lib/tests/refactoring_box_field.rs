@@ -80,3 +80,7 @@ fn box_field_struct_pattern_field_binding_1() {
 fn box_field_struct_pattern_field_binding_cond() {
     run_test("struct_pattern_field_binding_cond");
 }
+#[test]
+fn struct_pattern_field_used() {
+    run_test("struct_pattern_field_used");
+}
