@@ -1,0 +1,11 @@
+{
+    "file": "struct_expression_fields_init_shorthand.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "11:16"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "struct_expression_fields_init_shorthand_after.rs"
+    }
+}
