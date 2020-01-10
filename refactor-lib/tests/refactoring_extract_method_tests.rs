@@ -7,6 +7,7 @@ fn run_test(name: &str) {
 }
 
 #[test]
+#[ignore]
 fn extract_method_owned_mut_value() {
     run_test("owned_mut_value");
 }

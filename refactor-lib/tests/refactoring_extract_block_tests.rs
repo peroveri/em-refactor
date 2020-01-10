@@ -26,11 +26,13 @@ fn extract_block_multiple_use() {
 fn extract_block_field_used_later() {
     run_test("extract_block_field_used_later");
 }
-// #[test]
-// fn extract_block_borrow_field() {
-//     run_test("borrow_field");
-// }
-// #[test]
-// fn extract_block_deref() {
-//     run_test("deref");
-// }
+#[test]
+#[ignore]
+fn extract_block_borrow_field() {
+    run_test("borrow_field");
+}
+#[test]
+#[ignore]
+fn extract_block_deref() {
+    run_test("deref");
+}
