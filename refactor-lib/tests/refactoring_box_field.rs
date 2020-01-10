@@ -77,6 +77,6 @@ fn box_field_struct_pattern_field_binding_1() {
     run_test("struct_pattern_field_binding_1");
 }
 #[test]
-fn box_field_struct_pattern_field_binding_at() {
-    run_test("struct_pattern_field_binding_at");
+fn box_field_struct_pattern_field_binding_cond() {
+    run_test("struct_pattern_field_binding_cond");
 }
