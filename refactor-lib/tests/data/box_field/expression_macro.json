@@ -1,0 +1,11 @@
+{
+    "file": "expression_macro.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "11:16"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "expression_macro_after.rs"
+    }
+}

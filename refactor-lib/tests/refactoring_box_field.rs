@@ -20,6 +20,10 @@ fn box_field_attribute_macro_debug() {
     run_test("attribute_macro_debug");
 }
 #[test]
+fn box_field_expression_macro() {
+    run_test("expression_macro");
+}
+#[test]
 fn box_field_field_access_1() {
     run_test("field_access_1");
 }
