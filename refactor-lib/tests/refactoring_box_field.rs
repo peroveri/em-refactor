@@ -72,3 +72,11 @@ fn box_field_struct_expression_fields_init_shorthand() {
 fn box_field_struct_expression_tuple() {
     run_test("struct_expression_tuple");
 }
+#[test]
+fn box_field_struct_pattern_field_binding_1() {
+    run_test("struct_pattern_field_binding_1");
+}
+#[test]
+fn box_field_struct_pattern_field_binding_at() {
+    run_test("struct_pattern_field_binding_at");
+}

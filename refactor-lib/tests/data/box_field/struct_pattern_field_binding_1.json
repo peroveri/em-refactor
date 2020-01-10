@@ -1,0 +1,11 @@
+{
+    "file": "struct_pattern_field_binding_1.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "11:16"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "struct_pattern_field_binding_1_after.rs"
+    }
+}
