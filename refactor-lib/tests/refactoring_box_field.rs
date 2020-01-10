@@ -7,10 +7,6 @@ fn run_test(name: &str) {
 }
 
 #[test]
-fn box_field_assignment_and_access_should_be_wrapped() {
-    run_test("assignment_and_access_should_be_wrapped");
-}
-#[test]
 fn box_field_assignment_expression_1() {
     run_test("assignment_expression_1");
 }
