@@ -1,0 +1,11 @@
+{
+    "file": "struct_definition_named_fields.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "11:16"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "struct_definition_named_fields_after.rs"
+    }
+}

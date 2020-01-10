@@ -23,10 +23,10 @@ fn box_field_new_binding() {
     run_test("new_binding");
 }
 #[test]
-fn box_field_tuple_struct_field_should_be_boxed() {
-    run_test("tuple_struct_field_should_be_boxed");
+fn box_field_struct_definition_named_fields() {
+    run_test("struct_definition_named_fields");
 }
 #[test]
-fn box_field_struct_definition() {
-    run_test("struct_definition");
+fn box_field_struct_definition_tuple() {
+    run_test("struct_definition_tuple");
 }

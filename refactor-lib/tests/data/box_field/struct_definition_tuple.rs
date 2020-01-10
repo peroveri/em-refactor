@@ -1,3 +1,2 @@
 struct S(i32);
-fn main() {
-}
+fn main() {}
