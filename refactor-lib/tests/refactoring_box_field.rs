@@ -11,10 +11,6 @@ fn box_field_assignment_and_access_should_be_wrapped() {
     run_test("assignment_and_access_should_be_wrapped");
 }
 #[test]
-fn box_field_field_should_be_boxed() {
-    run_test("field_should_be_boxed");
-}
-#[test]
 fn box_field_match_as_ref() {
     run_test("match_as_ref");
 }
