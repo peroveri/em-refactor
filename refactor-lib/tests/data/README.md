@@ -9,6 +9,7 @@ Grammars
 * Struct pattern
   * TODO: Tuple Struct, Tuple, Grouped, Slice and Path patterns? (or do we not need to test those?)
 * Attribute macros
+* Expression macros
 
 Type system / other
 * Coercion(?)
