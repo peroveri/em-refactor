@@ -19,6 +19,22 @@ fn box_field_new_binding() {
     run_test("new_binding");
 }
 #[test]
+fn box_field_field_access_1() {
+    run_test("field_access_1");
+}
+#[test]
+fn box_field_field_access_call_expr_fn_generic() {
+    run_test("field_access_call_expr_fn_generic");
+}
+#[test]
+fn box_field_field_access_call_expr_fn_item() {
+    run_test("field_access_call_expr_fn_item");
+}
+#[test]
+fn box_field_field_access_call_expr_fn_trait() {
+    run_test("field_access_call_expr_fn_trait");
+}
+#[test]
 fn box_field_struct_definition_named_fields() {
     run_test("struct_definition_named_fields");
 }

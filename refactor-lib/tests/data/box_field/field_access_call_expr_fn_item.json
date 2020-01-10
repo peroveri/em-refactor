@@ -1,0 +1,11 @@
+{
+    "file": "field_access_call_expr_fn_item.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "11:16"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "field_access_call_expr_fn_item_after.rs"
+    }
+}

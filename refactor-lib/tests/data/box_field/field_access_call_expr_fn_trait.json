@@ -1,0 +1,11 @@
+{
+    "file": "field_access_call_expr_fn_trait.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "15:20"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "field_access_call_expr_fn_trait_after.rs"
+    }
+}
