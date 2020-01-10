@@ -19,6 +19,11 @@ fn box_field_field_access_1() {
     run_test("field_access_1");
 }
 #[test]
+#[ignore]
+fn box_field_field_access_2() {
+    run_test("field_access_2");
+}
+#[test]
 fn box_field_field_access_call_expr_fn_generic() {
     run_test("field_access_call_expr_fn_generic");
 }

@@ -1,0 +1,11 @@
+{
+    "file": "field_access_2.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "9:10"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "field_access_2_after.rs"
+    }
+}
