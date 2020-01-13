@@ -53,7 +53,8 @@ impl StructFieldAccessExpressionCollector<'_> {
     fn expr_resolves_to_struct(&self, expr: &Expr, hir_id: HirId) -> bool {
         let typecheck_table = self.tcx.typeck_tables_of(hir_id.owner_def_id());
 
-        let expr_ty = typecheck_table.expr_ty(expr);
+        let expr_ty = typecheck_table.expr_ty_adjusted(expr);
+
         if let Some(adt_def) = expr_ty.ty_adt_def() {
             self.struct_hir_id.owner_def_id() == adt_def.did
         } else {
@@ -106,6 +107,26 @@ mod test {
             }
         }
     }
+    fn create_program_with_field_access_self_param() -> quote::__rt::TokenStream {
+        quote! {
+            struct S { foo: u32 }
+            impl S {
+                fn foo(&self) {
+                    let _ = self.foo;
+                }
+            }
+        }
+    }
+    fn create_program_with_field_access_self_type() -> quote::__rt::TokenStream {
+        quote! {
+            struct S { foo: u32 }
+            impl S {
+                fn foo(s: Self) {
+                    let _ = s.foo;
+                }
+            }
+        }
+    }
     fn get_struct_hir_id(tcx: TyCtxt<'_>) -> HirId {
         let field =
             super::super::struct_def_field_collector::collect_field(tcx, create_test_span(11, 14))
@@ -113,10 +134,30 @@ mod test {
         let struct_def_id = field.hir_id.owner_def_id();
         tcx.hir().as_local_hir_id(struct_def_id).unwrap()
     }
-
+    
     #[test]
     fn struct_field_access_expression_collector_should_collect_access() {
         run_after_analysis(create_program_with_field_access(), |tcx| {
+            let hir_id = get_struct_hir_id(tcx);
+            let fields = collect_struct_field_access_expressions(tcx, hir_id, "foo".to_owned());
+
+            assert_eq!(fields.len(), 1);
+            assert_eq!(get_source(tcx, fields[0]), "s . foo");
+        });
+    }
+    #[test]
+    fn struct_field_access_expression_collector_should_collect_access_self_param() {
+        run_after_analysis(create_program_with_field_access_self_param(), |tcx| {
+            let hir_id = get_struct_hir_id(tcx);
+            let fields = collect_struct_field_access_expressions(tcx, hir_id, "foo".to_owned());
+
+            assert_eq!(fields.len(), 1);
+            assert_eq!(get_source(tcx, fields[0]), "self . foo");
+        });
+    }
+    #[test]
+    fn struct_field_access_expression_collector_should_collect_access_self_type() {
+        run_after_analysis(create_program_with_field_access_self_type(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
             let fields = collect_struct_field_access_expressions(tcx, hir_id, "foo".to_owned());
 

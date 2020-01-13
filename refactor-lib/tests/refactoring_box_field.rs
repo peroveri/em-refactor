@@ -45,7 +45,6 @@ fn box_field_field_access_call_expr_fn_trait() {
     run_test("field_access_call_expr_fn_trait");
 }
 #[test]
-#[ignore]
 fn box_field_impl_self_param() {
     run_test("impl_self_param");
 }
