@@ -50,7 +50,7 @@ where
         .by_ref()
         .take_while(|s| s != "--")
         .collect::<Vec<_>>();
-    let mut args = vec!["check".to_owned(), "--quiet".to_owned()];
+    let mut args = vec!["+nightly".to_owned(), "check".to_owned(), "--quiet".to_owned()];
     args.extend(old_args.collect::<Vec<_>>());
 
     // TODO: collect as JSON
