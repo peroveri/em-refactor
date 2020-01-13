@@ -66,6 +66,16 @@ fn box_field_struct_expression_fields_1() {
     run_test("struct_expression_fields_1");
 }
 #[test]
+#[ignore]
+fn box_field_struct_expression_fields_and_overlap() {
+    run_test("struct_expression_fields_and_overlap");
+}
+#[test]
+#[ignore]
+fn box_field_struct_expression_fields_and_self() {
+    run_test("struct_expression_fields_and_self");
+}
+#[test]
 fn box_field_struct_expression_fields_and_struct_base_1() {
     run_test("struct_expression_fields_and_struct_base_1");
 }

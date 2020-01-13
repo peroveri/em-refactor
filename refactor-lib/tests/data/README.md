@@ -17,3 +17,4 @@ Type system / other
 * Coercion(?)
 * Copy trait cannot contain Drop
 * Paths may not need deref (*), but it is an optimization
+* Overlapping changes
