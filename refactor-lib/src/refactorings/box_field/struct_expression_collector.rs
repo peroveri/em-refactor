@@ -63,8 +63,12 @@ impl StructPatternCollector<'_> {
             rustc::ty::TyS::same_type(struct_type, qp_type)
         } else {
             let res = typecheck_table.qpath_res(qpath, h);
-            let res_def_id = res.def_id();
-            res_def_id == self.struct_hir_id.owner_def_id()
+            let res_def_id = res.opt_def_id();
+            if let Some(did) = res_def_id {
+                did == self.struct_hir_id.owner_def_id()
+            } else {
+                false
+            }
         }
     }
 }
