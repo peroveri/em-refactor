@@ -11,7 +11,7 @@ Grammars
 * Attribute macros
 * Expression macros
 * self
-* Result-operator `?`
+* Error propagation expression: `?`
 
 Type system / other
 * Coercion(?)

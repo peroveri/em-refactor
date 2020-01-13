@@ -45,6 +45,16 @@ fn box_field_field_access_call_expr_fn_trait() {
     run_test("field_access_call_expr_fn_trait");
 }
 #[test]
+#[ignore]
+fn box_field_impl_self_param() {
+    run_test("impl_self_param");
+}
+#[test]
+#[ignore]
+fn box_field_impl_self_type() {
+    run_test("impl_self_type");
+}
+#[test]
 fn box_field_struct_definition_named_fields() {
     run_test("struct_definition_named_fields");
 }
