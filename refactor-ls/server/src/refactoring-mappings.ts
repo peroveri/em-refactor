@@ -136,17 +136,19 @@ const getRelativePath = (workspaceUri: string, fileUri: string) => {
 }
 
 export const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, new_fn: string | null, unsafe: boolean) => {
-    const refactorToolManifestPath = config.refactorToolManifestPath; // TODO: hardcoded path to refactoring project
     const refactorArgs = `--output-changes-as-json --ignore-missing-file --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`) + (unsafe ? ' --unsafe' : '');
 
     // The +nightly version should match the one used in the refactoring crate
-    return `cargo +nightly run --bin cargo-my-refactor --manifest-path=${refactorToolManifestPath} -- ${refactorArgs}`;
+    return config.useBin ?
+    `${config.refactorBinPath} ${refactorArgs}`
+    : `cargo +nightly run --bin cargo-my-refactor --manifest-path=${config.refactorToolManifestPath} -- ${refactorArgs}`;
 }
 
 export const convertToCmdProvideType = (relativeFilePath: string, selection: string) => {
-    const refactorToolManifestPath = config.refactorToolManifestPath; // TODO: hardcoded path to refactoring project
     const refactorArgs = `--output-changes-as-json --ignore-missing-file --file=${relativeFilePath} --provide-type --selection=${selection}`;
 
     // The +nightly version should match the one used in the refactoring crate
-    return `cargo +nightly run --bin cargo-my-refactor --manifest-path=${refactorToolManifestPath} -- ${refactorArgs}`;
+    return config.useBin ? 
+    `${config.refactorBinPath} ${refactorArgs}`
+    : `cargo +nightly run --bin cargo-my-refactor --manifest-path=${config.refactorToolManifestPath} -- ${refactorArgs}`;
 }

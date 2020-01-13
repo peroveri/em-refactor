@@ -31,6 +31,8 @@ import {
 	convertToCmdProvideType,
 } from './refactoring-mappings';
 
+import config from './config';
+
 let shell = require('shelljs');
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -213,6 +215,9 @@ connection.onHover(handleHover);
 
 async function handleHover(params: TextDocumentPositionParams): Promise<Hover | null> {
 	console.log(`handle hover`);
+	if(!config.showTypeOnHover) {
+		return Promise.resolve(null);
+	}
 
 	let workspaceFolders = await connection.workspace.getWorkspaceFolders();
 	let relativeFilePath = getFileRelativePath(params.textDocument.uri, workspaceFolders);
@@ -227,6 +232,7 @@ async function handleHover(params: TextDocumentPositionParams): Promise<Hover | 
 	if (shell.config.execPath === null) {
 		shell.config.execPath = shell.which('node').toString();
 	}
+	console.log(`cmd: ${cmd}`);
 	let result = shell.exec(cmd);
 
 	if (result.code === 0) {
