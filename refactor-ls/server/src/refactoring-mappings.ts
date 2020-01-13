@@ -140,5 +140,13 @@ export const convertToCmd = (relativeFilePath: string, refactoring: string, sele
     const refactorArgs = `--output-changes-as-json --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`) + (unsafe ? ' --unsafe' : '');
 
     // The +nightly version should match the one used in the refactoring crate
-    return `cargo +nightly-2019-12-08 run --bin cargo-my-refactor --manifest-path=${refactorToolManifestPath} -- ${refactorArgs}`;
+    return `cargo +nightly run --bin cargo-my-refactor --manifest-path=${refactorToolManifestPath} -- ${refactorArgs}`;
+}
+
+export const convertToCmdProvideType = (relativeFilePath: string, selection: string) => {
+    const refactorToolManifestPath = config.refactorToolManifestPath; // TODO: hardcoded path to refactoring project
+    const refactorArgs = `--output-changes-as-json --file=${relativeFilePath} --provide-type --selection=${selection}`;
+
+    // The +nightly version should match the one used in the refactoring crate
+    return `cargo +nightly run --bin cargo-my-refactor --manifest-path=${refactorToolManifestPath} -- ${refactorArgs}`;
 }

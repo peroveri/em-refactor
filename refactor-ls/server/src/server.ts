@@ -17,6 +17,9 @@ import {
 	ExecuteCommandParams,
 	MessageType,
 	ApplyWorkspaceEditParams,
+	TextDocumentPositionParams,
+	Hover,
+	MarkedString,
 } from 'vscode-languageserver';
 
 import {
@@ -25,6 +28,7 @@ import {
 	listActionsForRange,
 	mapRefactorResultToWorkspaceEdit,
 	RefactorArgs,
+	convertToCmdProvideType,
 } from './refactoring-mappings';
 
 let shell = require('shelljs');
@@ -72,7 +76,8 @@ connection.onInitialize((params: InitializeParams) => {
 			},
 			executeCommandProvider: {
 				commands: ['refactor.extract.function']
-			}
+			},
+			hoverProvider: true
 		}
 	};
 });
@@ -203,6 +208,49 @@ async function handleExecuteCommand(params: ExecuteCommandParams): Promise<Apply
 	return Promise.reject("empty arg list");
 }
 
+connection.onHover(handleHover);
+
+
+async function handleHover(params: TextDocumentPositionParams): Promise<Hover | null> {
+	console.log(`handle hover`);
+
+	let workspaceFolders = await connection.workspace.getWorkspaceFolders();
+	let relativeFilePath = getFileRelativePath(params.textDocument.uri, workspaceFolders);
+	if (relativeFilePath === undefined || workspaceFolders === null) return Promise.reject("unknown file path");
+
+	const doc = documents.get(params.textDocument.uri);
+	if (doc === undefined) {return Promise.reject();}
+	let pos = doc.offsetAt(params.position);
+	let cmd = convertToCmdProvideType(relativeFilePath, `${pos}:${pos}`);
+
+	/* https://github.com/shelljs/shelljs/wiki/Electron-compatibility */
+	if (shell.config.execPath === null) {
+		shell.config.execPath = shell.which('node').toString();
+	}
+	let result = shell.exec(cmd);
+
+	if (result.code === 0) {
+
+		let res = JSON.parse(result.stdout) as Array<{type: string}>;
+		let content = res && res.length > 0 ? res[0].type : '<empty>';
+
+		content = content.replace(/\n([ \t]+)/g, (match, p1: string) => {
+			return '\n' + ' '.repeat((p1.length) / 8);
+		});
+
+		return Promise.resolve({
+			contents: {
+				language: 'rust',
+				value: content
+			} as MarkedString,
+			range: {
+				start: params.position,
+				end: params.position
+			}
+		}as Hover );
+	}
+	return Promise.reject("refactoring failed")
+}
 
 // async function validateTextDocument(textDocument: TextDocument): Promise<void> {
 // 	// In this simple example we get the settings for every validate run.
