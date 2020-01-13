@@ -10,6 +10,8 @@ Grammars
   * TODO: Tuple Struct, Tuple, Grouped, Slice and Path patterns? (or do we not need to test those?)
 * Attribute macros
 * Expression macros
+* self
+* Result-operator `?`
 
 Type system / other
 * Coercion(?)
