@@ -1,0 +1,1 @@
+struct S { field: i32 }
