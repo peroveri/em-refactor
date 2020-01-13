@@ -101,6 +101,10 @@ fn box_field_struct_pattern_field_binding_2() {
     run_test("struct_pattern_field_binding_2");
 }
 #[test]
+fn box_field_struct_pattern_field_binding_at() {
+    run_test("struct_pattern_field_binding_at");
+}
+#[test]
 fn box_field_struct_pattern_field_binding_cond() {
     run_test("struct_pattern_field_binding_cond");
 }
