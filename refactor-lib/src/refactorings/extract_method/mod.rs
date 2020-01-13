@@ -1,6 +1,6 @@
 use super::utils::{get_file_offset, map_range_to_span};
 use crate::change::Change;
-use crate::refactor_definition::SourceCodeRange;
+use crate::refactor_definition::{RefactoringError, SourceCodeRange};
 use expr_use_visit::{collect_vars, CollectVarsArgs};
 use rustc::ty;
 use stmts_visitor::visit_stmts;
@@ -67,7 +67,7 @@ pub fn do_refactoring(
     ty: ty::TyCtxt,
     range: &SourceCodeRange,
     new_function: &str,
-) -> Result<Vec<Change>, String> {
+) -> Result<Vec<Change>, RefactoringError> {
     let spi = map_range_to_span(ty, &range)?;
     let stmts_visit_res = visit_stmts(ty, spi);
 
@@ -79,7 +79,7 @@ pub fn do_refactoring(
         let vars_used = collect_vars(ty, collect_args);
 
         if vars_used.get_return_values().len() > 1 {
-            return Err("Multiple returnvalues not implemented".to_owned());
+            return Err(RefactoringError::multiple_returnvalues());
         }
 
         let params = vars_used
@@ -126,10 +126,7 @@ pub fn do_refactoring(
             },
         ])
     } else {
-        Err(format!(
-            "{}:{} is not a valid selection!",
-            range.from, range.to
-        ))
+        Err(RefactoringError::invalid_selection(range.from, range.to))
     }
 }
 

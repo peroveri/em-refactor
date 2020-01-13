@@ -4,6 +4,7 @@ use std::process::Command;
 use tempdir::TempDir;
 
 const WORKSPACE_ARG: &str = "--workspace-root=./tests/data/crates/hello_world";
+const WORKSPACE_ARG_MULTI_ROOT: &str = "--workspace-root=./tests/data/crates/multi_root";
 
 fn cargo_my_refactor() -> Command {
     Command::cargo_bin("cargo-my-refactor").unwrap()
@@ -100,6 +101,51 @@ fn provide_type() {
         .arg(WORKSPACE_ARG)
         .arg("--provide-type")
         .arg("--selection=72:72")
+        .arg("--file=src/main.rs")
+        .arg("--")
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
+        .assert()
+        .success()
+        .stdout(expected);
+}
+
+#[test]
+fn multiroot_project_lib() {
+
+    let expected = r#"[{"file_name":"src/lib.rs","file_start_pos":0,"start":18,"end":21,"replacement":"Box<i32>"}]
+"#;
+
+    cargo_my_refactor()
+        .arg(WORKSPACE_ARG_MULTI_ROOT)
+        .arg("--output-changes-as-json")
+        .arg("--ignore-missing-file")
+        .arg("--refactoring=box-field")
+        .arg("--selection=11:16")
+        .arg("--file=src/lib.rs")
+        .arg("--")
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
+        .assert()
+        .success()
+        .stdout(expected);
+}
+
+#[test]
+fn multiroot_project_main() {
+    let expected = r#"[{"file_name":"src/main.rs","file_start_pos":0,"start":18,"end":21,"replacement":"Box<i32>"}]
+"#;
+
+    cargo_my_refactor()
+        .arg(WORKSPACE_ARG_MULTI_ROOT)
+        .arg("--output-changes-as-json")
+        .arg("--ignore-missing-file")
+        .arg("--refactoring=box-field")
+        .arg("--selection=11:16")
         .arg("--file=src/main.rs")
         .arg("--")
         .arg(format!(

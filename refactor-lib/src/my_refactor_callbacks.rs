@@ -1,5 +1,5 @@
 use crate::change::Change;
-use crate::refactor_definition::RefactorDefinition;
+use crate::refactor_definition::{InternalErrorCodes, RefactorDefinition, RefactoringError};
 use crate::refactorings::do_ty_refactoring;
 use rustc::ty;
 use rustc_driver;
@@ -15,18 +15,20 @@ use std::path::PathBuf;
 ///
 pub struct MyRefactorCallbacks {
     pub args: RefactorDefinition,
-    pub result: Result<Vec<Change>, String>,
+    pub result: Result<Vec<Change>, RefactoringError>,
     pub content: Option<String>, // TODO: remove content and multiple_files fields
-    pub multiple_files: bool
+    pub multiple_files: bool,
+    pub ignore_missing_file: bool
 }
 
 impl MyRefactorCallbacks {
     pub fn from_arg(arg: RefactorDefinition) -> MyRefactorCallbacks {
         MyRefactorCallbacks {
             args: arg,
-            result: Err("".to_owned()), // shouldnt be Err by default, but something like None
+            result: Err(RefactoringError::new(InternalErrorCodes::Error, "".to_owned())), // shouldnt be Err by default, but something like None
             content: None,
-            multiple_files: false
+            multiple_files: false,
+            ignore_missing_file: false
         }
     }
 

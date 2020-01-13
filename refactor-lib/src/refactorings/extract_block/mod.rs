@@ -1,5 +1,6 @@
 use super::utils::{map_change_from_span, get_source};
 use crate::change::Change;
+use crate::refactor_definition::RefactoringError;
 use block_collector::collect_block;
 use rustc_hir::{BodyId};
 use rustc::ty::TyCtxt;
@@ -14,8 +15,8 @@ fn extract_block(
     body_id: BodyId,
     span: Span,
     source: String,
-) -> Result<String, String> {
-    let (decls, ids) = push_stmt_into_block::push_stmts_into_block(tcx, body_id, span)?;
+) -> Result<String, RefactoringError> {
+    let (decls, ids) = push_stmt_into_block::push_stmts_into_block(tcx, body_id, span);
     let decls_fmt = decls.join(", ");
     let ids_fmt = ids.join(", ");
 
@@ -37,7 +38,7 @@ fn extract_block(
 /// how should it be moved?
 /// a. identical (cut & paste)
 /// b. add declaration and assign at start of block + add var in expression at end of block
-pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, String> {
+pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, RefactoringError> {
     if let Some((block, body_id)) = collect_block(tcx, span) {
         let source = tcx.sess.source_map().span_to_snippet(span).unwrap();
         if let Some(expr) = &block.expr {
@@ -51,12 +52,10 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, String> {
             extract_block(tcx, body_id, span, source)?,
         )])
     } else {
-        Err(format!(
-            // do this on a higher level?
-            "{}:{} is not a valid selection! `{}`",
+        Err(RefactoringError::invalid_selection_with_code(
             span.lo().0,
             span.hi().0,
-            get_source(tcx, span)
+            &get_source(tcx, span)
         ))
     }
 }

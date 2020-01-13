@@ -8,7 +8,7 @@ pub fn push_stmts_into_block(
     tcx: TyCtxt,
     body_id: BodyId,
     span: Span,
-) -> Result<(Vec<String>, Vec<String>), String> {
+) -> (Vec<String>, Vec<String>) {
     let rvs = collect_vars(tcx, body_id, span).get_return_values();
 
     let idents = rvs
@@ -20,5 +20,5 @@ pub fn push_stmts_into_block(
         .map(|rv| format!("{}{}", if rv.is_mutated { "mut " } else { "" }, rv.ident))
         .collect::<Vec<_>>();
 
-    Ok((decls, idents))
+    (decls, idents)
 }

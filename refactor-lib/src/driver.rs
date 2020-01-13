@@ -236,7 +236,11 @@ fn run_rustc() -> Result<(), i32> {
     let content = my_refactor.content.clone().unwrap_or_else(|| "".to_owned());
 
     if let Err(err) = my_refactor.result {
-        eprintln!("{}", err);
+        if err.code == crate::refactor_definition::InternalErrorCodes::FileNotFound &&
+            refactor_args.contains(&"--ignore-missing-file".to_owned()) {
+                return Ok(());
+            }
+        eprintln!("{}", err.message);
         return Err(RefactorStatusCodes::InternalRefactoringError as i32);
     }
 

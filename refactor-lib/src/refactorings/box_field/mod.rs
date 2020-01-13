@@ -10,6 +10,7 @@ use struct_pattern_collector::collect_struct_patterns;
 use rustc_span::Span;
 
 use super::utils::get_source;
+use crate::refactor_definition::RefactoringError;
 
 mod local_variable_use_collector;
 mod struct_def_field_collector;
@@ -45,17 +46,14 @@ pub fn get_field_ident(field: &StructField) -> String {
 ///   - Add Box::new around V
 /// - for F' in Fs
 ///   - Add * around F'
-pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, String> {
+pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, RefactoringError> {
     if let Some(field) = collect_field(tcx, span) {
         let struct_hir_id = get_struct_hir_id(tcx, &field);
         let field_ident = get_field_ident(field);
         let struct_patterns = collect_struct_patterns(tcx, struct_hir_id, field_ident.to_string());
 
         if !struct_patterns.other.is_empty() {
-            return Err(format!(
-                "Field: {} is used in a pattern and cannot be boxed.",
-                field.ident
-            ));
+            return Err(RefactoringError::used_in_pattern(&field.ident.to_string()));
         }
 
         let struct_expressions = collect_struct_expressions(tcx, struct_hir_id, field_ident.to_string());
@@ -85,12 +83,10 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, String> {
 
         Ok(changes)
     } else {
-        Err(format!(
-            // do this on a higher level?
-            "{}:{} is not a valid selection! `{}`",
+        Err(RefactoringError::invalid_selection_with_code(
             span.lo().0,
             span.hi().0,
-            get_source(tcx, span)
+            &get_source(tcx, span)
         ))
     }
 }

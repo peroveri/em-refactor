@@ -1,5 +1,5 @@
 use crate::change::Change;
-use crate::refactor_definition::SourceCodeRange;
+use crate::refactor_definition::{RefactoringError, SourceCodeRange};
 use rustc::ty::TyCtxt;
 use rustc_span::{BytePos, FileName, Span};
 use std::path::PathBuf;
@@ -19,7 +19,7 @@ fn get_filename(tcx: TyCtxt, span: Span) -> String {
     panic!("unexpected file type: {:?}", filename);
 }
 
-pub fn map_range_to_span(tcx: TyCtxt, range: &SourceCodeRange) -> Result<Span, String> {
+pub fn map_range_to_span(tcx: TyCtxt, range: &SourceCodeRange) -> Result<Span, RefactoringError> {
     let filename = FileName::Real(std::path::PathBuf::from(&range.file_name));
     let source_map = tcx.sess.source_map();
     if let Some(source_file) = source_map.get_source_file(&filename) {
@@ -28,7 +28,7 @@ pub fn map_range_to_span(tcx: TyCtxt, range: &SourceCodeRange) -> Result<Span, S
             BytePos(range.to + source_file.start_pos.0),
         ))
     } else {
-        Err(format!("Couldn't find file: {}", range.file_name))
+        Err(RefactoringError::file_not_found(&range.file_name))
     }
 }
 
