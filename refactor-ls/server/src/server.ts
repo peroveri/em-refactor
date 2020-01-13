@@ -189,7 +189,7 @@ async function handleExecuteCommand(params: ExecuteCommandParams): Promise<Apply
 		if (result.code === 0) {
 
 			let edits = mapRefactorResultToWorkspaceEdit(arg, result.stdout, workspace_uri, documents);
-			console.log(result.stdout);
+			console.log(`stdout: ${result.stdout}`);
 			connection.workspace.applyEdit(edits);
 			connection.sendNotification(ShowMessageNotification.type, {
 				message: `Applied: ${arg.refactoring}`, type: MessageType.Info,
