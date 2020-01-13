@@ -1,4 +1,4 @@
-use rustc_hir::{BodyId, Expr, ExprKind, FnDecl, HirId, QPath};
+use rustc_hir::{BodyId, Expr, ExprKind, FnDecl, HirId};
 use rustc_hir::intravisit::{FnKind, walk_expr, walk_fn, walk_crate, NestedVisitorMap, Visitor};
 use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
@@ -54,22 +54,14 @@ struct StructPatternCollector<'v> {
 }
 
 impl StructPatternCollector<'_> {
-    fn path_resolves_to_struct(&self, qpath: &QPath, h: HirId) -> bool {
-        let typecheck_table = self.tcx.typeck_tables_of(h.owner_def_id());
-
-        if let QPath::Resolved(Some(ty), _) = qpath {
-            let qp_type = typecheck_table.node_type(ty.hir_id);
-            let struct_type = typecheck_table.node_type(self.struct_hir_id);
-            rustc::ty::TyS::same_type(struct_type, qp_type)
-        } else {
-            let res = typecheck_table.qpath_res(qpath, h);
-            let res_def_id = res.opt_def_id();
-            if let Some(did) = res_def_id {
-                did == self.struct_hir_id.owner_def_id()
-            } else {
-                false
+    fn path_resolves_to_struct(&self, expr: &Expr) -> bool {
+        let typecheck_table = self.tcx.typeck_tables_of(expr.hir_id.owner_def_id());
+        if let Some(expr_type) = typecheck_table.expr_ty_adjusted_opt(expr) {
+            if let Some(adt_def) = expr_type.ty_adt_def() {
+                return adt_def.did == self.struct_hir_id.owner_def_id();
             }
-        }
+        } 
+        false
     }
 }
 
@@ -90,8 +82,8 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
         walk_fn(self, fk, fd, body_id, s, h);
     }
     fn visit_expr(&mut self, expr: &'v Expr) {
-        if let ExprKind::Struct(qpath, fields, _) = &expr.kind {
-            if self.path_resolves_to_struct(qpath, expr.hir_id) {
+        if let ExprKind::Struct(_, fields, _) = &expr.kind {
+            if self.path_resolves_to_struct(expr) {
                 for fp in fields.iter() {
                     if format!("{}", fp.ident) == self.field_ident {
                         self.field.push(fp.expr.span);
@@ -136,6 +128,16 @@ mod test {
             }
         }
     }
+    fn create_program_match_4() -> quote::__rt::TokenStream {
+        quote! {
+            struct S { foo: u32 }
+            impl S {
+                fn foo() {
+                    let _ = Self { foo: 0 };
+                }
+            }
+        }
+    }
     fn get_struct_hir_id(tcx: TyCtxt<'_>) -> HirId {
         let field =
             super::super::struct_def_field_collector::collect_field(tcx, create_test_span(11, 14))
@@ -172,6 +174,16 @@ mod test {
             assert_eq!(fields.len(), 2);
             assert_eq!(get_source(tcx, fields[0]), "0");
             assert_eq!(get_source(tcx, fields[1]), "1");
+        });
+    }
+    #[test]
+    fn struct_expression_collector_should_collect_4() {
+        run_after_analysis(create_program_match_4(), |tcx| {
+            let hir_id = get_struct_hir_id(tcx);
+            let fields = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
+
+            assert_eq!(fields.len(), 1);
+            assert_eq!(get_source(tcx, fields[0]), "0");
         });
     }
 }

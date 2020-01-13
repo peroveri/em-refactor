@@ -49,7 +49,6 @@ fn box_field_impl_self_param() {
     run_test("impl_self_param");
 }
 #[test]
-#[ignore]
 fn box_field_impl_self_type() {
     run_test("impl_self_type");
 }
