@@ -110,7 +110,6 @@ fn box_field_struct_pattern_field_used() {
     run_test("struct_pattern_field_used");
 }
 #[test]
-#[ignore]
 fn box_field_struct_pattern_tuple_1() {
     run_test("struct_pattern_tuple_1");
 }

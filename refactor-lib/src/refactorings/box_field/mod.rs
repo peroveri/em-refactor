@@ -18,6 +18,7 @@ mod struct_expression_collector;
 mod struct_field_access_expression_collector;
 mod struct_pattern_collector;
 
+#[derive(Clone)]
 pub enum StructFieldType {
     Tuple(usize), // index
     Named(String) // field name
@@ -66,13 +67,13 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, Refactorin
         let field_type = StructFieldType::from(field, index);
         let struct_hir_id = get_struct_hir_id(tcx, &field);
         let field_ident = get_field_ident(field);
-        let struct_patterns = collect_struct_patterns(tcx, struct_hir_id, field_ident.to_string());
+        let struct_patterns = collect_struct_patterns(tcx, struct_hir_id, field_type.clone());
 
         if !struct_patterns.other.is_empty() {
             return Err(RefactoringError::used_in_pattern(&field.ident.to_string()));
         }
 
-        let (struct_expressions, struct_expression_shorthands) = collect_struct_expressions(tcx, struct_hir_id, field_type);
+        let (struct_expressions, struct_expression_shorthands) = collect_struct_expressions(tcx, struct_hir_id, field_type.clone());
         let field_access_expressions = collect_struct_field_access_expressions(tcx, struct_hir_id, field_ident);
         let mut changes = vec![map_change_from_span(
             tcx,
