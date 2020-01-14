@@ -6,6 +6,6 @@
     },
     "expected": {
         "code": 2,
-        "stderr": "The refactoring broke the code\n"
+        "stderr": "Field: field is used in a pattern and cannot be boxed.\n"
     }
 }

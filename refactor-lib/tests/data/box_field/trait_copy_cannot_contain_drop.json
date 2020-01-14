@@ -6,6 +6,6 @@
     },
     "expected": {
         "code": 2,
-        "stderr": "The refactoring broke the code\n"
+        "stderr": "Structs with the Copy trait cannot contain types with the Drop trait.\n"
     }
 }
