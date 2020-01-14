@@ -1,5 +1,5 @@
-use rustc_hir::{BodyId, FnDecl, HirId, Pat, PatKind};
-use rustc_hir::intravisit::{FnKind, walk_fn, walk_pat, walk_crate, NestedVisitorMap, Visitor};
+use rustc_hir::{HirId, Pat, PatKind};
+use rustc_hir::intravisit::{walk_pat, walk_crate, NestedVisitorMap, Visitor};
 use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
@@ -48,7 +48,6 @@ pub fn collect_struct_patterns(
             other: vec![]
         },
         field_ident,
-        body_id: None,
     };
 
     walk_crate(&mut v, tcx.hir().krate());
@@ -66,23 +65,41 @@ struct StructPatternCollector<'v> {
     struct_hir_id: HirId,
     patterns: StructPatternCollection,
     field_ident: StructFieldType,
-    body_id: Option<BodyId>,
 }
 
 impl StructPatternCollector<'_> {
     fn path_resolves_to_struct(&self, pat: &Pat) -> bool {
         let typecheck_table = self.tcx.typeck_tables_of(pat.hir_id.owner_def_id());
-
-        if let Some(pat_type) = typecheck_table.pat_ty_opt(pat) {
-            if let Some(adt_def) = pat_type.ty_adt_def() {
-                if adt_def.did == self.struct_hir_id.owner_def_id() {
-                    return true;
-                }
+        if_chain! {
+            if let Some(pat_type) = typecheck_table.pat_ty_opt(pat);
+            if let Some(adt_def) = pat_type.ty_adt_def();
+            if adt_def.did == self.struct_hir_id.owner_def_id();
+            then {
+                true
+            } else {
+                false
             }
         }
-
-        false
     }
+    fn struct_pattern_used(&mut self, pattern_kind: &PatKind, span: Span) {
+        match pattern_kind {
+            // Wildcard patterns match anything, so no changes are needed
+            PatKind::Wild => {},
+            PatKind::Binding(_, hir_id, _, None) => { 
+                self.patterns.new_bindings.push(*hir_id);
+            },
+            PatKind::Binding(_, hir_id, _, Some(at_pattern)) => {
+                if let PatKind::Wild = at_pattern.kind {
+                    self.patterns.new_bindings.push(*hir_id);
+                } else {
+                    self.patterns.other.push(span);
+                }
+            },
+            _ =>  {
+                self.patterns.other.push(span);
+            }
+        }
+    } 
 }
 
 impl<'v> Visitor<'v> for StructPatternCollector<'v> {
@@ -90,40 +107,14 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
     fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, Self::Map> {
         NestedVisitorMap::All(&self.tcx.hir())
     }
-    fn visit_fn(
-        &mut self,
-        fk: FnKind<'v>,
-        fd: &'v FnDecl,
-        body_id: BodyId,
-        s: Span,
-        h: HirId,
-    ) {
-        self.body_id = Some(body_id);
-        walk_fn(self, fk, fd, body_id, s, h);
-    }
     fn visit_pat(&mut self, p: &'v Pat) {
         if self.path_resolves_to_struct(p) {
             if_chain! {
                 if let PatKind::Struct(_, fields, _) = &p.kind;
                 if let StructFieldType::Named(name) = &self.field_ident;
+                if let Some(fp) = fields.iter().find(|e| {&format!("{}", e.ident) == name});
                 then {
-                    for fp in fields.iter() {
-                        if &format!("{}", fp.ident) == name {
-                            if let PatKind::Wild = fp.pat.kind {
-                                // Wildcard patterns match anything, so no changes are needed
-                            } else if let PatKind::Binding(_, hir_id, _, None) = fp.pat.kind {
-                                self.patterns.new_bindings.push(hir_id);
-                            } else if let PatKind::Binding(_, hir_id, _, Some(at_pattern)) = fp.pat.kind {
-                                if let PatKind::Wild = at_pattern.kind {
-                                    self.patterns.new_bindings.push(hir_id);
-                                } else {
-                                    self.patterns.other.push(fp.span);
-                                }
-                            } else {
-                                self.patterns.other.push(fp.span);
-                            }
-                        }
-                    }
+                    self.struct_pattern_used(&fp.pat.kind, fp.span);
                 }
             }
             if_chain! {
@@ -131,19 +122,7 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
                 if let StructFieldType::Tuple(index) = &self.field_ident;
                 if let Some(field) = fields.get(*index);
                 then {
-                    if let PatKind::Wild = field.kind {
-                        // Wildcard patterns match anything, so no changes are needed
-                    } else if let PatKind::Binding(_, hir_id, _, None) = field.kind {
-                        self.patterns.new_bindings.push(hir_id);
-                    } else if let PatKind::Binding(_, hir_id, _, Some(at_pattern)) = field.kind {
-                        if let PatKind::Wild = at_pattern.kind {
-                            self.patterns.new_bindings.push(hir_id);
-                        } else {
-                            self.patterns.other.push(field.span);
-                        }
-                    } else {
-                        self.patterns.other.push(field.span);
-                    }
+                    self.struct_pattern_used(&field.kind, field.span);
                 }
             }
         }
