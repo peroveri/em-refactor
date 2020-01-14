@@ -28,7 +28,6 @@ fn box_field_field_access_1() {
     run_test("field_access_1");
 }
 #[test]
-#[ignore]
 fn box_field_field_access_2() {
     run_test("field_access_2");
 }
