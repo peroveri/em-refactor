@@ -111,8 +111,14 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
                         if &format!("{}", fp.ident) == name {
                             if let PatKind::Wild = fp.pat.kind {
                                 // Wildcard patterns match anything, so no changes are needed
-                            } else if let PatKind::Binding(_, hir_id, ..) = fp.pat.kind {
+                            } else if let PatKind::Binding(_, hir_id, _, None) = fp.pat.kind {
                                 self.patterns.new_bindings.push(hir_id);
+                            } else if let PatKind::Binding(_, hir_id, _, Some(at_pattern)) = fp.pat.kind {
+                                if let PatKind::Wild = at_pattern.kind {
+                                    self.patterns.new_bindings.push(hir_id);
+                                } else {
+                                    self.patterns.other.push(fp.span);
+                                }
                             } else {
                                 self.patterns.other.push(fp.span);
                             }
@@ -127,8 +133,14 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
                 then {
                     if let PatKind::Wild = field.kind {
                         // Wildcard patterns match anything, so no changes are needed
-                    } else if let PatKind::Binding(_, hir_id, ..) = field.kind {
+                    } else if let PatKind::Binding(_, hir_id, _, None) = field.kind {
                         self.patterns.new_bindings.push(hir_id);
+                    } else if let PatKind::Binding(_, hir_id, _, Some(at_pattern)) = field.kind {
+                        if let PatKind::Wild = at_pattern.kind {
+                            self.patterns.new_bindings.push(hir_id);
+                        } else {
+                            self.patterns.other.push(field.span);
+                        }
                     } else {
                         self.patterns.other.push(field.span);
                     }
@@ -307,7 +319,8 @@ mod test {
             let struct_hir_id = get_tuple_hir_id(tcx);
             let fields = collect_struct_patterns(tcx, struct_hir_id, tup(0));
 
-            assert_eq!(fields.new_bindings.len(), 1);
+            assert_eq!(fields.new_bindings.len(), 0);
+            assert_eq!(fields.other.len(), 1);
         });
     }
 }

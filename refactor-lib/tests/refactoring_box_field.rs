@@ -98,7 +98,6 @@ fn box_field_struct_pattern_field_binding_2() {
     run_test("struct_pattern_field_binding_2");
 }
 #[test]
-#[ignore]
 fn box_field_struct_pattern_field_binding_at() {
     run_test("struct_pattern_field_binding_at");
 }
@@ -115,7 +114,6 @@ fn box_field_struct_pattern_tuple_1() {
     run_test("struct_pattern_tuple_1");
 }
 #[test]
-#[ignore]
 fn box_field_struct_pattern_tuple_id_pat() {
     run_test("struct_pattern_tuple_id_pat");
 }
