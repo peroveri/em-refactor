@@ -1,0 +1,11 @@
+{
+    "file": "struct_pattern_tuple_1.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "11:14"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "struct_pattern_tuple_1_after.rs"
+    }
+}

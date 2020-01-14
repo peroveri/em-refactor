@@ -110,6 +110,15 @@ fn box_field_struct_pattern_field_used() {
     run_test("struct_pattern_field_used");
 }
 #[test]
+#[ignore]
+fn box_field_struct_pattern_tuple_1() {
+    run_test("struct_pattern_tuple_1");
+}
+#[test]
+fn box_field_struct_pattern_tuple_id_pat() {
+    run_test("struct_pattern_tuple_id_pat");
+}
+#[test]
 fn box_field_trait_copy_cannot_contain_drop() {
     run_test("trait_copy_cannot_contain_drop");
 }

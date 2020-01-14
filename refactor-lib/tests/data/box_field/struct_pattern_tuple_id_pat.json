@@ -1,0 +1,11 @@
+{
+    "file": "struct_pattern_tuple_id_pat.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "11:14"
+    },
+    "expected": {
+        "code": 2,
+        "stderr": "The refactoring broke the code\n"
+    }
+}
