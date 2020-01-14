@@ -83,7 +83,6 @@ fn box_field_struct_expression_fields_and_struct_base_2() {
     run_test("struct_expression_fields_and_struct_base_2");
 }
 #[test]
-#[ignore]
 fn box_field_struct_expression_fields_init_shorthand() {
     run_test("struct_expression_fields_init_shorthand");
 }

@@ -56,7 +56,7 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, Refactorin
             return Err(RefactoringError::used_in_pattern(&field.ident.to_string()));
         }
 
-        let struct_expressions = collect_struct_expressions(tcx, struct_hir_id, field_ident.to_string());
+        let (struct_expressions, struct_expression_shorthands) = collect_struct_expressions(tcx, struct_hir_id, field_ident.to_string());
         let field_access_expressions = collect_struct_field_access_expressions(tcx, struct_hir_id, field_ident);
         let mut changes = vec![map_change_from_span(
             tcx,
@@ -66,6 +66,11 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, Refactorin
 
         for struct_expression in struct_expressions {
             let replacement = format!("Box::new({})", get_source(tcx, struct_expression));
+            changes.push(map_change_from_span(tcx, struct_expression, replacement));
+        }
+
+        for (struct_expression, ident) in struct_expression_shorthands {
+            let replacement = format!("{}: Box::new({})", ident, get_source(tcx, struct_expression));
             changes.push(map_change_from_span(tcx, struct_expression, replacement));
         }
 

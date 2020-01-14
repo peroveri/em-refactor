@@ -31,24 +31,26 @@ pub fn collect_struct_expressions(
     tcx: TyCtxt,
     struct_hir_id: HirId,
     field_ident: String,
-) -> Vec<Span> {
+) -> (Vec<Span>, Vec<(Span, String)>) {
     let mut v = StructPatternCollector {
         tcx,
         struct_hir_id,
         field: vec![],
+        shorthands: vec![],
         field_ident,
         body_id: None,
     };
 
     walk_crate(&mut v, tcx.hir().krate());
 
-    v.field
+    (v.field, v.shorthands)
 }
 
 struct StructPatternCollector<'v> {
     tcx: TyCtxt<'v>,
     struct_hir_id: HirId,
     field: Vec<Span>,
+    shorthands: Vec<(Span, String)>,
     field_ident: String,
     body_id: Option<BodyId>,
 }
@@ -86,7 +88,11 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
             if self.path_resolves_to_struct(expr) {
                 for fp in fields.iter() {
                     if format!("{}", fp.ident) == self.field_ident {
-                        self.field.push(fp.expr.span);
+                        if fp.is_shorthand {
+                            self.shorthands.push((fp.expr.span, fp.ident.to_string()));
+                        } else {
+                            self.field.push(fp.expr.span);
+                        }
                     }
                 }
             }
@@ -138,6 +144,15 @@ mod test {
             }
         }
     }
+    fn create_program_match_5() -> quote::__rt::TokenStream {
+        quote! {
+            struct S { foo: u32 }
+            fn bar() {
+                let foo = 0;
+                S { foo };
+            }
+        }
+    }
     fn get_struct_hir_id(tcx: TyCtxt<'_>) -> HirId {
         let field =
             super::super::struct_def_field_collector::collect_field(tcx, create_test_span(11, 14))
@@ -150,7 +165,7 @@ mod test {
     fn struct_expression_collector_should_collect_1() {
         run_after_analysis(create_program_match_1(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
+            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
 
             assert_eq!(fields.len(), 1);
             assert_eq!(get_source(tcx, fields[0]), "0");
@@ -160,7 +175,7 @@ mod test {
     fn struct_expression_collector_should_collect_2() {
         run_after_analysis(create_program_match_2(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
+            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
 
             assert_eq!(fields.len(), 1);
         });
@@ -169,7 +184,7 @@ mod test {
     fn struct_expression_collector_should_collect_3() {
         run_after_analysis(create_program_match_3(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
+            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
 
             assert_eq!(fields.len(), 2);
             assert_eq!(get_source(tcx, fields[0]), "0");
@@ -180,10 +195,22 @@ mod test {
     fn struct_expression_collector_should_collect_4() {
         run_after_analysis(create_program_match_4(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
+            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
 
             assert_eq!(fields.len(), 1);
             assert_eq!(get_source(tcx, fields[0]), "0");
+        });
+    }
+    #[test]
+    fn struct_expression_collector_should_collect_5() {
+        run_after_analysis(create_program_match_5(), |tcx| {
+            let hir_id = get_struct_hir_id(tcx);
+            let (fields, shorthands) = collect_struct_expressions(tcx, hir_id, "foo".to_owned());
+
+            assert_eq!(fields.len(), 0);
+            assert_eq!(shorthands.len(), 1);
+            assert_eq!(get_source(tcx, shorthands[0].0), "foo");
+            assert_eq!(shorthands[0].1, "foo");
         });
     }
 }
