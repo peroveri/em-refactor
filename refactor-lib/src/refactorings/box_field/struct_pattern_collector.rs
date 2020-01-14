@@ -184,7 +184,7 @@ mod test {
         }
     }
     fn get_struct_hir_id(tcx: TyCtxt<'_>) -> HirId {
-        let field =
+        let (field, _) =
             super::super::struct_def_field_collector::collect_field(tcx, create_test_span(11, 16))
                 .unwrap();
         let struct_def_id = field.hir_id.owner_def_id();

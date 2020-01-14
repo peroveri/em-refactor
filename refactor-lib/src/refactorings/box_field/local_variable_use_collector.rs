@@ -89,7 +89,7 @@ mod test {
     fn init_test(tcx: TyCtxt<'_>) -> HirId {
         let field = collect_field(tcx, create_test_span(11, 16));
         assert!(field.is_some());
-        let field = field.unwrap();
+        let (field, _) = field.unwrap();
         let struct_hir_id = get_struct_hir_id(tcx, &field);
         let patterns = collect_struct_patterns(tcx, struct_hir_id, get_field_ident(field));
 

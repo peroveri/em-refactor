@@ -18,6 +18,21 @@ mod struct_expression_collector;
 mod struct_field_access_expression_collector;
 mod struct_pattern_collector;
 
+pub enum StructFieldType {
+    Tuple(usize), // index
+    Named(String) // field name
+}
+
+impl StructFieldType {
+    pub fn from(struct_field: &StructField, index: usize) -> StructFieldType {
+        if struct_field.is_positional() {
+            StructFieldType::Tuple(index)
+        } else {
+            StructFieldType::Named(struct_field.ident.to_string())
+        }
+    }
+}
+
 pub fn get_struct_hir_id(tcx: TyCtxt<'_>, field: &StructField) -> HirId {
     let struct_def_id = field.hir_id.owner_def_id();
     tcx.hir().as_local_hir_id(struct_def_id).unwrap()
@@ -47,7 +62,8 @@ pub fn get_field_ident(field: &StructField) -> String {
 /// - for F' in Fs
 ///   - Add * around F'
 pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, RefactoringError> {
-    if let Some(field) = collect_field(tcx, span) {
+    if let Some((field, index)) = collect_field(tcx, span) {
+        let field_type = StructFieldType::from(field, index);
         let struct_hir_id = get_struct_hir_id(tcx, &field);
         let field_ident = get_field_ident(field);
         let struct_patterns = collect_struct_patterns(tcx, struct_hir_id, field_ident.to_string());
@@ -56,7 +72,7 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, Refactorin
             return Err(RefactoringError::used_in_pattern(&field.ident.to_string()));
         }
 
-        let (struct_expressions, struct_expression_shorthands) = collect_struct_expressions(tcx, struct_hir_id, field_ident.to_string());
+        let (struct_expressions, struct_expression_shorthands) = collect_struct_expressions(tcx, struct_hir_id, field_type);
         let field_access_expressions = collect_struct_field_access_expressions(tcx, struct_hir_id, field_ident);
         let mut changes = vec![map_change_from_span(
             tcx,
