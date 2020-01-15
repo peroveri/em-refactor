@@ -1,0 +1,11 @@
+{
+    "file": "items_use_1.rs",
+    "args": {
+        "refactoring": "extract-block",
+        "selection": "16:34"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "items_use_1_after.rs"
+    }
+}

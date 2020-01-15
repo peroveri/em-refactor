@@ -1,0 +1,11 @@
+{
+    "file": "items_stuct_declaration.rs",
+    "args": {
+        "refactoring": "extract-block",
+        "selection": "16:25"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "items_stuct_declaration_after.rs"
+    }
+}
