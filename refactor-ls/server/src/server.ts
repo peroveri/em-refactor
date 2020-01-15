@@ -22,12 +22,7 @@ import {
 	MarkedString,
 } from 'vscode-languageserver';
 
-import {
-	generate_json_actions,
-	canExecuteGenerateTestCommand,
-	handleExecuteGenerateTestCommand
-}
-from './generate-test-file';
+import { generateJsonCodeActions, canExecuteGenerateTestCommand, handleExecuteGenerateTestCommand } from "./create-test-file";
 
 import {
 	convertToCmd,
@@ -94,7 +89,10 @@ connection.onInitialize((params: InitializeParams) => {
 		}
 	};
 });
-
+const refactorings = [
+	"extract-block",
+	"box-field"
+];
 connection.onInitialized(() => {
 
 	if (hasConfigurationCapability) {
@@ -107,7 +105,7 @@ connection.onInitialized(() => {
 		});
 	}
 	let hasEditCapability = true;
-	if(hasEditCapability) {
+	if (hasEditCapability) {
 		// connection.client.register()
 	}
 });
@@ -174,9 +172,12 @@ function handleCodeAction(params: CodeActionParams): Promise<(Command | CodeActi
 	if (doc === undefined) {
 		return Promise.resolve([]);
 	}
-
-	return Promise.resolve(listActionsForRange(doc, params.range)
-		.concat(generate_json_actions(doc, params)));
+	let result: (Command | CodeAction)[] = [];
+	if(config.showGenerateTestFileCodeActions) {
+		result = result.concat(listActionsForRange(doc, params.range));
+	}
+	result = result.concat(generateJsonCodeActions(refactorings, doc, params));
+	return Promise.resolve(result);
 }
 
 const isValidArgs = (args: RefactorArgs) => {
@@ -185,9 +186,9 @@ const isValidArgs = (args: RefactorArgs) => {
 
 async function handleExecuteCommand(params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void> {
 	console.log('handleExecuteCommand', params);
-	if(canExecuteGenerateTestCommand(params)) {
+	if (canExecuteGenerateTestCommand(params)) {
 		let edits = await handleExecuteGenerateTestCommand(params);
-		for(const edit of edits) {
+		for (const edit of edits) {
 			await connection.workspace.applyEdit(edit);
 		}
 		return Promise.resolve();
@@ -239,7 +240,7 @@ connection.onHover(handleHover);
 
 async function handleHover(params: TextDocumentPositionParams): Promise<Hover | null> {
 	console.log(`handle hover`);
-	if(!config.showTypeOnHover) {
+	if (!config.showTypeOnHover) {
 		return Promise.resolve(null);
 	}
 
@@ -248,7 +249,7 @@ async function handleHover(params: TextDocumentPositionParams): Promise<Hover | 
 	if (relativeFilePath === undefined || workspaceFolders === null) return Promise.reject("unknown file path");
 
 	const doc = documents.get(params.textDocument.uri);
-	if (doc === undefined) {return Promise.reject();}
+	if (doc === undefined) { return Promise.reject(); }
 	let pos = doc.offsetAt(params.position);
 	let cmd = convertToCmdProvideType(relativeFilePath, `${pos}:${pos}`);
 
@@ -261,7 +262,7 @@ async function handleHover(params: TextDocumentPositionParams): Promise<Hover | 
 
 	if (result.code === 0) {
 
-		let res = JSON.parse(result.stdout) as Array<{type: string}>;
+		let res = JSON.parse(result.stdout) as Array<{ type: string }>;
 		let content = res && res.length > 0 ? res[0].type : '<empty>';
 
 		content = content.replace(/\n([ \t]+)/g, (match, p1: string) => {
@@ -277,7 +278,7 @@ async function handleHover(params: TextDocumentPositionParams): Promise<Hover | 
 				start: params.position,
 				end: params.position
 			}
-		}as Hover );
+		} as Hover);
 	}
 	return Promise.reject("refactoring failed")
 }
