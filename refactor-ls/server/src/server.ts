@@ -19,17 +19,15 @@ import {
 	Hover,
 } from 'vscode-languageserver';
 
-import { generateJsonCodeActions, canExecuteGenerateTestCommand, handleExecuteGenerateTestCommand } from "./create-test-file";
-
 import {
-	handleExecuteRefactoringCommand, listActionsForRange
-} from './rust-refactor';
-
-import {
-	getLSPExtensionSettings
-} from './lsp-extension-settings';
-
-import { showTypeOrMacroExpansion } from './rust-hover/showTypeOrMacroExpansion';
+	canExecuteGenerateTestCommand,
+	generateJsonCodeActions,
+	getLSPExtensionSettings,
+	handleExecuteGenerateTestCommand,
+	handleExecuteRefactoringCommand,
+	listActionsForRange,
+	showTypeOrMacroExpansion
+} from './modules';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.

@@ -1,5 +1,5 @@
 import { TextDocumentPositionParams, Hover, MarkedString, Connection, TextDocuments } from 'vscode-languageserver';
-import { getFileRelativePath, convertToCmdProvideType } from '../rust-refactor/refactoring-mappings';
+import { getFileRelativePath, convertToCmdProvideType } from '..';
 import * as shell from 'shelljs';
 
 export async function showTypeOrMacroExpansion(params: TextDocumentPositionParams, connection: Connection, documents: TextDocuments, binaryPath: string): Promise<Hover> {

@@ -11,7 +11,7 @@ import {
     ApplyWorkspaceEditParams,
 } from 'vscode-languageserver';
 
-import { ByteRange, isValidBinaryPath } from '../ls-mappings';
+import { ByteRange, isValidBinaryPath } from '../';
 
 export interface RefactorArgs {
     file: string;
