@@ -31,7 +31,7 @@ import {
 	mapRefactorResultToWorkspaceEdit,
 	RefactorArgs,
 	convertToCmdProvideType,
-} from './refactoring-mappings';
+} from './rust-refactor/refactoring-mappings';
 
 import config from './config';
 

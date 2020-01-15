@@ -11,7 +11,8 @@ import {
     ApplyWorkspaceEditParams,
 } from 'vscode-languageserver';
 
-import config from './config';
+import config from '../config';
+import { ByteRange } from '../ls-mappings/ByteRange';
 
 export interface RefactorArgs {
     file: string;
@@ -19,21 +20,6 @@ export interface RefactorArgs {
     refactoring: string;
     selection: string;
     unsafe: boolean;
-}
-export class ByteRange {
-    constructor(public start: Number, public end: Number) { }
-    isRange = () => this.start >= 0 && this.end >= 0;
-    isEmpty = () => this.start === this.end;
-    toArgumentString = () => `${this.start}:${this.end}`;
-    static Empty = () => new ByteRange(0, 0);
-    static Null = () => new ByteRange(-1, -1);
-    static fromRange(range: Range, doc: TextDocument): ByteRange {
-        const hasSelection = range && range.start && range.end;
-        if (!hasSelection || doc === undefined) return this.Null();
-
-        if (range.start.character === range.end.character && range.start.line === range.end.line) return this.Empty();
-        return new ByteRange(doc.offsetAt(range.start), doc.offsetAt(range.end))
-    }
 }
 interface Change {
     file_name: string;
