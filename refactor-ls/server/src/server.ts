@@ -23,6 +23,13 @@ import {
 } from 'vscode-languageserver';
 
 import {
+	generate_json_actions,
+	canExecuteGenerateTestCommand,
+	handleExecuteGenerateTestCommand
+}
+from './generate-test-file';
+
+import {
 	convertToCmd,
 	getFileRelativePath,
 	listActionsForRange,
@@ -74,10 +81,14 @@ connection.onInitialize((params: InitializeParams) => {
 			codeActionProvider: { // TODO: code actions literal support
 				codeActionKinds: [
 					CodeActionKind.RefactorExtract + '.function',
+					`${CodeActionKind.Refactor}.generate_test_file`
 				]
 			},
 			executeCommandProvider: {
-				commands: ['refactor.extract.function']
+				commands: [
+					'refactor.extract.function',
+					`${CodeActionKind.Refactor}.generate_test_file`
+				]
 			},
 			hoverProvider: true
 		}
@@ -94,6 +105,10 @@ connection.onInitialized(() => {
 		connection.workspace.onDidChangeWorkspaceFolders(_event => {
 			connection.console.log('Workspace folder change event received.');
 		});
+	}
+	let hasEditCapability = true;
+	if(hasEditCapability) {
+		// connection.client.register()
 	}
 });
 
@@ -160,15 +175,24 @@ function handleCodeAction(params: CodeActionParams): Promise<(Command | CodeActi
 		return Promise.resolve([]);
 	}
 
-	return Promise.resolve(listActionsForRange(doc, params.range));
+	return Promise.resolve(listActionsForRange(doc, params.range)
+		.concat(generate_json_actions(doc, params)));
 }
 
 const isValidArgs = (args: RefactorArgs) => {
 	return args && args.file;
 }
 
-async function handleExecuteCommand(params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams> {
+async function handleExecuteCommand(params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void> {
 	console.log('handleExecuteCommand', params);
+	if(canExecuteGenerateTestCommand(params)) {
+		let edits = await handleExecuteGenerateTestCommand(params);
+		for(const edit of edits) {
+			await connection.workspace.applyEdit(edit);
+		}
+		return Promise.resolve();
+	}
+
 	if (params.arguments && params.arguments[0]) {
 		let arg = params.arguments[0] as RefactorArgs;
 		if (!isValidArgs(arg)) return Promise.reject(`invalid args: ${JSON.stringify(params.arguments)}`);

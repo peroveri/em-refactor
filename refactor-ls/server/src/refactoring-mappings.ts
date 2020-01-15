@@ -20,7 +20,7 @@ export interface RefactorArgs {
     selection: string;
     unsafe: boolean;
 }
-class ByteRange {
+export class ByteRange {
     constructor(public start: Number, public end: Number) { }
     isRange = () => this.start >= 0 && this.end >= 0;
     isEmpty = () => this.start === this.end;
