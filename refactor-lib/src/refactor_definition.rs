@@ -11,12 +11,6 @@ pub enum RefactorDefinition {
     // LiftClosure(SourceCodeRange),
 }
 
-// plan for compositions:
-// ExtractBlock            = InsertEmptyBlock     o PushExpression     o PushStatements
-// ExtractClosure          = ExtractBlock         o IntroduceClosure
-// ExtractLocalFunction    = ExtractClosure       o CloseOverVariables o IntroduceLocalFunction
-// ExtractMethod /Function = ExtractLocalFunction o LiftLocalFunction
-
 #[derive(PartialEq, Debug)]
 pub struct ExtractMethodArgs {
     pub range: SourceCodeRange,
