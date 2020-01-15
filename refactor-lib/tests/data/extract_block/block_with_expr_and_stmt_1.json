@@ -1,0 +1,11 @@
+{
+    "file": "block_with_expr_and_stmt_1.rs",
+    "args": {
+        "refactoring": "extract-block",
+        "selection": "23:39"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "block_with_expr_and_stmt_1_after.rs"
+    }
+}
