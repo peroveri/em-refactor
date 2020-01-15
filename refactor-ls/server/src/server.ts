@@ -9,13 +9,11 @@ import {
 	ProposedFeatures,
 	InitializeParams,
 	DidChangeConfigurationNotification,
-	ShowMessageNotification,
 	CodeActionKind,
 	CodeAction,
 	Command,
 	CodeActionParams,
 	ExecuteCommandParams,
-	MessageType,
 	ApplyWorkspaceEditParams,
 	TextDocumentPositionParams,
 	Hover,
@@ -25,25 +23,24 @@ import {
 import { generateJsonCodeActions, canExecuteGenerateTestCommand, handleExecuteGenerateTestCommand } from "./create-test-file";
 
 import {
-	convertToCmd,
 	getFileRelativePath,
 	listActionsForRange,
-	mapRefactorResultToWorkspaceEdit,
 	RefactorArgs,
 	convertToCmdProvideType,
 } from './rust-refactor/refactoring-mappings';
 
 import config from './config';
+import { handleExecuteRefactoringCommand } from './rust-refactor/handleExecuteRefactoringCommand';
 
 let shell = require('shelljs');
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
-let connection = createConnection(ProposedFeatures.all);
+export let connection = createConnection(ProposedFeatures.all);
 
 // Create a simple text document manager. The text document manager
 // supports full document sync only
-let documents: TextDocuments = new TextDocuments();
+export let documents: TextDocuments = new TextDocuments();
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
@@ -180,59 +177,18 @@ function handleCodeAction(params: CodeActionParams): Promise<(Command | CodeActi
 	return Promise.resolve(result);
 }
 
-const isValidArgs = (args: RefactorArgs) => {
+export const isValidArgs = (args: RefactorArgs) => {
 	return args && args.file;
 }
-
 async function handleExecuteCommand(params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void> {
-	console.log('handleExecuteCommand', params);
 	if (canExecuteGenerateTestCommand(params)) {
-		let edits = await handleExecuteGenerateTestCommand(params);
+		const edits = await handleExecuteGenerateTestCommand(params);
 		for (const edit of edits) {
 			await connection.workspace.applyEdit(edit);
 		}
 		return Promise.resolve();
 	}
-
-	if (params.arguments && params.arguments[0]) {
-		let arg = params.arguments[0] as RefactorArgs;
-		if (!isValidArgs(arg)) return Promise.reject(`invalid args: ${JSON.stringify(params.arguments)}`);
-
-		let workspaceFolders = await connection.workspace.getWorkspaceFolders();
-		let relativeFilePath = getFileRelativePath(arg.file, workspaceFolders);
-		if (relativeFilePath === undefined || workspaceFolders === null) return Promise.reject("unknown file path");
-		let workspace_uri = workspaceFolders[0].uri;
-
-		let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.refactoring === 'extract-method' ? 'foo' : null, arg.unsafe);
-
-		/* https://github.com/shelljs/shelljs/wiki/Electron-compatibility */
-		if (shell.config.execPath === null) {
-			shell.config.execPath = shell.which('node').toString();
-		}
-		let result = shell.exec(cmd);
-
-		if (result.code === 0) {
-
-			let edits = mapRefactorResultToWorkspaceEdit(arg, result.stdout, workspace_uri, documents);
-			console.log(`stdout: ${result.stdout}`);
-			connection.workspace.applyEdit(edits);
-			connection.sendNotification(ShowMessageNotification.type, {
-				message: `Applied: ${arg.refactoring}`, type: MessageType.Info,
-			});
-			return Promise.resolve(edits);
-		} else {
-			connection.sendNotification(ShowMessageNotification.type, {
-				message: `Refactoring failed. \nstderr: ${result.stderr}\nstdout: ${result.stdout}`, type: MessageType.Error,
-			});
-			console.error(`Got error code: ${result.code}`);
-			console.error(cmd);
-			console.error(result);
-			return Promise.reject("refactoring failed")
-		}
-	}
-	// console.log(params);
-
-	return Promise.reject("empty arg list");
+	return handleExecuteRefactoringCommand(params);
 }
 
 connection.onHover(handleHover);
