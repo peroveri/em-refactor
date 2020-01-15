@@ -122,3 +122,19 @@ fn box_field_struct_pattern_tuple_id_pat() {
 fn box_field_trait_copy_cannot_contain_drop() {
     run_test("trait_copy_cannot_contain_drop");
 }
+#[test]
+fn box_field_visibility_named_pub_1() {
+    run_test("visibility_named_pub_1");
+}
+#[test]
+fn box_field_visibility_named_pub_crate() {
+    run_test("visibility_named_pub_crate");
+}
+#[test]
+fn box_field_visibility_tuple_pub_1() {
+    run_test("visibility_tuple_pub_1");
+}
+#[test]
+fn box_field_visibility_tuple_pub_crate() {
+    run_test("visibility_tuple_pub_crate");
+}

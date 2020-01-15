@@ -12,6 +12,7 @@ Grammars
 * Expression macros
 * self
 * Error propagation expression: `?`
+* Visibility modifiers
 
 Type system / other
 * Coercion(?)

@@ -1,0 +1,11 @@
+{
+    "file": "visibility_named_pub_1.rs",
+    "args": {
+        "refactoring": "box-field",
+        "selection": "15:20"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "visibility_named_pub_1_after.rs"
+    }
+}
