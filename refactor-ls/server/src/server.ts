@@ -17,21 +17,17 @@ import {
 	ApplyWorkspaceEditParams,
 	TextDocumentPositionParams,
 	Hover,
-	MarkedString,
 } from 'vscode-languageserver';
 
 import { generateJsonCodeActions, canExecuteGenerateTestCommand, handleExecuteGenerateTestCommand } from "./create-test-file";
 
 import {
-	getFileRelativePath,
 	listActionsForRange,
-	convertToCmdProvideType,
 } from './rust-refactor/refactoring-mappings';
 
 import config from './config';
 import { handleExecuteRefactoringCommand } from './rust-refactor/handleExecuteRefactoringCommand';
-
-let shell = require('shelljs');
+import { showTypeOrMacroExpansion } from './rust-hover/showTypeOrMacroExpansion';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -39,7 +35,7 @@ let connection = createConnection(ProposedFeatures.all);
 
 // Create a simple text document manager. The text document manager
 // supports full document sync only
- let documents: TextDocuments = new TextDocuments();
+let documents: TextDocuments = new TextDocuments();
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
@@ -187,52 +183,13 @@ async function handleExecuteCommand(params: ExecuteCommandParams): Promise<Apply
 	return handleExecuteRefactoringCommand(params, connection, documents);
 }
 
-connection.onHover(handleHover);
+connection.onHover(handleOnHover);
 
-
-async function handleHover(params: TextDocumentPositionParams): Promise<Hover | null> {
-	console.log(`handle hover`);
+async function handleOnHover(params: TextDocumentPositionParams): Promise<Hover | null> {
 	if (!config.showTypeOnHover) {
 		return Promise.resolve(null);
 	}
-
-	let workspaceFolders = await connection.workspace.getWorkspaceFolders();
-	let relativeFilePath = getFileRelativePath(params.textDocument.uri, workspaceFolders);
-	if (relativeFilePath === undefined || workspaceFolders === null) return Promise.reject("unknown file path");
-
-	const doc = documents.get(params.textDocument.uri);
-	if (doc === undefined) { return Promise.reject(); }
-	let pos = doc.offsetAt(params.position);
-	let cmd = convertToCmdProvideType(relativeFilePath, `${pos}:${pos}`);
-
-	/* https://github.com/shelljs/shelljs/wiki/Electron-compatibility */
-	if (shell.config.execPath === null) {
-		shell.config.execPath = shell.which('node').toString();
-	}
-	console.log(`cmd: ${cmd}`);
-	let result = shell.exec(cmd);
-
-	if (result.code === 0) {
-
-		let res = JSON.parse(result.stdout) as Array<{ type: string }>;
-		let content = res && res.length > 0 ? res[0].type : '<empty>';
-
-		content = content.replace(/\n([ \t]+)/g, (match, p1: string) => {
-			return '\n' + ' '.repeat((p1.length) / 8);
-		});
-
-		return Promise.resolve({
-			contents: {
-				language: 'rust',
-				value: content
-			} as MarkedString,
-			range: {
-				start: params.position,
-				end: params.position
-			}
-		} as Hover);
-	}
-	return Promise.reject("refactoring failed")
+	return showTypeOrMacroExpansion(params, connection, documents);
 }
 
 // async function validateTextDocument(textDocument: TextDocument): Promise<void> {
