@@ -7,14 +7,17 @@ fn run_test(name: &str) {
 }
 
 #[test]
+#[ignore]
 fn extract_block_block_only_expr() {
     run_test("block_only_expr");
 }
 #[test]
+#[ignore]
 fn extract_block_block_with_expr_and_stmt_1() {
     run_test("block_with_expr_and_stmt_1");
 }
 #[test]
+#[ignore]
 fn extract_block_block_with_expr_and_stmt_2() {
     run_test("block_with_expr_and_stmt_2");
 }
