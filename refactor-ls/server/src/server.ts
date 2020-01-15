@@ -25,7 +25,6 @@ import { generateJsonCodeActions, canExecuteGenerateTestCommand, handleExecuteGe
 import {
 	getFileRelativePath,
 	listActionsForRange,
-	RefactorArgs,
 	convertToCmdProvideType,
 } from './rust-refactor/refactoring-mappings';
 
@@ -36,11 +35,11 @@ let shell = require('shelljs');
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
-export let connection = createConnection(ProposedFeatures.all);
+let connection = createConnection(ProposedFeatures.all);
 
 // Create a simple text document manager. The text document manager
 // supports full document sync only
-export let documents: TextDocuments = new TextDocuments();
+ let documents: TextDocuments = new TextDocuments();
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
@@ -177,9 +176,6 @@ function handleCodeAction(params: CodeActionParams): Promise<(Command | CodeActi
 	return Promise.resolve(result);
 }
 
-export const isValidArgs = (args: RefactorArgs) => {
-	return args && args.file;
-}
 async function handleExecuteCommand(params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void> {
 	if (canExecuteGenerateTestCommand(params)) {
 		const edits = await handleExecuteGenerateTestCommand(params);
@@ -188,7 +184,7 @@ async function handleExecuteCommand(params: ExecuteCommandParams): Promise<Apply
 		}
 		return Promise.resolve();
 	}
-	return handleExecuteRefactoringCommand(params);
+	return handleExecuteRefactoringCommand(params, connection, documents);
 }
 
 connection.onHover(handleHover);

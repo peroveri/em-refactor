@@ -1,10 +1,13 @@
-import { ShowMessageNotification, ExecuteCommandParams, MessageType, ApplyWorkspaceEditParams } from 'vscode-languageserver';
+import { ShowMessageNotification, ExecuteCommandParams, MessageType, ApplyWorkspaceEditParams, Connection, TextDocuments } from 'vscode-languageserver';
 import { convertToCmd, getFileRelativePath, mapRefactorResultToWorkspaceEdit, RefactorArgs } from './refactoring-mappings';
-import { isValidArgs, connection, documents } from '../server';
 
 let shell = require('shelljs');
 
-export async function handleExecuteRefactoringCommand(params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void> {
+const isValidArgs = (args: RefactorArgs) => {
+	return args && args.file;
+}
+
+export async function handleExecuteRefactoringCommand(params: ExecuteCommandParams, connection: Connection, documents: TextDocuments): Promise<ApplyWorkspaceEditParams | void> {
 	if (params.arguments && params.arguments[0]) {
 		let arg = params.arguments[0] as RefactorArgs;
 		if (!isValidArgs(arg))
