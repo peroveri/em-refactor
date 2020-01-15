@@ -25,11 +25,23 @@
 			"type": "object",
 			"title": "Example configuration",
 			"properties": {
-				"languageServerExample.maxNumberOfProblems": {
-					"scope": "resource",
-					"type": "number",
-					"default": 100,
-					"description": "Controls the maximum number of problems produced by the server."
+				"languageServerExample.isHoverEnabled": {
+					"scope": "window",
+					"type": "boolean",
+					"default": false,
+					"description": "Shows type information and macro expansion on hover."
+				},
+				"languageServerExample.isGenerateTestFilesEnabled": {
+					"scope": "window",
+					"type": "boolean",
+					"default": false,
+					"description": "Developer setting. Allows test files to be generated."
+				},
+				"languageServerExample.refactoringBinaryPath": {
+					"scope": "window",
+					"type": "string",
+					"default": "",
+					"description": "The path to the refactoring binary file."
 				},
 				"languageServerExample.trace.server": {
 					"scope": "window",

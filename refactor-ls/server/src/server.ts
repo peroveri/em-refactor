@@ -22,11 +22,13 @@ import {
 import { generateJsonCodeActions, canExecuteGenerateTestCommand, handleExecuteGenerateTestCommand } from "./create-test-file";
 
 import {
-	listActionsForRange,
-} from './rust-refactor/refactoring-mappings';
+	handleExecuteRefactoringCommand, listActionsForRange
+} from './rust-refactor';
 
-import config from './config';
-import { handleExecuteRefactoringCommand } from './rust-refactor/handleExecuteRefactoringCommand';
+import {
+	getLSPExtensionSettings
+} from './lsp-extension-settings';
+
 import { showTypeOrMacroExpansion } from './rust-hover/showTypeOrMacroExpansion';
 
 // Create a connection for the server. The connection uses Node's IPC as a transport.
@@ -39,7 +41,6 @@ let documents: TextDocuments = new TextDocuments();
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
-let hasDiagnosticRelatedInformationCapability: boolean = false;
 
 connection.onInitialize((params: InitializeParams) => {
 	let capabilities = params.capabilities;
@@ -51,11 +52,6 @@ connection.onInitialize((params: InitializeParams) => {
 	);
 	hasWorkspaceFolderCapability = !!(
 		capabilities.workspace && !!capabilities.workspace.workspaceFolders
-	);
-	hasDiagnosticRelatedInformationCapability = !!(
-		capabilities.textDocument &&
-		capabilities.textDocument.publishDiagnostics &&
-		capabilities.textDocument.publishDiagnostics.relatedInformation
 	);
 
 	return {
@@ -102,89 +98,46 @@ connection.onInitialized(() => {
 	}
 });
 
-// The example settings
-// interface ExampleSettings {
-// 	maxNumberOfProblems: number;
-// }
-
-// The global settings, used when the `workspace/configuration` request is not supported by the client.
-// Please note that this is not the case when using this server with the client provided in this example
-// but could happen with other clients.
-// const defaultSettings: ExampleSettings = { maxNumberOfProblems: 1000 };
-// let globalSettings: ExampleSettings = defaultSettings;
-
-// Cache the settings of all open documents
-// let documentSettings: Map<string, Thenable<ExampleSettings>> = new Map();
-
-// connection.onDidChangeConfiguration(change => {
-// 	if (hasConfigurationCapability) {
-// 		// Reset all cached document settings
-// 		documentSettings.clear();
-// 	} else {
-// 		globalSettings = <ExampleSettings>(
-// 			(change.settings.languageServerExample || defaultSettings)
-// 		);
-// 	}
-
-// 	// Revalidate all open text documents
-// 	documents.all().forEach(validateTextDocument);
-// });
-
-// function getDocumentSettings(resource: string): Thenable<ExampleSettings> {
-// 	if (!hasConfigurationCapability) {
-// 		return Promise.resolve(globalSettings);
-// 	}
-// 	let result = documentSettings.get(resource);
-// 	if (!result) {
-// 		result = connection.workspace.getConfiguration({
-// 			scopeUri: resource,
-// 			section: 'languageServerExample'
-// 		});
-// 		documentSettings.set(resource, result);
-// 	}
-// 	return result;
-// }
-
-// Only keep settings for open documents
-// documents.onDidClose(e => {
-// 	documentSettings.delete(e.document.uri);
-// });
-
 connection.onCodeAction(handleCodeAction);
 connection.onExecuteCommand(handleExecuteCommand);
 
-function handleCodeAction(params: CodeActionParams): Promise<(Command | CodeAction)[]> {
+async function handleCodeAction(params: CodeActionParams): Promise<(Command | CodeAction)[]> {
+	let settings = await getLSPExtensionSettings(connection);
 
 	const doc = documents.get(params.textDocument.uri);
 	if (doc === undefined) {
 		return Promise.resolve([]);
 	}
 	let result: (Command | CodeAction)[] = [];
-	if(config.showGenerateTestFileCodeActions) {
-		result = result.concat(listActionsForRange(doc, params.range));
+	if (settings.isGenerateTestFilesEnabled) {
+		result = result.concat(generateJsonCodeActions(refactorings, doc, params));
 	}
-	result = result.concat(generateJsonCodeActions(refactorings, doc, params));
+	result = result.concat(listActionsForRange(doc, params.range));
 	return Promise.resolve(result);
 }
 
-async function handleExecuteCommand(params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void> {
-	if (canExecuteGenerateTestCommand(params)) {
+async function handleExecuteCommand(params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void | any> {
+	const settings = await getLSPExtensionSettings(connection);
+
+	if (settings.isGenerateTestFilesEnabled && canExecuteGenerateTestCommand(params)) {
 		const edits = await handleExecuteGenerateTestCommand(params);
 		for (const edit of edits) {
 			await connection.workspace.applyEdit(edit);
 		}
 		return Promise.resolve();
 	}
-	return handleExecuteRefactoringCommand(params, connection, documents);
+	return handleExecuteRefactoringCommand(params, connection, documents, settings.refactoringBinaryPath);
 }
 
 connection.onHover(handleOnHover);
 
 async function handleOnHover(params: TextDocumentPositionParams): Promise<Hover | null> {
-	if (!config.showTypeOnHover) {
-		return Promise.resolve(null);
+	const settings = await getLSPExtensionSettings(connection);
+
+	if (settings.isHoverEnabled) {
+		return showTypeOrMacroExpansion(params, connection, documents, settings.refactoringBinaryPath);
 	}
-	return showTypeOrMacroExpansion(params, connection, documents);
+	return Promise.resolve(null);
 }
 
 connection.onDidChangeWatchedFiles(_change => {

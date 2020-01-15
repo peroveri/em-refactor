@@ -12,8 +12,9 @@
 		"url": "https://github.com/Microsoft/vscode-extension-samples"
 	},
 	"dependencies": {
-		"vscode-languageserver": "~5.2.1",
-		"shelljs": "~0.8.3"
+		"@types/shelljs": "^0.8.6",
+		"shelljs": "~0.8.3",
+		"vscode-languageserver": "~5.2.1"
 	},
 	"scripts": {}
 }

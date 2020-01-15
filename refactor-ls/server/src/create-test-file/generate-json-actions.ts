@@ -1,5 +1,5 @@
 import { CodeAction, CodeActionParams, Command, TextDocument, TextDocumentIdentifier, CodeActionKind } from 'vscode-languageserver';
-import { ByteRange } from "../ls-mappings/ByteRange";
+import { ByteRange } from "../ls-mappings";
 import { GenerateTestFileArgs } from './GenerateTestFileArgs';
 
 const getDocName = (doc: TextDocumentIdentifier): string =>

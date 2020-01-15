@@ -1,9 +1,8 @@
 import { TextDocumentPositionParams, Hover, MarkedString, Connection, TextDocuments } from 'vscode-languageserver';
 import { getFileRelativePath, convertToCmdProvideType } from '../rust-refactor/refactoring-mappings';
+import * as shell from 'shelljs';
 
-let shell = require('shelljs');
-
-export async function showTypeOrMacroExpansion(params: TextDocumentPositionParams, connection: Connection, documents: TextDocuments): Promise<Hover> {
+export async function showTypeOrMacroExpansion(params: TextDocumentPositionParams, connection: Connection, documents: TextDocuments, binaryPath: string): Promise<Hover> {
 	let workspaceFolders = await connection.workspace.getWorkspaceFolders();
 	let relativeFilePath = getFileRelativePath(params.textDocument.uri, workspaceFolders);
 	if (relativeFilePath === undefined || workspaceFolders === null)
@@ -13,12 +12,14 @@ export async function showTypeOrMacroExpansion(params: TextDocumentPositionParam
 		return Promise.reject();
 	}
 	let pos = doc.offsetAt(params.position);
-	let cmd = convertToCmdProvideType(relativeFilePath, `${pos}:${pos}`);
+	let cmd = convertToCmdProvideType(relativeFilePath, `${pos}:${pos}`, binaryPath);
+	if(cmd instanceof Error) {
+		return Promise.reject(cmd.message);
+	}
 	/* https://github.com/shelljs/shelljs/wiki/Electron-compatibility */
 	if (shell.config.execPath === null) {
 		shell.config.execPath = shell.which('node').toString();
 	}
-	console.log(`cmd: ${cmd}`);
 	let result = shell.exec(cmd);
 	if (result.code === 0) {
 		let res = JSON.parse(result.stdout) as Array<{

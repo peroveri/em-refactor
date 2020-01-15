@@ -1,13 +1,14 @@
 import { ShowMessageNotification, ExecuteCommandParams, MessageType, ApplyWorkspaceEditParams, Connection, TextDocuments } from 'vscode-languageserver';
 import { convertToCmd, getFileRelativePath, mapRefactorResultToWorkspaceEdit, RefactorArgs } from './refactoring-mappings';
-
-let shell = require('shelljs');
+import * as shell from 'shelljs';
 
 const isValidArgs = (args: RefactorArgs) => {
 	return args && args.file;
 }
 
-export async function handleExecuteRefactoringCommand(params: ExecuteCommandParams, connection: Connection, documents: TextDocuments): Promise<ApplyWorkspaceEditParams | void> {
+export async function handleExecuteRefactoringCommand(params: ExecuteCommandParams, connection: Connection, documents: TextDocuments, binaryPath: string): Promise<ApplyWorkspaceEditParams | void> {
+
+
 	if (params.arguments && params.arguments[0]) {
 		let arg = params.arguments[0] as RefactorArgs;
 		if (!isValidArgs(arg))
@@ -17,7 +18,13 @@ export async function handleExecuteRefactoringCommand(params: ExecuteCommandPara
 		if (relativeFilePath === undefined || workspaceFolders === null)
 			return Promise.reject("unknown file path");
 		let workspace_uri = workspaceFolders[0].uri;
-		let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.refactoring === 'extract-method' ? 'foo' : null, arg.unsafe);
+		let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.refactoring === 'extract-method' ? 'foo' : null, arg.unsafe, binaryPath);
+		if(cmd instanceof Error) {
+			connection.sendNotification(ShowMessageNotification.type, {
+				message: cmd.message, type: MessageType.Error,
+			});
+			return Promise.reject(cmd.message);
+		}
 		/* https://github.com/shelljs/shelljs/wiki/Electron-compatibility */
 		if (shell.config.execPath === null) {
 			shell.config.execPath = shell.which('node').toString();
