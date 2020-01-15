@@ -1,6 +1,6 @@
 import { CodeAction, CodeActionParams, Command, TextDocument, TextDocumentIdentifier, CodeActionKind } from 'vscode-languageserver';
 import { ByteRange } from "../ls-mappings/ByteRange";
-import { GenerateTestFileArgs } from './generate-test-file-args';
+import { GenerateTestFileArgs } from './GenerateTestFileArgs';
 
 const getDocName = (doc: TextDocumentIdentifier): string =>
     doc.uri.substring(doc.uri.lastIndexOf("/") + 1, doc.uri.lastIndexOf("."));
