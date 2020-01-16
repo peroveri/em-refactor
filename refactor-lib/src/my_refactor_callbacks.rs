@@ -38,6 +38,7 @@ impl MyRefactorCallbacks {
         if changes.is_empty() {
             return;
         }
+        self.map_file_replacements2(tcx, changes);
         self.multiple_files = contains_multiple_files(changes);
         if self.multiple_files {
             return;
@@ -60,13 +61,18 @@ impl MyRefactorCallbacks {
             let s2 = &content[(change.end) as usize..];
             content = format!("{}{}{}", s1, change.replacement, s2);
 
-            let replacement = self.map_file_replacements(tcx, &change);
-            self.file_replace_content.push(replacement);
         }
 
         self.content = Some(content);
     }
 
+
+    fn map_file_replacements2(&mut self, tcx: ty::TyCtxt, changes: &[Change]) {
+        for change in changes {
+            let replacement = self.map_file_replacements(tcx, &change);
+            self.file_replace_content.push(replacement);
+        }
+    }
 
     fn map_file_replacements(&mut self, tcx: ty::TyCtxt, change: &Change) -> FileReplaceContent {
         let range = crate::refactor_definition::SourceCodeRange {
