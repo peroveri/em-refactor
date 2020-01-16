@@ -85,19 +85,19 @@ impl MyRefactorCallbacks {
             byte_start: change.start,
             char_end: line_end.end_col.0,
             char_start: line_start.start_col.0,
-            file_name: change.replacement.to_string(),
+            file_name: change.file_name.to_string(),
             line_end: line_end.line_index,
             line_start: line_start.line_index,
             replacement: change.replacement.to_string()
         }
     }
+}
 
-    pub fn serialize_file_replacements(&self) ->  Result<String, i32> {
-        if let Ok(serialized) = serde_json::to_string(&self.file_replace_content) {
-            Ok(serialized)
-        } else {
-            Err(4)
-        }
+pub fn serialize_file_replacements(replacements: &Vec<FileReplaceContent>) ->  Result<String, i32> {
+    if let Ok(serialized) = serde_json::to_string(replacements) {
+        Ok(serialized)
+    } else {
+        Err(4)
     }
 }
 

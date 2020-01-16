@@ -234,6 +234,7 @@ fn run_rustc() -> Result<(), i32> {
     // Runs with default callbacks
     let changes = my_refactor.result.clone().ok().unwrap_or_else(|| vec![]);
     let content = my_refactor.content.clone().unwrap_or_else(|| "".to_owned());
+    let replacements = my_refactor.file_replace_content.clone();
 
     if let Err(err) = my_refactor.result {
         if err.code == crate::refactor_definition::InternalErrorCodes::FileNotFound &&
@@ -273,7 +274,7 @@ fn run_rustc() -> Result<(), i32> {
     if refactor_args.contains(&"--output-changes-as-json".to_owned()) {
         print!("{}", change_serialize::serialize_changes(changes)?);
     } else if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
-        print!("{}", my_refactor.serialize_file_replacements()?);
+        print!("{}", my_refactor_callbacks::serialize_file_replacements(&replacements)?);
     } else {
         print!("{}", content);
     }
