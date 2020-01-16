@@ -34,7 +34,7 @@ pub fn collect_struct_expressions(
     struct_hir_id: HirId,
     field_ident: StructFieldType,
 ) -> (Vec<Span>, Vec<(Span, String)>) {
-    let mut v = StructPatternCollector {
+    let mut v = StructExpressionCollector {
         tcx,
         struct_hir_id,
         field: vec![],
@@ -48,7 +48,7 @@ pub fn collect_struct_expressions(
     (v.field, v.shorthands)
 }
 
-struct StructPatternCollector<'v> {
+struct StructExpressionCollector<'v> {
     tcx: TyCtxt<'v>,
     struct_hir_id: HirId,
     field: Vec<Span>,
@@ -57,7 +57,7 @@ struct StructPatternCollector<'v> {
     body_id: Option<BodyId>,
 }
 
-impl StructPatternCollector<'_> {
+impl StructExpressionCollector<'_> {
     fn expr_resolves_to_struct(&self, expr: &Expr) -> bool {
         let typecheck_table = self.tcx.typeck_tables_of(expr.hir_id.owner_def_id());
         if let Some(expr_type) = typecheck_table.expr_ty_adjusted_opt(expr) {
@@ -97,7 +97,7 @@ impl StructPatternCollector<'_> {
     }
 }
 
-impl<'v> Visitor<'v> for StructPatternCollector<'v> {
+impl<'v> Visitor<'v> for StructExpressionCollector<'v> {
     type Map = Map<'v>;
     fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, Self::Map> {
         NestedVisitorMap::All(&self.tcx.hir())
