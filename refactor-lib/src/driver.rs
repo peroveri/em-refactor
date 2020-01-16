@@ -272,6 +272,8 @@ fn run_rustc() -> Result<(), i32> {
 
     if refactor_args.contains(&"--output-changes-as-json".to_owned()) {
         print!("{}", change_serialize::serialize_changes(changes)?);
+    } else if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
+        print!("{}", my_refactor.serialize_file_replacements()?);
     } else {
         print!("{}", content);
     }

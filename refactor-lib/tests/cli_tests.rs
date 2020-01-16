@@ -93,6 +93,27 @@ fn cli_output_json() {
 }
 
 #[test]
+fn cli_output_replacement_json() {
+    let expected = r#"[{"byte_end":40,"byte_start":16,"char_end":28,"char_start":4,"file_name":"let s = \n{\nlet s = \"Hello, world!\";\ns};","line_end":1,"line_start":1,"replacement":"let s = \n{\nlet s = \"Hello, world!\";\ns};"}]
+"#;
+
+    cargo_my_refactor()
+        .arg(WORKSPACE_ARG)
+        .arg("--output-replacements-as-json")
+        .arg("--refactoring=extract-block")
+        .arg("--selection=16:40")
+        .arg("--file=src/main.rs")
+        .arg("--")
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
+        .assert()
+        .success()
+        .stdout(expected);
+}
+
+#[test]
 fn provide_type() {
     let expected = r#"[{"type":"fn foo(i32,u32) -> (i32)"}]
 "#;

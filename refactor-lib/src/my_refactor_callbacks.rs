@@ -1,4 +1,4 @@
-use crate::change::Change;
+use crate::change::{Change, FileReplaceContent};
 use crate::refactor_definition::{InternalErrorCodes, RefactorDefinition, RefactoringError};
 use crate::refactorings::do_ty_refactoring;
 use rustc::ty;
@@ -18,7 +18,8 @@ pub struct MyRefactorCallbacks {
     pub result: Result<Vec<Change>, RefactoringError>,
     pub content: Option<String>, // TODO: remove content and multiple_files fields
     pub multiple_files: bool,
-    pub ignore_missing_file: bool
+    pub ignore_missing_file: bool,
+    pub file_replace_content: Vec<FileReplaceContent>
 }
 
 impl MyRefactorCallbacks {
@@ -28,7 +29,8 @@ impl MyRefactorCallbacks {
             result: Err(RefactoringError::new(InternalErrorCodes::Error, "".to_owned())), // shouldnt be Err by default, but something like None
             content: None,
             multiple_files: false,
-            ignore_missing_file: false
+            ignore_missing_file: false,
+            file_replace_content: vec![]
         }
     }
 
@@ -57,9 +59,45 @@ impl MyRefactorCallbacks {
             let s1 = &content[..(change.start) as usize];
             let s2 = &content[(change.end) as usize..];
             content = format!("{}{}{}", s1, change.replacement, s2);
+
+            let replacement = self.map_file_replacements(tcx, &change);
+            self.file_replace_content.push(replacement);
         }
 
         self.content = Some(content);
+    }
+
+
+    fn map_file_replacements(&mut self, tcx: ty::TyCtxt, change: &Change) -> FileReplaceContent {
+        let range = crate::refactor_definition::SourceCodeRange {
+            file_name: change.file_name.to_string(),
+            from: change.start,
+            to: change.end
+        };
+
+        let span = crate::refactorings::utils::map_range_to_span(tcx, &range).unwrap();
+
+        let lines = tcx.sess.source_map().span_to_lines(span).unwrap().lines;
+        let line_start = lines.first().unwrap();
+        let line_end = lines.last().unwrap();
+        FileReplaceContent {
+            byte_end: change.end,
+            byte_start: change.start,
+            char_end: line_end.end_col.0,
+            char_start: line_start.start_col.0,
+            file_name: change.replacement.to_string(),
+            line_end: line_end.line_index,
+            line_start: line_start.line_index,
+            replacement: change.replacement.to_string()
+        }
+    }
+
+    pub fn serialize_file_replacements(&self) ->  Result<String, i32> {
+        if let Ok(serialized) = serde_json::to_string(&self.file_replace_content) {
+            Ok(serialized)
+        } else {
+            Err(4)
+        }
     }
 }
 
