@@ -21,9 +21,13 @@ export interface RefactorArgs {
     unsafe: boolean;
 }
 interface Change {
+    byte_end: number;
+    byte_start: number;
+    char_end: number;
+    char_start: number;
     file_name: string;
-    start: number;
-    end: number;
+    line_end: number;
+    line_start: number;
     replacement: string;
 }
 
@@ -71,39 +75,33 @@ export function listActionsForRange(doc: TextDocument, range: Range): (Command |
 const concatUris = (uri: string, relativePath: string) =>
     uri + "/" + relativePath; // TODO: combine properly
 
-const mapChange = (doc: TextDocument | undefined, change: Change): TextEdit => {
-    if (doc === undefined) throw "document was undefined"; // doc shouldn't be undefined here
-    return {
-        newText: change.replacement,
-        range: {
-            start: doc.positionAt(change.start),
-            end: doc.positionAt(change.end)
-        }
-    };
-};
+const mapRange = (change: Change): Range =>
+    Range.create(change.line_start, change.char_start, change.line_end, change.char_end);
 
-const mapDocumentChanges = (changes: Change[], workspaceUri: string, documents: TextDocuments): TextDocumentEdit[] =>
-    changes.map(change => ({
-        doc: documents.get(concatUris(workspaceUri, change.file_name)),
-        change: change
-    }))
-        .filter(e => e.doc !== undefined)
-        .map(edit => ({
-            edits: [
-                mapChange(edit.doc, edit.change)
-            ],
-            textDocument: {
-                uri: (edit.doc ? edit.doc.uri : ''),
+export const mapRefactorResultToWorkspaceEdit = (arg: RefactorArgs, stdout: string, workspaceUri: string): ApplyWorkspaceEditParams => {
+    let changes = JSON.parse(stdout) as [Change];
+
+    let documentChanges: TextDocumentEdit[] = [];
+
+    for(const change of changes) {
+        let uri = concatUris(workspaceUri, change.file_name);
+        let documentChange = documentChanges.find(e => e.textDocument.uri === uri);
+        if(documentChange === undefined) {
+            documentChange = TextDocumentEdit.create( {
+                uri,
                 version: null
-            }
-        } as TextDocumentEdit));
-
-export const mapRefactorResultToWorkspaceEdit = (arg: RefactorArgs, stdout: string, workspaceUri: string, documents: TextDocuments): ApplyWorkspaceEditParams => ({
-    edit: {
-        documentChanges: mapDocumentChanges(JSON.parse(stdout) as [Change], workspaceUri, documents)
-    },
-    label: arg.refactoring
-});
+            }, []);
+            documentChanges.push(documentChange);
+        }
+        documentChange.edits.push(TextEdit.replace(mapRange(change), change.replacement));
+    }
+    return {
+        edit: {
+            documentChanges
+        },
+        label: arg.refactoring
+    } as ApplyWorkspaceEditParams;
+}
 
 export const getFileRelativePath = (fileUri: string, workspace: WorkspaceFolder[] | null) => {
     if (workspace === null || workspace.length === 0) return undefined;
@@ -124,7 +122,7 @@ export const convertToCmd = (relativeFilePath: string, refactoring: string, sele
     if (!isValidBinaryPath(binaryPath)) {
         return new Error(`'${binaryPath}' is not a valid binary file`);
     }
-    const refactorArgs = `--output-changes-as-json --ignore-missing-file --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`) + (unsafe ? ' --unsafe' : '');
+    const refactorArgs = `--output-replacements-as-json --ignore-missing-file --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`) + (unsafe ? ' --unsafe' : '');
 
     return `${binaryPath} ${refactorArgs}`;
 }

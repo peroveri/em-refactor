@@ -1,4 +1,4 @@
-import { ShowMessageNotification, ExecuteCommandParams, MessageType, ApplyWorkspaceEditParams, Connection, TextDocuments } from 'vscode-languageserver';
+import { ShowMessageNotification, ExecuteCommandParams, MessageType, ApplyWorkspaceEditParams, Connection } from 'vscode-languageserver';
 import { convertToCmd, getFileRelativePath, mapRefactorResultToWorkspaceEdit, RefactorArgs } from './refactoring-mappings';
 import * as shell from 'shelljs';
 
@@ -6,8 +6,7 @@ const isValidArgs = (args: RefactorArgs) => {
 	return args && args.file;
 }
 
-export async function handleExecuteRefactoringCommand(params: ExecuteCommandParams, connection: Connection, documents: TextDocuments, binaryPath: string): Promise<ApplyWorkspaceEditParams | void> {
-
+export async function handleExecuteRefactoringCommand(params: ExecuteCommandParams, connection: Connection, binaryPath: string): Promise<ApplyWorkspaceEditParams | void> {
 
 	if (params.arguments && params.arguments[0]) {
 		let arg = params.arguments[0] as RefactorArgs;
@@ -31,13 +30,14 @@ export async function handleExecuteRefactoringCommand(params: ExecuteCommandPara
 		}
 		let result = shell.exec(cmd);
 		if (result.code === 0) {
-			let edits = mapRefactorResultToWorkspaceEdit(arg, result.stdout, workspace_uri, documents);
-			console.log(`stdout: ${result.stdout}`);
-			connection.workspace.applyEdit(edits);
+			let edits = mapRefactorResultToWorkspaceEdit(arg, result.stdout, workspace_uri);
+
+			await connection.workspace.applyEdit(edits);
+
 			connection.sendNotification(ShowMessageNotification.type, {
 				message: `Applied: ${arg.refactoring}`, type: MessageType.Info,
 			});
-			return Promise.resolve(edits);
+			return Promise.resolve();
 		}
 		else {
 			connection.sendNotification(ShowMessageNotification.type, {

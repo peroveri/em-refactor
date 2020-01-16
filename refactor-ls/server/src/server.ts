@@ -124,7 +124,7 @@ async function handleExecuteCommand(params: ExecuteCommandParams): Promise<Apply
 		}
 		return Promise.resolve();
 	}
-	return handleExecuteRefactoringCommand(params, connection, documents, settings.refactoringBinaryPath);
+	return handleExecuteRefactoringCommand(params, connection, settings.refactoringBinaryPath);
 }
 
 connection.onHover(handleOnHover);
