@@ -60,3 +60,8 @@ Desugaring
 Macro invocation
 * Extract macro invocation
 * Extract macro invocation argument
+
+Other
+* Copy trait (move semantics "removed")
+* Error propagation expression: `?`
+* Futures? Closures?
