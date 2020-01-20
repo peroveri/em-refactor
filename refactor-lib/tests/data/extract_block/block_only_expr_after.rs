@@ -1,3 +1,4 @@
-fn main() -> i32 {
+fn foo() -> i32 {
     {0}
 }
+fn main() { }

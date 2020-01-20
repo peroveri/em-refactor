@@ -2,7 +2,7 @@
 	"file": "block_with_expr_and_stmt.rs",
 	"args": {
 		"refactoring": "extract-block",
-		"selection": "34:46"
+		"selection": "33:45"
 	},
 	"expected": {
 		"code": 0,

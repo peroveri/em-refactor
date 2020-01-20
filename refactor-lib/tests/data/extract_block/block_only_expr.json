@@ -1,11 +1,11 @@
 {
-    "file": "block_only_expr.rs",
-    "args": {
-        "refactoring": "extract-block",
-        "selection": "23:24"
-    },
-    "expected": {
-        "code": 0,
-        "stdout_file": "block_only_expr_after.rs"
-    }
+	"file": "block_only_expr.rs",
+	"args": {
+		"refactoring": "extract-block",
+		"selection": "22:23"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "block_only_expr_after.rs"
+	}
 }
