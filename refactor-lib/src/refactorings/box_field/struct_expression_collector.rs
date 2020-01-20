@@ -3,7 +3,6 @@ use rustc_hir::intravisit::{FnKind, walk_expr, walk_fn, walk_crate, NestedVisito
 use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
-use super::StructFieldType;
 
 ///
 /// Collect all places where a given struct occurs in a struct expression where also `field_ident` occurs.
@@ -31,14 +30,14 @@ use super::StructFieldType;
 pub fn collect_struct_expressions(
     tcx: TyCtxt,
     struct_hir_id: HirId,
-    field_ident: StructFieldType,
+    field_ident: &str,
 ) -> (Vec<Span>, Vec<(Span, String)>) {
     let mut v = StructExpressionCollector {
         tcx,
         struct_hir_id,
         field: vec![],
         shorthands: vec![],
-        field_ident,
+        field_ident: field_ident.to_string(),
         body_id: None,
     };
     
@@ -52,7 +51,7 @@ struct StructExpressionCollector<'v> {
     struct_hir_id: HirId,
     field: Vec<Span>,
     shorthands: Vec<(Span, String)>,
-    field_ident: StructFieldType,
+    field_ident: String,
     body_id: Option<BodyId>,
 }
 
@@ -66,10 +65,10 @@ impl StructExpressionCollector<'_> {
         } 
         false
     }
-    fn handle_expr(&mut self, expr: &Expr, fields: &[Field], field_name: &str) {
+    fn handle_expr(&mut self, expr: &Expr, fields: &[Field]) {
         if self.expr_resolves_to_struct(expr) {
             for fp in fields.iter() {
-                if format!("{}", fp.ident) == field_name {
+                if format!("{}", fp.ident) == self.field_ident {
                     if fp.is_shorthand {
                         self.shorthands.push((fp.expr.span, fp.ident.to_string()));
                     } else {
@@ -99,10 +98,7 @@ impl<'v> Visitor<'v> for StructExpressionCollector<'v> {
     }
     fn visit_expr(&mut self, expr: &'v Expr) {
         if let ExprKind::Struct(_, fields, _) = &expr.kind {
-            if let StructFieldType::Named(name) = &self.field_ident {
-                let name = name.to_string();
-                self.handle_expr(expr, fields, &name);
-            }
+            self.handle_expr(expr, fields);
         }
         walk_expr(self, expr);
     }
@@ -115,10 +111,6 @@ mod test {
     use super::super::struct_def_field_collector::collect_field;
     use super::super::super::utils::get_source;
     use quote::quote;
-
-    fn field(s: &str) -> StructFieldType {
-        StructFieldType::Named(s.to_string())
-    }
 
     fn create_program_match_1() -> quote::__rt::TokenStream {
         quote! {
@@ -176,7 +168,7 @@ mod test {
     fn struct_expression_collector_should_collect_1() {
         run_after_analysis(create_program_match_1(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let (fields, _) = collect_struct_expressions(tcx, hir_id, field("foo"));
+            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo");
 
             assert_eq!(fields.len(), 1);
             assert_eq!(get_source(tcx, fields[0]), "0");
@@ -186,7 +178,7 @@ mod test {
     fn struct_expression_collector_should_collect_2() {
         run_after_analysis(create_program_match_2(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let (fields, _) = collect_struct_expressions(tcx, hir_id, field("foo"));
+            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo");
 
             assert_eq!(fields.len(), 1);
         });
@@ -195,7 +187,7 @@ mod test {
     fn struct_expression_collector_should_collect_3() {
         run_after_analysis(create_program_match_3(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let (fields, _) = collect_struct_expressions(tcx, hir_id, field("foo"));
+            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo");
 
             assert_eq!(fields.len(), 2);
             assert_eq!(get_source(tcx, fields[0]), "0");
@@ -206,7 +198,7 @@ mod test {
     fn struct_expression_collector_should_collect_4() {
         run_after_analysis(create_program_match_4(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let (fields, _) = collect_struct_expressions(tcx, hir_id, field("foo"));
+            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo");
 
             assert_eq!(fields.len(), 1);
             assert_eq!(get_source(tcx, fields[0]), "0");
@@ -216,7 +208,7 @@ mod test {
     fn struct_expression_collector_should_collect_5() {
         run_after_analysis(create_program_match_5(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let (fields, shorthands) = collect_struct_expressions(tcx, hir_id, field("foo"));
+            let (fields, shorthands) = collect_struct_expressions(tcx, hir_id, "foo");
 
             assert_eq!(fields.len(), 0);
             assert_eq!(shorthands.len(), 1);

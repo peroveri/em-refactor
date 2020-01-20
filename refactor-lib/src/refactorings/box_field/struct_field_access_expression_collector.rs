@@ -26,13 +26,13 @@ use rustc_span::Span;
 pub fn collect_struct_field_access_expressions(
     tcx: TyCtxt,
     struct_hir_id: HirId,
-    field_ident: String,
+    field_ident: &str,
 ) -> Vec<Span> {
     let mut v = StructFieldAccessExpressionCollector {
         tcx,
         struct_hir_id,
         field: vec![],
-        field_ident,
+        field_ident: field_ident.to_string(),
         body_id: None,
     };
 
@@ -139,7 +139,7 @@ mod test {
     fn struct_field_access_expression_collector_should_collect_access() {
         run_after_analysis(create_program_with_field_access(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_field_access_expressions(tcx, hir_id, "foo".to_owned());
+            let fields = collect_struct_field_access_expressions(tcx, hir_id, "foo");
 
             assert_eq!(fields.len(), 1);
             assert_eq!(get_source(tcx, fields[0]), "s . foo");
@@ -149,7 +149,7 @@ mod test {
     fn struct_field_access_expression_collector_should_collect_access_self_param() {
         run_after_analysis(create_program_with_field_access_self_param(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_field_access_expressions(tcx, hir_id, "foo".to_owned());
+            let fields = collect_struct_field_access_expressions(tcx, hir_id, "foo");
 
             assert_eq!(fields.len(), 1);
             assert_eq!(get_source(tcx, fields[0]), "self . foo");
@@ -159,7 +159,7 @@ mod test {
     fn struct_field_access_expression_collector_should_collect_access_self_type() {
         run_after_analysis(create_program_with_field_access_self_type(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_field_access_expressions(tcx, hir_id, "foo".to_owned());
+            let fields = collect_struct_field_access_expressions(tcx, hir_id, "foo");
 
             assert_eq!(fields.len(), 1);
             assert_eq!(get_source(tcx, fields[0]), "s . foo");

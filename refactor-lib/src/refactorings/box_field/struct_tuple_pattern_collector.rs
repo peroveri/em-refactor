@@ -15,12 +15,12 @@ use if_chain::if_chain;
 /// given:
 /// ```
 /// match (foo) {
-///   S {field: 0} => {}
-///   |          |
-///   x          y
+///   S (field) => {}
+///      |   |
+///      x   y
 /// }
 /// ```
-/// then `collect_struct_patterns(S, "ident")` would return a single byte range `(x, y)`
+/// then `collect_struct_patterns(S, "0")` would return a single byte range `(x, y)`
 /// 
 /// # Grammar
 /// ```

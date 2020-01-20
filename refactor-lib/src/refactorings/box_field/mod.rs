@@ -1,20 +1,14 @@
-use super::utils::map_change_from_span;
 use crate::change::Change;
-use local_variable_use_collector::collect_local_variable_use;
 use rustc::ty::TyCtxt;
 use rustc_hir::{HirId, StructField};
-
-use struct_constructor_call_collector::collect_struct_constructor_calls;
-use struct_def_field_collector::collect_field;
-use struct_expression_collector::collect_struct_expressions;
-use struct_field_access_expression_collector::collect_struct_field_access_expressions;
-use struct_named_pattern_collector::collect_struct_named_patterns;
-use struct_tuple_pattern_collector::collect_struct_tuple_patterns;
 use rustc_span::Span;
 
-use super::utils::get_source;
 use crate::refactor_definition::RefactoringError;
+use super::utils::get_source;
+use struct_def_field_collector::collect_field;
 
+mod box_named_field;
+mod box_tuple_field;
 mod local_variable_use_collector;
 mod struct_constructor_call_collector;
 mod struct_def_field_collector;
@@ -23,32 +17,14 @@ mod struct_field_access_expression_collector;
 mod struct_named_pattern_collector;
 mod struct_tuple_pattern_collector;
 
-#[derive(Clone)]
-pub enum StructFieldType {
-    Tuple(usize), // index
-    Named(String) // field name
-}
 pub struct StructPatternCollection {
     pub new_bindings: Vec<HirId>,
     pub other: Vec<Span>
 }
 
-impl StructFieldType {
-    pub fn from(struct_field: &StructField, index: usize) -> StructFieldType {
-        if struct_field.is_positional() {
-            StructFieldType::Tuple(index)
-        } else {
-            StructFieldType::Named(struct_field.ident.to_string())
-        }
-    }
-}
-
 pub fn get_struct_hir_id(tcx: TyCtxt<'_>, field: &StructField) -> HirId {
     let struct_def_id = field.hir_id.owner_def_id();
     tcx.hir().as_local_hir_id(struct_def_id).unwrap()
-}
-pub fn get_field_ident(field: &StructField) -> String {
-    format!("{}", field.ident)
 }
 
 /// Box field refactoring
@@ -73,55 +49,14 @@ pub fn get_field_ident(field: &StructField) -> String {
 ///   - Add * around F'
 pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, RefactoringError> {
     if let Some((field, index)) = collect_field(tcx, span) {
-        let field_type = StructFieldType::from(field, index);
         let struct_hir_id = get_struct_hir_id(tcx, &field);
-        let field_ident = get_field_ident(field);
 
+        if field.is_positional() {
+            box_tuple_field::do_refactoring(tcx, struct_hir_id, index, field.ty.span)
+        } else {
+            box_named_field::do_refactoring(tcx, struct_hir_id, &field.ident.to_string(), field.ty.span)
+        }
         
-        let struct_patterns = match field_type {
-            StructFieldType::Tuple(i) => collect_struct_tuple_patterns(tcx, struct_hir_id, i),
-            StructFieldType::Named(ref n) => collect_struct_named_patterns(tcx, struct_hir_id, n),
-        }; 
-
-        if !struct_patterns.other.is_empty() {
-            return Err(RefactoringError::used_in_pattern(&field.ident.to_string()));
-        }
-
-        let (struct_expressions, struct_expression_shorthands) = match field_type {
-            StructFieldType::Tuple(_) => collect_struct_constructor_calls(tcx, struct_hir_id, field_type.clone()),
-            StructFieldType::Named(_) => collect_struct_expressions(tcx, struct_hir_id, field_type.clone()),
-        }; 
-        
-        let field_access_expressions = collect_struct_field_access_expressions(tcx, struct_hir_id, field_ident);
-        let mut changes = vec![map_change_from_span(
-            tcx,
-            field.ty.span,
-            format!("Box<{}>", get_source(tcx, field.ty.span)),
-        )];
-
-        for struct_expression in struct_expressions {
-            let replacement = format!("Box::new({})", get_source(tcx, struct_expression));
-            changes.push(map_change_from_span(tcx, struct_expression, replacement));
-        }
-
-        for (struct_expression, ident) in struct_expression_shorthands {
-            let replacement = format!("{}: Box::new({})", ident, get_source(tcx, struct_expression));
-            changes.push(map_change_from_span(tcx, struct_expression, replacement));
-        }
-
-        for field_access_expression in field_access_expressions {
-            let replacement = format!("(*{})", get_source(tcx, field_access_expression));
-            changes.push(map_change_from_span(tcx, field_access_expression, replacement));
-        }
-
-        for new_binding in struct_patterns.new_bindings {
-            for local_use in collect_local_variable_use(tcx, new_binding) {
-                let replacement = format!("(*{})", get_source(tcx, local_use));
-                changes.push(map_change_from_span(tcx, local_use, replacement));
-            }
-        }
-
-        Ok(changes)
     } else {
         Err(RefactoringError::invalid_selection_with_code(
             span.lo().0,

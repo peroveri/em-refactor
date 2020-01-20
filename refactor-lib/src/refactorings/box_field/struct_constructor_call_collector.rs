@@ -3,27 +3,19 @@ use rustc_hir::intravisit::{FnKind, walk_expr, walk_fn, walk_crate, NestedVisito
 use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
-use super::StructFieldType;
 use if_chain::if_chain;
 
 ///
-/// Collect all places where a given struct occurs in a struct expression where also `field_ident` occurs.
+/// Collect all places where a given struct occurs in a call expression.
 /// 
 /// # Example
 /// given:
 /// ```
-/// let _ = S { foo: 0 };
-///             | |
-///             x y
-/// };
+/// let _ = S (foo);
+///            | |
+///            x y
 /// ```
-/// then `collect_struct_expressions(S, "foo")` would return a single byte range `(x, y)`
-/// 
-/// but with:
-/// ```
-/// let _ = S { ..bar };
-/// ```
-/// then `collect_struct_expressions(S, "foo")` would return an empty list
+/// then `collect_struct_constructor_calls(S, "0")` would return a single byte range `(x, y)`
 /// 
 /// # Grammar
 /// ```
@@ -32,32 +24,30 @@ use if_chain::if_chain;
 pub fn collect_struct_constructor_calls(
     tcx: TyCtxt,
     struct_hir_id: HirId,
-    field_ident: StructFieldType,
-) -> (Vec<Span>, Vec<(Span, String)>) {
-    let mut v = StructExpressionCollector {
+    field_index: usize,
+) -> Vec<Span> {
+    let mut v = StructConstructorCallCollector {
         tcx,
         struct_hir_id,
         field: vec![],
-        shorthands: vec![],
-        field_ident,
+        field_index,
         body_id: None,
     };
     
     walk_crate(&mut v, tcx.hir().krate());
 
-    (v.field, v.shorthands)
+    v.field
 }
 
-struct StructExpressionCollector<'v> {
+struct StructConstructorCallCollector<'v> {
     tcx: TyCtxt<'v>,
     struct_hir_id: HirId,
     field: Vec<Span>,
-    shorthands: Vec<(Span, String)>,
-    field_ident: StructFieldType,
+    field_index: usize,
     body_id: Option<BodyId>,
 }
 
-impl StructExpressionCollector<'_> {
+impl StructConstructorCallCollector<'_> {
     fn expr_resolves_to_struct(&self, expr: &Expr) -> bool {
         let typecheck_table = self.tcx.typeck_tables_of(expr.hir_id.owner_def_id());
         if let Some(expr_type) = typecheck_table.expr_ty_adjusted_opt(expr) {
@@ -67,7 +57,7 @@ impl StructExpressionCollector<'_> {
         } 
         false
     }
-    fn handle_call(&mut self, expr: &Expr, function: &Expr, args: &[Expr], index: usize) {
+    fn handle_call(&mut self, expr: &Expr, function: &Expr, args: &[Expr]) {
         if let ExprKind::Path(qpath) = &function.kind {
             let typecheck_table = self.tcx.typeck_tables_of(expr.hir_id.owner_def_id());
 
@@ -75,7 +65,7 @@ impl StructExpressionCollector<'_> {
                 if let Some(defid) = typecheck_table.qpath_res(qpath, function.hir_id).opt_def_id();
                 if self.tcx.is_constructor(defid);
                 if self.expr_resolves_to_struct(expr);
-                if let Some(expr_init) = args.get(index);
+                if let Some(expr_init) = args.get(self.field_index);
                 then {
                     self.field.push(expr_init.span);
                 }
@@ -84,7 +74,7 @@ impl StructExpressionCollector<'_> {
     }
 }
 
-impl<'v> Visitor<'v> for StructExpressionCollector<'v> {
+impl<'v> Visitor<'v> for StructConstructorCallCollector<'v> {
     type Map = Map<'v>;
     fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, Self::Map> {
         NestedVisitorMap::All(&self.tcx.hir())
@@ -102,9 +92,7 @@ impl<'v> Visitor<'v> for StructExpressionCollector<'v> {
     }
     fn visit_expr(&mut self, expr: &'v Expr) {
         if let ExprKind::Call(function, args) = &expr.kind {
-            if let StructFieldType::Tuple(index) = self.field_ident {
-                self.handle_call(expr, function, args, index);
-            }
+            self.handle_call(expr, function, args);
         }
         walk_expr(self, expr);
     }
@@ -118,9 +106,6 @@ mod test {
     use super::super::super::utils::get_source;
     use quote::quote;
 
-    fn tup(i: usize) -> StructFieldType {
-        StructFieldType::Tuple(i)
-    }
     fn create_program_match_6() -> quote::__rt::TokenStream {
         quote! {
             struct S ( i32 );
@@ -152,9 +137,8 @@ mod test {
     fn struct_expression_collector_should_collect_6() {
         run_after_analysis(create_program_match_6(), |tcx| {
             let hir_id = get_struct_tuple_hir_id(tcx);
-            let (fields, shorthands) = collect_struct_constructor_calls(tcx, hir_id, tup(0));
+            let fields = collect_struct_constructor_calls(tcx, hir_id, 0);
 
-            assert_eq!(shorthands.len(), 0);
             assert_eq!(fields.len(), 1);
             assert_eq!(get_source(tcx, fields[0]), "123");
         });
@@ -163,9 +147,8 @@ mod test {
     fn struct_expression_collector_should_not_collect_7() {
         run_after_analysis(create_program_match_7(), |tcx| {
             let hir_id = get_struct_tuple_hir_id(tcx);
-            let (fields, shorthands) = collect_struct_constructor_calls(tcx, hir_id, tup(0));
+            let fields = collect_struct_constructor_calls(tcx, hir_id, 0);
 
-            assert_eq!(shorthands.len(), 0);
             assert_eq!(fields.len(), 0);
         });
     }
