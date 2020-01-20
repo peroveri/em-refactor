@@ -1,0 +1,11 @@
+{
+	"file": "macro_arg_used_twice.rs",
+	"args": {
+		"refactoring": "box-field",
+		"selection": "10:15"
+	},
+	"expected": {
+		"code": 2,
+		"stderr": "todo"
+	}
+}

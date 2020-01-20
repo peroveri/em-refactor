@@ -52,6 +52,16 @@ fn box_field_impl_self_type() {
     run_test("impl_self_type");
 }
 #[test]
+#[ignore]
+fn box_field_macro_arg_used_twice() {
+    run_test("macro_arg_used_twice");
+}
+#[test]
+#[ignore]
+fn box_field_macro_rule_used_twice() {
+    run_test("macro_rule_used_twice");
+}
+#[test]
 fn box_field_struct_definition_named_fields() {
     run_test("struct_definition_named_fields");
 }
