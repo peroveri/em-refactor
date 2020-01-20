@@ -19,6 +19,7 @@ Type system / other
 * Copy trait cannot contain Drop
 * Paths may not need deref (*), but it is an optimization
 * Overlapping changes
+* Binding to Box, e.g. user defined Box<T> is allowed!
 
 ## Extract block
 

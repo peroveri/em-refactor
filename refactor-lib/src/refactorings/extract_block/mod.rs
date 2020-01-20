@@ -34,6 +34,24 @@ fn extract_block(
     Ok(format!("{}{{\n{}\n{}}}{}", let_b, source, expr, end))
 }
 
+
+/// Extract block
+/// 
+/// ## Algorithm
+/// 
+/// Steps
+/// Block <- The block (innermost) containing A;B;C
+/// A <- Statements before B
+/// B <- Statements to be extracted
+/// C <- Statements after B
+/// 
+/// If B ends with an expression:
+///    Add { around B } and return 
+/// End
+/// 
+/// Vs <- Locals declared in B and used in C
+/// 
+/// 
 /// for each stmt
 /// how should it be moved?
 /// a. identical (cut & paste)
