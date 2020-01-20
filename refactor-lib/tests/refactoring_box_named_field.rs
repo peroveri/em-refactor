@@ -3,7 +3,7 @@ use crate::test_case::run_testcase;
 mod test_case;
 
 fn run_test(name: &str) {
-    run_testcase("box_field", name).unwrap();
+    run_testcase("box_named_field", name).unwrap();
 }
 
 #[test]
@@ -26,10 +26,6 @@ fn box_field_expression_macro() {
 #[test]
 fn box_field_field_access_1() {
     run_test("field_access_1");
-}
-#[test]
-fn box_field_field_access_2() {
-    run_test("field_access_2");
 }
 #[test]
 fn box_field_field_access_call_expr_fn_generic() {
@@ -66,10 +62,6 @@ fn box_field_struct_definition_named_fields() {
     run_test("struct_definition_named_fields");
 }
 #[test]
-fn box_field_struct_definition_tuple() {
-    run_test("struct_definition_tuple");
-}
-#[test]
 fn box_field_struct_expression_fields_1() {
     run_test("struct_expression_fields_1");
 }
@@ -96,10 +88,6 @@ fn box_field_struct_expression_fields_init_shorthand() {
     run_test("struct_expression_fields_init_shorthand");
 }
 #[test]
-fn box_field_struct_expression_tuple() {
-    run_test("struct_expression_tuple");
-}
-#[test]
 fn box_field_struct_pattern_field_binding_1() {
     run_test("struct_pattern_field_binding_1");
 }
@@ -120,14 +108,6 @@ fn box_field_struct_pattern_field_used() {
     run_test("struct_pattern_field_used");
 }
 #[test]
-fn box_field_struct_pattern_tuple_1() {
-    run_test("struct_pattern_tuple_1");
-}
-#[test]
-fn box_field_struct_pattern_tuple_id_pat() {
-    run_test("struct_pattern_tuple_id_pat");
-}
-#[test]
 #[ignore]
 fn box_field_trait_copy_cannot_contain_drop() {
     run_test("trait_copy_cannot_contain_drop");
@@ -139,12 +119,4 @@ fn box_field_visibility_named_pub_1() {
 #[test]
 fn box_field_visibility_named_pub_crate() {
     run_test("visibility_named_pub_crate");
-}
-#[test]
-fn box_field_visibility_tuple_pub_1() {
-    run_test("visibility_tuple_pub_1");
-}
-#[test]
-fn box_field_visibility_tuple_pub_crate() {
-    run_test("visibility_tuple_pub_crate");
 }
