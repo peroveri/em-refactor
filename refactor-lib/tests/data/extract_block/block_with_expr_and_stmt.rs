@@ -1,4 +1,7 @@
 fn main() -> i32 {
-    let i = 0;
-    i
+    foo();
+    bar();
+    1
 }
+fn foo() {}
+fn bar() {}

@@ -13,13 +13,18 @@ fn extract_block_block_only_expr() {
 }
 #[test]
 #[ignore]
-fn extract_block_block_with_expr_and_stmt_1() {
-    run_test("block_with_expr_and_stmt_1");
+fn extract_block_block_with_expr_and_stmt_2() {
+    run_test("block_with_expr_and_stmt_2");
 }
 #[test]
 #[ignore]
-fn extract_block_block_with_expr_and_stmt_2() {
-    run_test("block_with_expr_and_stmt_2");
+fn extract_block_block_with_expr_and_stmt_3() {
+    run_test("block_with_expr_and_stmt_3");
+}
+#[test]
+#[ignore]
+fn extract_block_block_with_expr_and_stmt_23() {
+    run_test("block_with_expr_and_stmt_23");
 }
 #[test]
 #[ignore]
