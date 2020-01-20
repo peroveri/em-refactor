@@ -19,15 +19,14 @@ pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_ident: &str, fiel
     if !struct_patterns.other.is_empty() {
         return Err(RefactoringError::used_in_pattern(&field_ident));
     }
-
-    let (struct_expressions, struct_expression_shorthands) = collect_struct_expressions(tcx, struct_hir_id, field_ident);
     
-    let field_access_expressions = collect_struct_field_access_expressions(tcx, struct_hir_id, field_ident);
     let mut changes = vec![map_change_from_span(
         tcx,
         field_ty_span,
         format!("Box<{}>", get_source(tcx, field_ty_span)),
     )];
+
+    let (struct_expressions, struct_expression_shorthands) = collect_struct_expressions(tcx, struct_hir_id, field_ident);
 
     for struct_expression in struct_expressions {
         let replacement = format!("Box::new({})", get_source(tcx, struct_expression));
@@ -39,7 +38,7 @@ pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_ident: &str, fiel
         changes.push(map_change_from_span(tcx, struct_expression, replacement));
     }
 
-    for field_access_expression in field_access_expressions {
+    for field_access_expression in collect_struct_field_access_expressions(tcx, struct_hir_id, field_ident) {
         let replacement = format!("(*{})", get_source(tcx, field_access_expression));
         changes.push(map_change_from_span(tcx, field_access_expression, replacement));
     }

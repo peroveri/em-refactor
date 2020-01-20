@@ -20,21 +20,18 @@ pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_index: usize, fie
         return Err(RefactoringError::used_in_pattern(&field_index.to_string()));
     }
 
-    let constructor_calls = collect_struct_constructor_calls(tcx, struct_hir_id, field_index);
-    
-    let field_access_expressions = collect_struct_field_access_expressions(tcx, struct_hir_id, &field_index.to_string());
     let mut changes = vec![map_change_from_span(
         tcx,
         field_ty_span,
         format!("Box<{}>", get_source(tcx, field_ty_span)),
     )];
 
-    for struct_expression in constructor_calls {
+    for struct_expression in collect_struct_constructor_calls(tcx, struct_hir_id, field_index) {
         let replacement = format!("Box::new({})", get_source(tcx, struct_expression));
         changes.push(map_change_from_span(tcx, struct_expression, replacement));
     }
 
-    for field_access_expression in field_access_expressions {
+    for field_access_expression in collect_struct_field_access_expressions(tcx, struct_hir_id, &field_index.to_string()) {
         let replacement = format!("(*{})", get_source(tcx, field_access_expression));
         changes.push(map_change_from_span(tcx, field_access_expression, replacement));
     }
