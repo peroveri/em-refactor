@@ -1,30 +1,16 @@
 use crate::change::Change;
 use rustc::ty::TyCtxt;
-use rustc_hir::{HirId, StructField};
+use rustc_hir::HirId;
 use rustc_span::Span;
 
 use crate::refactor_definition::RefactoringError;
-use super::utils::get_source;
-use struct_def_field_collector::collect_field;
-
-mod box_named_field;
-mod box_tuple_field;
-mod local_variable_use_collector;
-mod struct_constructor_call_collector;
-mod struct_def_field_collector;
-mod struct_expression_collector;
-mod struct_field_access_expression_collector;
-mod struct_named_pattern_collector;
-mod struct_tuple_pattern_collector;
+use super::utils::{get_source, get_struct_hir_id};
+use super::{box_named_field, box_tuple_field};
+use super::visitors::collect_field;
 
 pub struct StructPatternCollection {
     pub new_bindings: Vec<HirId>,
     pub other: Vec<Span>
-}
-
-pub fn get_struct_hir_id(tcx: TyCtxt<'_>, field: &StructField) -> HirId {
-    let struct_def_id = field.hir_id.owner_def_id();
-    tcx.hir().as_local_hir_id(struct_def_id).unwrap()
 }
 
 /// Box field refactoring

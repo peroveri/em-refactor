@@ -102,7 +102,7 @@ impl<'v> Visitor<'v> for StructConstructorCallCollector<'v> {
 mod test {
     use super::*;
     use crate::{create_test_span, run_after_analysis};
-    use super::super::struct_def_field_collector::collect_field;
+    use crate::refactorings::visitors::collect_field;
     use super::super::super::utils::get_source;
     use quote::quote;
 

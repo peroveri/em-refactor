@@ -67,7 +67,7 @@ impl<'v> Visitor<'v> for FieldCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use super::super::get_source;
+    use crate::refactorings::utils::get_source;
     use crate::{create_test_span, run_after_analysis};
     use quote::quote;
 

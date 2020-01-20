@@ -5,10 +5,12 @@ use rustc_span::Span;
 use crate::change::Change;
 use crate::refactorings::utils::{get_source, map_change_from_span};
 use crate::refactor_definition::RefactoringError;
-use super::local_variable_use_collector::collect_local_variable_use;
-use super::struct_expression_collector::collect_struct_expressions;
-use super::struct_field_access_expression_collector::collect_struct_field_access_expressions;
-use super::struct_named_pattern_collector::collect_struct_named_patterns;
+use super::visitors::{collect_local_variable_use, collect_struct_field_access_expressions};
+use struct_expression_collector::collect_struct_expressions;
+use struct_named_pattern_collector::collect_struct_named_patterns;
+
+mod struct_expression_collector;
+pub mod struct_named_pattern_collector;
 
 pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_ident: &str, field_ty_span: Span) -> Result<Vec<Change>, RefactoringError> {
 

@@ -1,6 +1,7 @@
 use crate::change::Change;
 use crate::refactor_definition::{RefactoringError, SourceCodeRange};
 use rustc::ty::TyCtxt;
+use rustc_hir::{HirId, StructField};
 use rustc_span::{BytePos, FileName, Span};
 use std::path::PathBuf;
 
@@ -59,4 +60,9 @@ pub fn map_change_from_span(tcx: TyCtxt, span: Span, replacement: String) -> Cha
 
 pub fn get_source(tcx: TyCtxt, span: Span) -> String {
     tcx.sess.source_map().span_to_snippet(span).unwrap()
+}
+
+pub fn get_struct_hir_id(tcx: TyCtxt<'_>, field: &StructField) -> HirId {
+    let struct_def_id = field.hir_id.owner_def_id();
+    tcx.hir().as_local_hir_id(struct_def_id).unwrap()
 }

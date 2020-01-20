@@ -3,7 +3,7 @@ use rustc_hir::intravisit::{walk_pat, walk_crate, NestedVisitorMap, Visitor};
 use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
-use super::StructPatternCollection;
+use super::super::box_field::StructPatternCollection;
 use if_chain::if_chain;
 
 ///
@@ -119,7 +119,7 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use super::super::struct_def_field_collector::collect_field;
+    use crate::refactorings::visitors::collect_field;
     use crate::{create_test_span, run_after_analysis};
     use quote::quote;
 

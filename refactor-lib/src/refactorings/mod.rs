@@ -3,10 +3,13 @@ use crate::refactor_definition::{RefactoringError, RefactorDefinition};
 use rustc::ty;
 
 mod box_field;
+mod box_named_field;
+mod box_tuple_field;
 mod extract_block;
 mod extract_method;
 mod introduce_closure;
 pub mod utils;
+mod visitors;
 
 pub fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Vec<Change>, RefactoringError> {
     match args {

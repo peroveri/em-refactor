@@ -66,10 +66,11 @@ impl<'v> Visitor<'v> for LocalVariableUseCollector<'v> {
 
 #[cfg(test)]
 mod test {
-    use super::super::{
-        collect_field, get_source, get_struct_hir_id
+    use super::super::collect_field;
+    use crate::refactorings::utils::{
+        get_source, get_struct_hir_id
     };
-    use super::super::struct_named_pattern_collector::collect_struct_named_patterns;
+    use crate::refactorings::box_named_field::struct_named_pattern_collector::collect_struct_named_patterns;
     use super::*;
     use crate::{create_test_span, run_after_analysis};
     use quote::quote;

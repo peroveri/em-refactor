@@ -96,6 +96,7 @@ mod test {
     use super::super::super::utils::get_source;
     use super::*;
     use crate::{create_test_span, run_after_analysis};
+    use super::super::collect_field;
     use quote::quote;
 
     fn create_program_with_field_access() -> quote::__rt::TokenStream {
@@ -128,9 +129,7 @@ mod test {
         }
     }
     fn get_struct_hir_id(tcx: TyCtxt<'_>) -> HirId {
-        let (field, _) =
-            super::super::struct_def_field_collector::collect_field(tcx, create_test_span(11, 14))
-                .unwrap();
+        let (field, _) = collect_field(tcx, create_test_span(11, 14)).unwrap();
         let struct_def_id = field.hir_id.owner_def_id();
         tcx.hir().as_local_hir_id(struct_def_id).unwrap()
     }
