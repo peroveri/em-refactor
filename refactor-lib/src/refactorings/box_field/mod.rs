@@ -6,7 +6,8 @@ use rustc_hir::{HirId, StructField};
 use struct_def_field_collector::collect_field;
 use struct_expression_collector::collect_struct_expressions;
 use struct_field_access_expression_collector::collect_struct_field_access_expressions;
-use struct_pattern_collector::collect_struct_patterns;
+use struct_named_pattern_collector::collect_struct_named_patterns;
+use struct_tuple_pattern_collector::collect_struct_tuple_patterns;
 use rustc_span::Span;
 
 use super::utils::get_source;
@@ -16,12 +17,17 @@ mod local_variable_use_collector;
 mod struct_def_field_collector;
 mod struct_expression_collector;
 mod struct_field_access_expression_collector;
-mod struct_pattern_collector;
+mod struct_named_pattern_collector;
+mod struct_tuple_pattern_collector;
 
 #[derive(Clone)]
 pub enum StructFieldType {
     Tuple(usize), // index
     Named(String) // field name
+}
+pub struct StructPatternCollection {
+    pub new_bindings: Vec<HirId>,
+    pub other: Vec<Span>
 }
 
 impl StructFieldType {
@@ -67,7 +73,12 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, Refactorin
         let field_type = StructFieldType::from(field, index);
         let struct_hir_id = get_struct_hir_id(tcx, &field);
         let field_ident = get_field_ident(field);
-        let struct_patterns = collect_struct_patterns(tcx, struct_hir_id, field_type.clone());
+
+        
+        let struct_patterns = match field_type {
+            StructFieldType::Tuple(_) => collect_struct_tuple_patterns(tcx, struct_hir_id, field_type.clone()),
+            StructFieldType::Named(_) => collect_struct_named_patterns(tcx, struct_hir_id, field_type.clone()),
+        }; 
 
         if !struct_patterns.other.is_empty() {
             return Err(RefactoringError::used_in_pattern(&field.ident.to_string()));
