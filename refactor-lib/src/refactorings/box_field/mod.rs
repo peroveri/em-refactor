@@ -3,6 +3,8 @@ use crate::change::Change;
 use local_variable_use_collector::collect_local_variable_use;
 use rustc::ty::TyCtxt;
 use rustc_hir::{HirId, StructField};
+
+use struct_constructor_call_collector::collect_struct_constructor_calls;
 use struct_def_field_collector::collect_field;
 use struct_expression_collector::collect_struct_expressions;
 use struct_field_access_expression_collector::collect_struct_field_access_expressions;
@@ -14,6 +16,7 @@ use super::utils::get_source;
 use crate::refactor_definition::RefactoringError;
 
 mod local_variable_use_collector;
+mod struct_constructor_call_collector;
 mod struct_def_field_collector;
 mod struct_expression_collector;
 mod struct_field_access_expression_collector;
@@ -84,7 +87,11 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, Refactorin
             return Err(RefactoringError::used_in_pattern(&field.ident.to_string()));
         }
 
-        let (struct_expressions, struct_expression_shorthands) = collect_struct_expressions(tcx, struct_hir_id, field_type.clone());
+        let (struct_expressions, struct_expression_shorthands) = match field_type {
+            StructFieldType::Tuple(_) => collect_struct_constructor_calls(tcx, struct_hir_id, field_type.clone()),
+            StructFieldType::Named(_) => collect_struct_expressions(tcx, struct_hir_id, field_type.clone()),
+        }; 
+        
         let field_access_expressions = collect_struct_field_access_expressions(tcx, struct_hir_id, field_ident);
         let mut changes = vec![map_change_from_span(
             tcx,
