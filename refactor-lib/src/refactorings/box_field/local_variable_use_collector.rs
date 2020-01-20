@@ -67,7 +67,7 @@ impl<'v> Visitor<'v> for LocalVariableUseCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::super::{
-        collect_field, collect_struct_named_patterns, get_source, get_struct_hir_id, StructFieldType
+        collect_field, collect_struct_named_patterns, get_source, get_struct_hir_id
     };
     use super::*;
     use crate::{create_test_span, run_after_analysis};
@@ -91,7 +91,7 @@ mod test {
         assert!(field.is_some());
         let (field, _) = field.unwrap();
         let struct_hir_id = get_struct_hir_id(tcx, &field);
-        let patterns = collect_struct_named_patterns(tcx, struct_hir_id, StructFieldType::from(field, 0));
+        let patterns = collect_struct_named_patterns(tcx, struct_hir_id, &field.ident.to_string());
 
         assert_eq!(1, patterns.new_bindings.len());
         patterns.new_bindings[0]

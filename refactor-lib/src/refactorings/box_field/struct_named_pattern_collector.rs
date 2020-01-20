@@ -3,7 +3,7 @@ use rustc_hir::intravisit::{walk_pat, walk_crate, NestedVisitorMap, Visitor};
 use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
-use super::{StructFieldType, StructPatternCollection};
+use super::StructPatternCollection;
 use if_chain::if_chain;
 
 ///
@@ -38,7 +38,7 @@ use if_chain::if_chain;
 pub fn collect_struct_named_patterns(
     tcx: TyCtxt,
     struct_hir_id: HirId,
-    field_ident: StructFieldType,
+    field_ident: &str,
 ) -> StructPatternCollection {
     let mut v = StructPatternCollector {
         tcx,
@@ -47,7 +47,7 @@ pub fn collect_struct_named_patterns(
             new_bindings: vec![],
             other: vec![]
         },
-        field_ident,
+        field_ident: field_ident.to_string(),
     };
 
     walk_crate(&mut v, tcx.hir().krate());
@@ -59,7 +59,7 @@ struct StructPatternCollector<'v> {
     tcx: TyCtxt<'v>,
     struct_hir_id: HirId,
     patterns: StructPatternCollection,
-    field_ident: StructFieldType,
+    field_ident: String,
 }
 
 impl StructPatternCollector<'_> {
@@ -106,8 +106,7 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
         if self.path_resolves_to_struct(p) {
             if_chain! {
                 if let PatKind::Struct(_, fields, _) = &p.kind;
-                if let StructFieldType::Named(name) = &self.field_ident;
-                if let Some(fp) = fields.iter().find(|e| {&format!("{}", e.ident) == name});
+                if let Some(fp) = fields.iter().find(|e| {format!("{}", e.ident) == self.field_ident});
                 then {
                     self.struct_pattern_used(&fp.pat.kind, fp.span);
                 }
@@ -124,9 +123,6 @@ mod test {
     use crate::{create_test_span, run_after_analysis};
     use quote::quote;
 
-    fn field(s: &str) -> StructFieldType {
-        StructFieldType::Named(s.to_string())
-    }
     fn create_program_match() -> quote::__rt::TokenStream {
         quote! {
             struct S { field: u32 }
@@ -195,7 +191,7 @@ mod test {
     fn struct_pattern_collector_should_collect_match_pattern() {
         run_after_analysis(create_program_match(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_named_patterns(tcx, hir_id, field("field"));
+            let fields = collect_struct_named_patterns(tcx, hir_id, "field");
 
             assert_eq!(fields.other.len(), 1);
         });
@@ -204,7 +200,7 @@ mod test {
     fn struct_pattern_collector_should_collect_if_let_pattern() {
         run_after_analysis(create_program_if_let(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_named_patterns(tcx, hir_id, field("field"));
+            let fields = collect_struct_named_patterns(tcx, hir_id, "field");
 
             assert_eq!(fields.other.len(), 1);
         });
@@ -213,7 +209,7 @@ mod test {
     fn struct_pattern_collector_should_not_collect_struct_without_field() {
         run_after_analysis(create_program_match_without_field(), |tcx| {
             let struct_hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_named_patterns(tcx, struct_hir_id, field("field"));
+            let fields = collect_struct_named_patterns(tcx, struct_hir_id, "field");
 
             assert_eq!(fields.other.len(), 0);
         });
@@ -222,7 +218,7 @@ mod test {
     fn struct_pattern_collector_should_collect_struct_self_type() {
         run_after_analysis(create_program_self_type(), |tcx| {
             let struct_hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_named_patterns(tcx, struct_hir_id, field("field"));
+            let fields = collect_struct_named_patterns(tcx, struct_hir_id, "field");
 
             assert_eq!(fields.other.len(), 1);
         });
@@ -231,7 +227,7 @@ mod test {
     fn struct_pattern_collector_should_collect_struct_self_type_wildcard() {
         run_after_analysis(create_program_self_type_wildcard(), |tcx| {
             let struct_hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_named_patterns(tcx, struct_hir_id, field("field"));
+            let fields = collect_struct_named_patterns(tcx, struct_hir_id, "field");
 
             assert_eq!(fields.new_bindings.len(), 1);
         });

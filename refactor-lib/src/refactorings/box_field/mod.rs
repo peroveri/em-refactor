@@ -79,8 +79,8 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, Refactorin
 
         
         let struct_patterns = match field_type {
-            StructFieldType::Tuple(_) => collect_struct_tuple_patterns(tcx, struct_hir_id, field_type.clone()),
-            StructFieldType::Named(_) => collect_struct_named_patterns(tcx, struct_hir_id, field_type.clone()),
+            StructFieldType::Tuple(i) => collect_struct_tuple_patterns(tcx, struct_hir_id, i),
+            StructFieldType::Named(ref n) => collect_struct_named_patterns(tcx, struct_hir_id, n),
         }; 
 
         if !struct_patterns.other.is_empty() {

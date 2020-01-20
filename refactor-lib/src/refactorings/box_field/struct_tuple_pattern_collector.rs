@@ -3,7 +3,7 @@ use rustc_hir::intravisit::{walk_pat, walk_crate, NestedVisitorMap, Visitor};
 use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
-use super::{StructFieldType, StructPatternCollection};
+use super::StructPatternCollection;
 use if_chain::if_chain;
 
 ///
@@ -38,7 +38,7 @@ use if_chain::if_chain;
 pub fn collect_struct_tuple_patterns(
     tcx: TyCtxt,
     struct_hir_id: HirId,
-    field_ident: StructFieldType,
+    field_index: usize,
 ) -> StructPatternCollection {
     let mut v = StructPatternCollector {
         tcx,
@@ -47,7 +47,7 @@ pub fn collect_struct_tuple_patterns(
             new_bindings: vec![],
             other: vec![]
         },
-        field_ident,
+        field_index,
     };
 
     walk_crate(&mut v, tcx.hir().krate());
@@ -59,7 +59,7 @@ struct StructPatternCollector<'v> {
     tcx: TyCtxt<'v>,
     struct_hir_id: HirId,
     patterns: StructPatternCollection,
-    field_ident: StructFieldType,
+    field_index: usize,
 }
 
 impl StructPatternCollector<'_> {
@@ -106,8 +106,7 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
         if self.path_resolves_to_struct(p) {
             if_chain! {
                 if let PatKind::TupleStruct(_, fields, _) = &p.kind;
-                if let StructFieldType::Tuple(index) = &self.field_ident;
-                if let Some(field) = fields.get(*index);
+                if let Some(field) = fields.get(self.field_index);
                 then {
                     self.struct_pattern_used(&field.kind, field.span);
                 }
@@ -124,9 +123,6 @@ mod test {
     use crate::{create_test_span, run_after_analysis};
     use quote::quote;
 
-    fn tup(i: usize) -> StructFieldType {
-        StructFieldType::Tuple(i)
-    }
     fn create_program_self_tuple_wildcard() -> quote::__rt::TokenStream {
         quote! {
             struct S ( i32 );
@@ -163,7 +159,7 @@ mod test {
     fn struct_pattern_collector_should_collect_struct_self_tuple_wildcard() {
         run_after_analysis(create_program_self_tuple_wildcard(), |tcx| {
             let struct_hir_id = get_tuple_hir_id(tcx);
-            let fields = collect_struct_tuple_patterns(tcx, struct_hir_id, tup(0));
+            let fields = collect_struct_tuple_patterns(tcx, struct_hir_id, 0);
 
             assert_eq!(fields.new_bindings.len(), 1);
         });
@@ -172,7 +168,7 @@ mod test {
     fn struct_pattern_collector_should_collect_struct_self_tuple_pattern() {
         run_after_analysis(create_program_self_tuple_pattern(), |tcx| {
             let struct_hir_id = get_tuple_hir_id(tcx);
-            let fields = collect_struct_tuple_patterns(tcx, struct_hir_id, tup(0));
+            let fields = collect_struct_tuple_patterns(tcx, struct_hir_id, 0);
 
             assert_eq!(fields.new_bindings.len(), 0);
             assert_eq!(fields.other.len(), 1);
