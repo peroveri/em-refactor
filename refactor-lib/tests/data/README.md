@@ -66,3 +66,23 @@ Other
 * Copy trait (move semantics "removed")
 * Error propagation expression: `?`
 * Futures? Closures?
+* From single expression
+
+## Introduce closure
+Desugaring
+* While, For, ++
+
+Control flow statements
+* Return, Break, Continue
+x Conditionals
+
+Assignment to block (body of the new closure)
+* The block is assigned to
+* The block is an expression in another block
+
+Return value
+* The block has an expression
+
+Mutating vars
+* 
+* Other closure inside mutating implicit vars

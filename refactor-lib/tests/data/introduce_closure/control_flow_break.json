@@ -1,0 +1,11 @@
+{
+	"file": "control_flow_break.rs",
+	"args": {
+		"refactoring": "introduce-closure",
+		"selection": "40:141"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "control_flow_break_after.rs"
+	}
+}

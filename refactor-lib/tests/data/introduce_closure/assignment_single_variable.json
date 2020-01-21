@@ -1,0 +1,11 @@
+{
+	"file": "assignment_single_variable.rs",
+	"args": {
+		"refactoring": "introduce-closure",
+		"selection": "24:42"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "assignment_single_variable_after.rs"
+	}
+}
