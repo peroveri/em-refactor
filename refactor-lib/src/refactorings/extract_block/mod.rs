@@ -60,7 +60,8 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, Refactorin
     if let Some(selection) = collect_block(tcx, span) {
         let source = tcx.sess.source_map().span_to_snippet(span).unwrap();
         if selection.contains_expr {
-            return Ok(vec![map_change_from_span(tcx, selection.get_span(), format!("{{{}}}", source))]);
+            let span = selection.get_span();
+            return Ok(vec![map_change_from_span(tcx, span, format!("{{{}}}", get_source(tcx, span)))]);
         }
         Ok(vec![map_change_from_span(
             tcx,
