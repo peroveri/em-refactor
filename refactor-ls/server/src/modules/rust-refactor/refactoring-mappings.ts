@@ -10,7 +10,7 @@ import {
     ApplyWorkspaceEditParams,
 } from 'vscode-languageserver';
 
-import { ByteRange, isValidBinaryPath } from '../';
+import { ByteRange } from '../';
 
 export interface RefactorArgs {
     file: string;
@@ -117,22 +117,4 @@ const getRelativePath = (workspaceUri: string, fileUri: string) => {
         return sub;
     }
     return undefined;
-}
-
-export const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, new_fn: string | null, unsafe: boolean, binaryPath: string): string | Error => {
-    if (!isValidBinaryPath(binaryPath)) {
-        return new Error(`'${binaryPath}' is not a valid binary file`);
-    }
-    const refactorArgs = `--output-replacements-as-json --ignore-missing-file --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`) + (unsafe ? ' --unsafe' : '');
-
-    return `${binaryPath} ${refactorArgs}`;
-}
-
-export const convertToCmdProvideType = (relativeFilePath: string, selection: string, binaryPath: string): string | Error => {
-    if (!isValidBinaryPath(binaryPath)) {
-        return new Error(`'${binaryPath}' is not a valid binary file`);
-    }
-    const refactorArgs = `--output-changes-as-json --ignore-missing-file --file=${relativeFilePath} --provide-type --selection=${selection}`;
-
-    return `${binaryPath} ${refactorArgs}`;
 }

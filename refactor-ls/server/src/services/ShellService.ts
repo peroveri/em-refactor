@@ -1,6 +1,6 @@
 import { singleton, inject } from "tsyringe";
 import * as shell from "shelljs";
-import { convertToCmdProvideType, RefactorArgs, convertToCmd } from "../modules";
+import { RefactorArgs } from "../modules";
 import { NotificationService } from "./NotificationService";
 
 @singleton()
@@ -58,3 +58,24 @@ const trimWhitespace = (s: string) =>
     s.replace(/\n([ \t]+)/g, (match, p1: string) => {
         return '\n' + ' '.repeat((p1.length) / 8);
     });
+
+const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, new_fn: string | null, unsafe: boolean, binaryPath: string): string | Error => {
+    if (!isValidBinaryPath(binaryPath)) {
+        return new Error(`'${binaryPath}' is not a valid binary file`);
+    }
+    const refactorArgs = `--output-replacements-as-json --ignore-missing-file --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`) + (unsafe ? ' --unsafe' : '');
+
+    return `${binaryPath} ${refactorArgs}`;
+}
+
+const convertToCmdProvideType = (relativeFilePath: string, selection: string, binaryPath: string): string | Error => {
+    if (!isValidBinaryPath(binaryPath)) {
+        return new Error(`'${binaryPath}' is not a valid binary file`);
+    }
+    const refactorArgs = `--output-changes-as-json --ignore-missing-file --file=${relativeFilePath} --provide-type --selection=${selection}`;
+
+    return `${binaryPath} ${refactorArgs}`;
+}
+
+const isValidBinaryPath = (binaryPath: string): boolean =>
+    !!binaryPath && binaryPath.length > 0;
