@@ -1,0 +1,11 @@
+{
+	"file": "call_site_stmt_single.rs",
+	"args": {
+		"refactoring": "inline-macro",
+		"selection": "63:70"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "call_site_stmt_single_after.rs"
+	}
+}

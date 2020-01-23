@@ -86,3 +86,16 @@ Return value
 Mutating vars
 * 
 * Other closure inside mutating implicit vars
+
+## Inline macro
+Call site (statement)
+- Expands to 1, multiple statements
+
+Call site (expr)
+
+Call site (item)
+
+Binding locals
+- New bindings shouldnt affect outside
+
+Invoke inline inside a macro is not supported

@@ -1,0 +1,11 @@
+{
+	"file": "invocation_inside_macro.rs",
+	"args": {
+		"refactoring": "inline-macro",
+		"selection": "31:39"
+	},
+	"expected": {
+		"code": 2,
+		"stderr": "Inlining inside a macro definition is not supported"
+	}
+}

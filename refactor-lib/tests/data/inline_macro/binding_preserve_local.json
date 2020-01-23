@@ -1,0 +1,11 @@
+{
+	"file": "binding_preserve_local.rs",
+	"args": {
+		"refactoring": "inline-macro",
+		"selection": "90:97"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "binding_preserve_local_after.rs"
+	}
+}
