@@ -4,6 +4,7 @@ import { canExecuteGenerateTestCommand, handleExecuteGenerateTestCommand, Refact
 import { SettingsService } from "./SettingsService";
 import { NotificationService } from "./NotificationService";
 import { ShellService } from "./ShellService";
+import { WorkspaceService } from "./WorkspaceService";
 
 @singleton()
 export class ExecuteCommandService {
@@ -12,6 +13,7 @@ export class ExecuteCommandService {
         @inject(SettingsService) private settings: SettingsService,
         @inject(NotificationService) private notificationService: NotificationService,
         @inject(ShellService) private shell: ShellService,
+        @inject(WorkspaceService) private workspace: WorkspaceService,
         ) {
     }
 
@@ -34,11 +36,10 @@ export class ExecuteCommandService {
             let arg = params.arguments[0] as RefactorArgs;
             if (!isValidArgs(arg))
                 return Promise.reject(`invalid args: ${JSON.stringify(params.arguments)}`);
-            let workspaceFolders = await this.connection.workspace.getWorkspaceFolders();
-            let relativeFilePath = getFileRelativePath(arg.file, workspaceFolders);
-            if (relativeFilePath === undefined || workspaceFolders === null)
+            let relativeFilePath = await this.workspace.getRelativeFilePath(arg.file);
+            let workspace_uri = await this.workspace.getWorkspaceUri();
+            if (relativeFilePath === undefined || workspace_uri === undefined)
                 return Promise.reject("unknown file path");
-            let workspace_uri = workspaceFolders[0].uri;
 
             let result = this.shell.callRefactoring(relativeFilePath, arg, binaryPath)
 

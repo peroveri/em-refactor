@@ -2,7 +2,7 @@ import { singleton, inject } from "tsyringe";
 import { TextDocuments, TextDocumentPositionParams, Hover, MarkedString } from 'vscode-languageserver';
 import { SettingsService } from "./SettingsService";
 import { ShellService } from './ShellService';
-import { ConnectionService } from './ConnectionService';
+import { WorkspaceService } from './WorkspaceService';
 
 @singleton()
 export class HoverService {
@@ -10,7 +10,7 @@ export class HoverService {
         @inject("TextDocuments") private documents: TextDocuments,
         @inject(SettingsService) private settings: SettingsService,
         @inject(ShellService) private shell: ShellService,
-        @inject(ConnectionService) private connectionService: ConnectionService
+        @inject(WorkspaceService) private connectionService: WorkspaceService
     ) {
     }
 
