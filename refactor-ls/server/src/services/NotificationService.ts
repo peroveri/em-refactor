@@ -18,8 +18,10 @@ export class NotificationService {
         });
     }
 
-    logError(message: string)  {
-
+    logError(message: string) {
         console.error(message);
+    }
+    logInfo(message: string) {
+        console.log(message);
     }
 }

@@ -1,16 +1,18 @@
 import { singleton, inject } from "tsyringe";
 import { Connection, ExecuteCommandParams, ApplyWorkspaceEditParams } from 'vscode-languageserver';
-import { canExecuteGenerateTestCommand, handleExecuteGenerateTestCommand, RefactorArgs, getFileRelativePath, convertToCmd, mapRefactorResultToWorkspaceEdit } from "../modules";
+import { canExecuteGenerateTestCommand, handleExecuteGenerateTestCommand, RefactorArgs, getFileRelativePath, mapRefactorResultToWorkspaceEdit } from "../modules";
 import { SettingsService } from "./SettingsService";
 import { NotificationService } from "./NotificationService";
-import * as shell from 'shelljs';
+import { ShellService } from "./ShellService";
 
 @singleton()
 export class ExecuteCommandService {
     constructor(
         @inject("Connection") private connection: Connection,
         @inject(SettingsService) private settings: SettingsService,
-        @inject(NotificationService) private notificationService: NotificationService) {
+        @inject(NotificationService) private notificationService: NotificationService,
+        @inject(ShellService) private shell: ShellService,
+        ) {
     }
 
     handleExecuteCommand = async (params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void | any> => {
@@ -37,16 +39,14 @@ export class ExecuteCommandService {
             if (relativeFilePath === undefined || workspaceFolders === null)
                 return Promise.reject("unknown file path");
             let workspace_uri = workspaceFolders[0].uri;
-            let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.refactoring === 'extract-method' ? 'foo' : null, arg.unsafe, binaryPath);
-            if (cmd instanceof Error) {
-                this.notificationService.sendErrorNotification(cmd.message);
-                return Promise.reject(cmd.message);
+
+            let result = this.shell.callRefactoring(relativeFilePath, arg, binaryPath)
+
+            if(result instanceof Error) {
+                this.notificationService.sendErrorNotification(result.message);
+                return Promise.reject(result.message);
             }
-            /* https://github.com/shelljs/shelljs/wiki/Electron-compatibility */
-            if (shell.config.execPath === null) {
-                shell.config.execPath = shell.which('node').toString();
-            }
-            let result = shell.exec(cmd);
+
             if (result.code === 0) {
                 let edits = mapRefactorResultToWorkspaceEdit(arg, result.stdout, workspace_uri);
 
@@ -59,7 +59,6 @@ export class ExecuteCommandService {
             else {
                 this.notificationService.sendErrorNotification(`Refactoring failed. \nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
 
-                this.notificationService.logError(`Got error code: ${result.code}`);
                 return Promise.reject("refactoring failed");
             }
         }
