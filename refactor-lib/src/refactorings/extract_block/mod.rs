@@ -58,13 +58,14 @@ fn extract_block(
 /// b. add declaration and assign at start of block + add var in expression at end of block
 pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, RefactoringError> {
     if let Some(selection) = collect_block(tcx, span) {
-        let source = tcx.sess.source_map().span_to_snippet(span).unwrap();
+        let source_map = tcx.sess.source_map();
+        let source = source_map.span_to_snippet(span).unwrap();
         if selection.contains_expr {
             let span = selection.get_span();
-            return Ok(vec![map_change_from_span(tcx, span, format!("{{{}}}", get_source(tcx, span)))]);
+            return Ok(vec![map_change_from_span(source_map, span, format!("{{{}}}", get_source(tcx, span)))]);
         }
         Ok(vec![map_change_from_span(
-            tcx,
+            source_map,
             span,
             extract_block(tcx, selection.function_body_id, span, source)?,
         )])

@@ -1,10 +1,10 @@
 use crate::change::{Change, FileReplaceContent};
 use crate::refactor_definition::{InternalErrorCodes, RefactorDefinition, RefactoringError};
 use crate::refactorings::{do_after_expansion_refactoring, do_ty_refactoring, is_after_expansion_refactoring};
-use rustc::ty;
 use rustc_driver;
 use rustc_interface::interface;
 use rustc_span::FileName;
+use rustc_span::source_map::SourceMap;
 use std::path::PathBuf;
 
 ///
@@ -34,11 +34,11 @@ impl MyRefactorCallbacks {
         }
     }
 
-    fn output_changes(&mut self, tcx: ty::TyCtxt, changes: &[Change]) {
+    fn output_changes(&mut self, source_map: &SourceMap, changes: &[Change]) {
         if changes.is_empty() {
             return;
         }
-        self.map_file_replacements2(tcx, changes);
+        self.map_file_replacements2(source_map, changes);
         self.multiple_files = contains_multiple_files(changes);
         if self.multiple_files {
             return;
@@ -47,7 +47,6 @@ impl MyRefactorCallbacks {
         let mut changes = changes.to_owned();
         changes.sort_by_key(|c| c.start);
         changes.reverse();
-        let source_map = tcx.sess.source_map();
         let file_name = FileName::Real(PathBuf::from(changes[0].file_name.to_string()));
         let source_file = source_map.get_source_file(&file_name).unwrap();
         let mut content = if let Some(s) = &source_file.src {
@@ -67,23 +66,22 @@ impl MyRefactorCallbacks {
     }
 
 
-    fn map_file_replacements2(&mut self, tcx: ty::TyCtxt, changes: &[Change]) {
+    fn map_file_replacements2(&mut self, source_map: &SourceMap, changes: &[Change]) {
         for change in changes {
-            let replacement = self.map_file_replacements(tcx, &change);
+            let replacement = self.map_file_replacements(source_map, &change);
             self.file_replace_content.push(replacement);
         }
     }
 
-    fn map_file_replacements(&mut self, tcx: ty::TyCtxt, change: &Change) -> FileReplaceContent {
+    fn map_file_replacements(&mut self, source_map: &SourceMap, change: &Change) -> FileReplaceContent {
         let range = crate::refactor_definition::SourceCodeRange {
             file_name: change.file_name.to_string(),
             from: change.start,
             to: change.end
         };
+        let span = crate::refactorings::utils::map_range_to_span(source_map, &range).unwrap();
 
-        let span = crate::refactorings::utils::map_range_to_span(tcx, &range).unwrap();
-
-        let lines = tcx.sess.source_map().span_to_lines(span).unwrap().lines;
+        let lines = source_map.span_to_lines(span).unwrap().lines;
         let line_start = lines.first().unwrap();
         let line_end = lines.last().unwrap();
         FileReplaceContent {
@@ -129,13 +127,13 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
         queries.global_ctxt().unwrap().peek_mut().enter(|tcx| {
 
             if let Ok(changes) = self.result.clone() {
-                self.output_changes(tcx, &changes);
+                self.output_changes(tcx.sess.source_map(), &changes);
                 return;
             }
 
             self.result = do_ty_refactoring(tcx, &self.args);
             if let Ok(changes) = self.result.clone() {
-                self.output_changes(tcx, &changes);
+                self.output_changes(tcx.sess.source_map(), &changes);
             }
         });
         rustc_driver::Compilation::Stop

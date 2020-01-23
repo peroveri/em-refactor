@@ -68,7 +68,7 @@ pub fn do_refactoring(
     range: &SourceCodeRange,
     new_function: &str,
 ) -> Result<Vec<Change>, RefactoringError> {
-    let spi = map_range_to_span(ty, &range)?;
+    let spi = map_range_to_span(ty.sess.source_map(), &range)?;
     let stmts_visit_res = visit_stmts(ty, spi);
 
     if let Some(stmts) = stmts_visit_res {
@@ -107,7 +107,7 @@ pub fn do_refactoring(
         let si_start = stmts.stmts.first().unwrap().span.lo().0;
         let si_end = stmts.stmts.last().unwrap().span.hi().0;
 
-        let file_offset = get_file_offset(ty, &range.file_name);
+        let file_offset = get_file_offset(ty.sess.source_map(), &range.file_name);
 
         Ok(vec![
             Change {

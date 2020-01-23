@@ -1,7 +1,8 @@
 use rustc_span::Span;
 use crate::change::Change;
 use crate::refactor_definition::RefactoringError;
-use syntax::ast::{Crate, Expr, Stmt};
+use super::utils::map_change_from_span;
+use syntax::ast::{Expr, Stmt};
 use syntax::visit::{Visitor, walk_crate };
 
 pub fn do_refactoring<'tcx>(compiler: &rustc_interface::interface::Compiler,queries:  &'tcx rustc_interface::Queries<'tcx>, span: Span) -> Result<Vec<Change>, RefactoringError>{
@@ -50,35 +51,5 @@ impl<'ast> Visitor<'ast> for MacroCollector {
         } else {
             syntax::visit::walk_stmt(self, stmt);
         }
-    }
-}
-use std::path::PathBuf;
-use rustc_span::source_map::SourceMap;
-use rustc_span::{BytePos, FileName};
-
-pub fn get_file_offset(source_map: &SourceMap, file_name: &str) -> u32 {
-    let file_name = FileName::Real(PathBuf::from(file_name.to_string()));
-    let source_file = source_map.get_source_file(&file_name).unwrap();
-    source_file.start_pos.0 as u32
-}
-fn get_filename(source_map: &SourceMap, span: Span) -> String {
-    let filename = source_map.span_to_filename(span);
-    if let FileName::Real(pathbuf) = &filename {
-        if let Some(s) = pathbuf.to_str() {
-            return s.to_string();
-        }
-    }
-    panic!("unexpected file type: {:?}", filename);
-}
-fn map_change_from_span(source_map: &SourceMap, span: Span, replacement: String) -> Change {
-
-    let filename = get_filename(source_map, span);
-    let file_offset = get_file_offset(source_map, &filename);
-    Change {
-        file_name: filename,
-        file_start_pos: file_offset,
-        start: span.lo().0 - file_offset,
-        end: span.hi().0 - file_offset,
-        replacement,
     }
 }

@@ -9,11 +9,11 @@ mod block_collector;
 
 fn get_call(tcx: TyCtxt, span: Span) -> Change {
     // TODO: find fresh name instead of using foo
-    map_change_from_span(tcx, span, "foo()".to_owned())
+    map_change_from_span(tcx.sess.source_map(), span, "foo()".to_owned())
 }
 fn get_decl(tcx: TyCtxt, span: Span, block_span: Span) -> Change {
     let block_source = get_source(tcx, block_span);
-    map_change_from_span(tcx, span, format!("let foo = || {};\n", block_source))
+    map_change_from_span(tcx.sess.source_map(), span, format!("let foo = || {};\n", block_source))
 }
 
 pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, RefactoringError> {

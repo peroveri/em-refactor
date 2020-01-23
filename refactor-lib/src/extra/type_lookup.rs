@@ -130,7 +130,7 @@ pub fn provide_type(rustc_args: &[String], file_name: &str, selection: &str) -> 
     };
     
     let mut callbacks = RustcAfterAnalysisCallbacks(|tcx: TyCtxt<'_>| {
-        let range = map_range_to_span(tcx, &range);
+        let range = map_range_to_span(&tcx.sess.source_map(), &range);
 
         if range.is_err() {
             return;
