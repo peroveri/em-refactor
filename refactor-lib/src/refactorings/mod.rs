@@ -7,6 +7,7 @@ mod box_named_field;
 mod box_tuple_field;
 mod extract_block;
 mod extract_method;
+mod inline_macro;
 mod introduce_closure;
 pub mod utils;
 mod visitors;
@@ -19,5 +20,24 @@ pub fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Ve
         }
         RefactorDefinition::ExtractBlock(range) => extract_block::do_refactoring(ty, utils::map_range_to_span(ty, range)?),
         RefactorDefinition::IntroduceClosure(range) => introduce_closure::do_refactoring(ty, utils::map_range_to_span(ty, range)?),
+        _ => panic!("")
+    }
+}
+
+pub fn is_after_expansion_refactoring(args: &RefactorDefinition) -> bool {
+    if let RefactorDefinition::InlineMacro(..) = args {
+        true
+    } else {
+        false
+    }
+}
+pub fn do_after_expansion_refactoring<'tcx>(queries:  &'tcx rustc_interface::Queries<'tcx>, compiler: &rustc_interface::interface::Compiler, args: &RefactorDefinition) -> Result<Vec<Change>, RefactoringError> {
+
+    match args {
+        RefactorDefinition::InlineMacro(range) =>{
+            let span = utils::map_span_from_session(compiler, range).unwrap();
+            inline_macro::do_refactoring(compiler, &queries, span)
+        } ,
+        _ => panic!("")
     }
 }

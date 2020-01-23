@@ -1,6 +1,6 @@
 use crate::change::{Change, FileReplaceContent};
 use crate::refactor_definition::{InternalErrorCodes, RefactorDefinition, RefactoringError};
-use crate::refactorings::do_ty_refactoring;
+use crate::refactorings::{do_after_expansion_refactoring, do_ty_refactoring, is_after_expansion_refactoring};
 use rustc::ty;
 use rustc_driver;
 use rustc_interface::interface;
@@ -108,9 +108,18 @@ pub fn serialize_file_replacements(replacements: &Vec<FileReplaceContent>) ->  R
 }
 
 impl rustc_driver::Callbacks for MyRefactorCallbacks {
-    // fn after_expansion(&mut self, compiler: &interface::Compiler) -> rustc_driver::Compilation {
-    //     rustc_driver::Compilation::Continue
-    // }
+    fn after_expansion<'tcx>(
+        &mut self, 
+        compiler: &interface::Compiler,
+        queries: &'tcx rustc_interface::Queries<'tcx>
+    ) -> rustc_driver::Compilation {
+        if is_after_expansion_refactoring(&self.args) {
+            self.result = do_after_expansion_refactoring(&queries, compiler, &self.args);
+            // rustc_driver::Compilation::Stop
+        } else {
+        }
+        rustc_driver::Compilation::Continue
+    }
     fn after_analysis<'tcx>(
         &mut self, 
         compiler: &interface::Compiler,
@@ -118,6 +127,12 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
     ) -> rustc_driver::Compilation {
         compiler.session().abort_if_errors();
         queries.global_ctxt().unwrap().peek_mut().enter(|tcx| {
+
+            if let Ok(changes) = self.result.clone() {
+                self.output_changes(tcx, &changes);
+                return;
+            }
+
             self.result = do_ty_refactoring(tcx, &self.args);
             if let Ok(changes) = self.result.clone() {
                 self.output_changes(tcx, &changes);
