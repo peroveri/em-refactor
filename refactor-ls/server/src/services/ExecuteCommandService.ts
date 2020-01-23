@@ -1,5 +1,5 @@
 import { singleton, inject } from "tsyringe";
-import { Connection, ExecuteCommandParams, ApplyWorkspaceEditParams } from 'vscode-languageserver';
+import { ExecuteCommandParams, ApplyWorkspaceEditParams } from 'vscode-languageserver';
 import { canExecuteGenerateTestCommand, handleExecuteGenerateTestCommand, RefactorArgs } from "../modules";
 import { SettingsService } from "./SettingsService";
 import { NotificationService } from "./NotificationService";
@@ -10,7 +10,6 @@ import { mapRefactorResultToWorkspaceEdit } from "./mappings/workspace-mappings"
 @singleton()
 export class ExecuteCommandService {
     constructor(
-        @inject("Connection") private connection: Connection,
         @inject(SettingsService) private settings: SettingsService,
         @inject(NotificationService) private notificationService: NotificationService,
         @inject(ShellService) private shell: ShellService,
@@ -22,9 +21,7 @@ export class ExecuteCommandService {
         let settings = await this.settings.getSettings();
         if (settings.isGenerateTestFilesEnabled && canExecuteGenerateTestCommand(params)) {
             const edits = await handleExecuteGenerateTestCommand(params);
-            for (const edit of edits) {
-                await this.connection.workspace.applyEdit(edit);
-            }
+            await this.workspace.applyEdits(edits);
             return Promise.resolve();
         }
         return this.handleExecuteRefactoringCommand(params, settings.refactoringBinaryPath);
@@ -50,9 +47,9 @@ export class ExecuteCommandService {
             }
 
             if (result.code === 0) {
-                let edits = mapRefactorResultToWorkspaceEdit(arg, result.stdout, workspace_uri);
+                let edit = mapRefactorResultToWorkspaceEdit(arg, result.stdout, workspace_uri);
 
-                await this.connection.workspace.applyEdit(edits);
+                await this.workspace.applyEdit(edit);
 
                 this.notificationService.sendInfoNotification(`Applied: ${arg.refactoring}`);
 

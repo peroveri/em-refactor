@@ -1,5 +1,5 @@
 import { singleton, inject } from "tsyringe";
-import { Connection, WorkspaceFolder } from "vscode-languageserver";
+import { Connection, WorkspaceFolder, ApplyWorkspaceEditParams } from "vscode-languageserver";
 
 @singleton()
 export class WorkspaceService {
@@ -14,6 +14,15 @@ export class WorkspaceService {
     async getWorkspaceUri() {
         let f = await this.connection.workspace.getWorkspaceFolders();
         return f === null ? undefined : f[0].uri;
+    }
+
+    async applyEdits(params: ApplyWorkspaceEditParams[]) {
+        for (const edit of params) {
+            await this.applyEdit(edit);
+        }
+    }
+    async applyEdit(params: ApplyWorkspaceEditParams) {
+        await this.connection.workspace.applyEdit(params);
     }
 }
 
