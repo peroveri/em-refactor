@@ -13,13 +13,11 @@ fn inline_macro_binding_preserve_local() {
 }
 
 #[test]
-#[ignore]
 fn inline_macro_call_site_stmt_multiple() {
     run_test("call_site_stmt_multiple");
 }
 
 #[test]
-#[ignore]
 fn inline_macro_call_site_stmt_single() {
     run_test("call_site_stmt_single");
 }
