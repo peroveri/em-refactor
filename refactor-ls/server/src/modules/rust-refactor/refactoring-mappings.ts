@@ -5,7 +5,6 @@ import {
     Range,
     TextDocument,
     TextDocumentEdit,
-    TextDocuments,
     TextEdit,
     WorkspaceFolder,
     ApplyWorkspaceEditParams,
