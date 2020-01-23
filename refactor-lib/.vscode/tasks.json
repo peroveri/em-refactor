@@ -4,12 +4,22 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "cargo check",
+            "type": "shell",
+            "command": "cargo check",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "test"
+        },
+        {
             "label": "test",
             "type": "shell",
             "command": "cargo test1",
             "problemMatcher": [
                 "$rustc"
-            ]
+            ],
+            "group": "test"
         },
         {
             "label": "test --ignored",
@@ -17,7 +27,8 @@
             "command": "cargo testi",
             "problemMatcher": [
                 "$rustc"
-            ]
+            ],
+            "group": "test"
         },
         {
             "label": "test box field",
@@ -25,7 +36,8 @@
             "command": "cargo test1 box_",
             "problemMatcher": [
                 "$rustc"
-            ]
+            ],
+            "group": "test"
         },
         {
             "label": "test extract-block",
@@ -33,7 +45,8 @@
             "command": "cargo test1 extract_block",
             "problemMatcher": [
                 "$rustc"
-            ]
+            ],
+            "group": "test"
         },
         {
             "label": "test inline-macro",
@@ -41,7 +54,26 @@
             "command": "cargo test1 inline_macro",
             "problemMatcher": [
                 "$rustc"
-            ]
+            ],
+            "group": "test"
+        },
+        {
+            "label": "build binary",
+            "type": "shell",
+            "command": "cargo build --bins --release",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "cargo build",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": {"isDefault": true, "kind": "build"}
         },
     ]
 }
