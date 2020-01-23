@@ -35,7 +35,7 @@ pub fn do_after_expansion_refactoring<'tcx>(queries:  &'tcx rustc_interface::Que
 
     match args {
         RefactorDefinition::InlineMacro(range) =>{
-            let span = utils::map_span_from_session(compiler, range).unwrap();
+            let span = utils::map_range_to_span(compiler.session().source_map(), range).unwrap();
             inline_macro::do_refactoring(compiler, &queries, span)
         } ,
         _ => panic!("")

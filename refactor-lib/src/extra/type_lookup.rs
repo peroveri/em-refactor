@@ -6,7 +6,7 @@ use rustc_hir::intravisit::{walk_crate, NestedVisitorMap, Visitor};
 use rustc_hir::{Expr, FunctionRetTy, Item, ItemKind, Stmt};
 use rustc_hir::intravisit::{walk_expr, walk_item, walk_stmt};
 use rustc::hir::map::Map;
-use crate::refactorings::utils::{map_span_from_session, map_range_to_span};
+use crate::refactorings::utils::map_range_to_span;
 use crate::refactor_definition::SourceCodeRange;
 
 struct RustcAfterAnalysisCallbacks<F>(F, SourceCodeRange);
@@ -30,7 +30,7 @@ where
         queries: &'tcx rustc_interface::Queries<'tcx>
     ) -> rustc_driver::Compilation {
 
-        let span = map_span_from_session(compiler, &self.1);
+        let span = map_range_to_span(compiler.session().source_map(), &self.1);
         if span.is_err() {
             return rustc_driver::Compilation::Stop;
         }

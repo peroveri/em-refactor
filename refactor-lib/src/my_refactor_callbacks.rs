@@ -113,10 +113,13 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
     ) -> rustc_driver::Compilation {
         if is_after_expansion_refactoring(&self.args) {
             self.result = do_after_expansion_refactoring(&queries, compiler, &self.args);
-            // rustc_driver::Compilation::Stop
+            if let Ok(changes) = self.result.clone() {
+                self.output_changes(compiler.session().source_map(), &changes);
+            }
+            rustc_driver::Compilation::Stop
         } else {
+            rustc_driver::Compilation::Continue
         }
-        rustc_driver::Compilation::Continue
     }
     fn after_analysis<'tcx>(
         &mut self, 
@@ -125,12 +128,6 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
     ) -> rustc_driver::Compilation {
         compiler.session().abort_if_errors();
         queries.global_ctxt().unwrap().peek_mut().enter(|tcx| {
-
-            if let Ok(changes) = self.result.clone() {
-                self.output_changes(tcx.sess.source_map(), &changes);
-                return;
-            }
-
             self.result = do_ty_refactoring(tcx, &self.args);
             if let Ok(changes) = self.result.clone() {
                 self.output_changes(tcx.sess.source_map(), &changes);
