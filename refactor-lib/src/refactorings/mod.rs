@@ -10,7 +10,7 @@ mod extract_method;
 mod inline_macro;
 mod introduce_closure;
 pub mod utils;
-mod visitors;
+pub mod visitors;
 
 pub fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Vec<Change>, RefactoringError> {
     match args {

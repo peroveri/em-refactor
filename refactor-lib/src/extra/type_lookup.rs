@@ -6,7 +6,9 @@ use rustc_hir::intravisit::{walk_crate, NestedVisitorMap, Visitor};
 use rustc_hir::{Expr, FunctionRetTy, Item, ItemKind, Stmt};
 use rustc_hir::intravisit::{walk_expr, walk_item, walk_stmt};
 use rustc::hir::map::Map;
+use syntax::ast::{Crate};
 use crate::refactorings::utils::map_range_to_span;
+use crate::refactorings::visitors::collect_inline_macro;
 use crate::refactor_definition::SourceCodeRange;
 
 struct RustcAfterAnalysisCallbacks<F>(F, SourceCodeRange);
@@ -42,7 +44,7 @@ where
             .unwrap()
             .peek_mut();
 
-        if super::macro_res::resolve(crate_, span) {
+        if get_macro_body(span, crate_) {
             rustc_driver::Compilation::Stop
         } else {
             rustc_driver::Compilation::Continue
@@ -157,4 +159,15 @@ pub fn provide_type(rustc_args: &[String], file_name: &str, selection: &str) -> 
     let err = rustc_driver::run_compiler(&rustc_args, &mut callbacks, None, Some(emitter));
     err.unwrap();
     Ok(())
+}
+
+fn get_macro_body(span: Span, crate_: &Crate) -> bool {
+    if let Some((content, _)) = collect_inline_macro(span, crate_) {
+        print!("{}", serde_json::json!([{
+            "type": content
+        }]));
+        true
+    } else {
+        false
+    }
 }

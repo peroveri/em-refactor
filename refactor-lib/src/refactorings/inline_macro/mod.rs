@@ -2,9 +2,7 @@ use rustc_span::Span;
 use crate::change::Change;
 use crate::refactor_definition::RefactoringError;
 use super::utils::map_change_from_span;
-use inline_macro_collector::collect_inline_macro;
-
-mod inline_macro_collector;
+use super::visitors::collect_inline_macro;
 
 pub fn do_refactoring<'tcx>(compiler: &rustc_interface::interface::Compiler,queries:  &'tcx rustc_interface::Queries<'tcx>, span: Span) -> Result<Vec<Change>, RefactoringError>{
 
