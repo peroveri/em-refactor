@@ -1,16 +1,16 @@
 import { singleton, inject } from "tsyringe";
-import { Connection, TextDocuments, TextDocumentPositionParams, Hover, MarkedString } from 'vscode-languageserver';
-import { getFileRelativePath } from "../modules";
+import { TextDocuments, TextDocumentPositionParams, Hover, MarkedString } from 'vscode-languageserver';
 import { SettingsService } from "./SettingsService";
 import { ShellService } from './ShellService';
+import { ConnectionService } from './ConnectionService';
 
 @singleton()
 export class HoverService {
     constructor(
-        @inject("Connection") private connection: Connection,
         @inject("TextDocuments") private documents: TextDocuments,
         @inject(SettingsService) private settings: SettingsService,
-        @inject(ShellService) private shell: ShellService
+        @inject(ShellService) private shell: ShellService,
+        @inject(ConnectionService) private connectionService: ConnectionService
     ) {
     }
 
@@ -23,9 +23,8 @@ export class HoverService {
     };
 
     async showTypeOrMacroExpansion(params: TextDocumentPositionParams, binaryPath: string): Promise<Hover> {
-        let workspaceFolders = await this.connection.workspace.getWorkspaceFolders();
-        let relativeFilePath = getFileRelativePath(params.textDocument.uri, workspaceFolders);
-        if (relativeFilePath === undefined || workspaceFolders === null)
+        const relativeFilePath = await this.connectionService.getRelativeFilePath(params.textDocument.uri);
+        if (relativeFilePath === undefined)
             return Promise.reject("unknown file path");
         const doc = this.documents.get(params.textDocument.uri);
         if (doc === undefined) {
