@@ -99,3 +99,8 @@ Binding locals
 - New bindings shouldnt affect outside
 
 Invoke inline inside a macro is not supported
+
+Standard macros have some special rules (cannot be inlined?)
+- format! use of libraries
+- vec! box syntax
+- try! deprecated
