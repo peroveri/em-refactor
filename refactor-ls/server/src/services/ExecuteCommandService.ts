@@ -1,14 +1,16 @@
 import { singleton, inject } from "tsyringe";
-import { Connection, ExecuteCommandParams, ApplyWorkspaceEditParams, ShowMessageNotification, MessageType } from 'vscode-languageserver';
+import { Connection, ExecuteCommandParams, ApplyWorkspaceEditParams } from 'vscode-languageserver';
 import { canExecuteGenerateTestCommand, handleExecuteGenerateTestCommand, RefactorArgs, getFileRelativePath, convertToCmd, mapRefactorResultToWorkspaceEdit } from "../modules";
 import { SettingsService } from "./SettingsService";
+import { NotificationService } from "./NotificationService";
 import * as shell from 'shelljs';
 
 @singleton()
 export class ExecuteCommandService {
     constructor(
         @inject("Connection") private connection: Connection,
-        @inject(SettingsService) private settings: SettingsService) {
+        @inject(SettingsService) private settings: SettingsService,
+        @inject(NotificationService) private notificationService: NotificationService) {
     }
 
     handleExecuteCommand = async (params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void | any> => {
@@ -37,9 +39,7 @@ export class ExecuteCommandService {
             let workspace_uri = workspaceFolders[0].uri;
             let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.refactoring === 'extract-method' ? 'foo' : null, arg.unsafe, binaryPath);
             if (cmd instanceof Error) {
-                this.connection.sendNotification(ShowMessageNotification.type, {
-                    message: cmd.message, type: MessageType.Error,
-                });
+                this.notificationService.sendErrorNotification(cmd.message);
                 return Promise.reject(cmd.message);
             }
             /* https://github.com/shelljs/shelljs/wiki/Electron-compatibility */
@@ -52,18 +52,14 @@ export class ExecuteCommandService {
 
                 await this.connection.workspace.applyEdit(edits);
 
-                this.connection.sendNotification(ShowMessageNotification.type, {
-                    message: `Applied: ${arg.refactoring}`, type: MessageType.Info,
-                });
+                this.notificationService.sendInfoNotification(`Applied: ${arg.refactoring}`);
+
                 return Promise.resolve();
             }
             else {
-                this.connection.sendNotification(ShowMessageNotification.type, {
-                    message: `Refactoring failed. \nstderr: ${result.stderr}\nstdout: ${result.stdout}`, type: MessageType.Error,
-                });
-                console.error(`Got error code: ${result.code}`);
-                console.error(cmd);
-                console.error(result);
+                this.notificationService.sendErrorNotification(`Refactoring failed. \nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
+
+                this.notificationService.logError(`Got error code: ${result.code}`);
                 return Promise.reject("refactoring failed");
             }
         }
