@@ -1,0 +1,47 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "test",
+            "type": "shell",
+            "command": "cargo test1",
+            "problemMatcher": [
+                "$rustc"
+            ]
+        },
+        {
+            "label": "test --ignored",
+            "type": "shell",
+            "command": "cargo testi",
+            "problemMatcher": [
+                "$rustc"
+            ]
+        },
+        {
+            "label": "test box field",
+            "type": "shell",
+            "command": "cargo test1 box_",
+            "problemMatcher": [
+                "$rustc"
+            ]
+        },
+        {
+            "label": "test extract-block",
+            "type": "shell",
+            "command": "cargo test1 extract_block",
+            "problemMatcher": [
+                "$rustc"
+            ]
+        },
+        {
+            "label": "test inline-macro",
+            "type": "shell",
+            "command": "cargo test1 inline_macro",
+            "problemMatcher": [
+                "$rustc"
+            ]
+        },
+    ]
+}
