@@ -4,7 +4,9 @@
 		"target": "es6",
 		"outDir": "out",
 		"rootDir": "src",
-		"sourceMap": true
+		"sourceMap": true,
+		"experimentalDecorators": true, //experimentalDecorators and emitDecoratorMetadata are needed for tsyringe
+		"emitDecoratorMetadata": true
 	},
 	"include": [
 		"src"

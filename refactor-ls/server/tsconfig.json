@@ -6,7 +6,9 @@
 		"sourceMap": true,
 		"strict": true,
 		"outDir": "out",
-		"rootDir": "src"
+		"rootDir": "src",
+		"experimentalDecorators": true, //experimentalDecorators and emitDecoratorMetadata are needed for tsyringe
+		"emitDecoratorMetadata": true
 	},
 	"include": ["src"],
 	"exclude": ["node_modules", ".vscode-test"]
