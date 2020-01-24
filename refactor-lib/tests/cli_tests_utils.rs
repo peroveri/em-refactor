@@ -24,7 +24,8 @@ pub fn create_output(crate_name: &str, is_test: bool, replacement: &FileReplaceC
     RefactorOutput {
         crate_name: crate_name.to_owned(),
         is_test: is_test,
-        replacements: vec![replacement.clone()]
+        replacements: vec![replacement.clone()],
+        errors: vec![]
     }
 }
 
@@ -49,6 +50,8 @@ pub fn assert_json_eq(expected: Vec<RefactorOutput>, actual: std::process::Outpu
     assert_eq!(expected, list);
 }
 
+// These structs are copied from src/change.rs
+// Should import them instead
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct FileReplaceContent {
     pub byte_end: u32,
@@ -62,9 +65,22 @@ pub struct FileReplaceContent {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+pub struct RefactoringError {
+    pub byte_end: u32,
+    pub byte_start: u32,
+    pub char_end: usize,
+    pub char_start: usize,
+    pub file_name: String,
+    pub line_end: usize,
+    pub line_start: usize,
+    pub message: String
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct RefactorOutput {
     pub crate_name: String,
     // pub root_path: String,
     pub is_test: bool,
-    pub replacements: Vec<FileReplaceContent>
+    pub replacements: Vec<FileReplaceContent>,
+    pub errors: Vec<RefactoringError>
 }
