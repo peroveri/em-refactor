@@ -1,15 +1,7 @@
-import { singleton, inject, container } from "tsyringe";
-import { TextDocuments, CodeActionParams, Command, CodeAction, TextDocument } from 'vscode-languageserver';
-import { generateJsonCodeActions, listActionsForRange } from "../modules";
+import { singleton, inject } from "tsyringe";
+import { TextDocuments, CodeActionParams, Command, CodeAction } from 'vscode-languageserver';
 import { SettingsService } from "./SettingsService";
-
-export const refactorings = [
-    "box-field",
-    "extract-block",
-    "extract-method",
-    "inline-macro",
-    "introduce-closure"
-];
+import { listCodeActions } from "./mappings/code-action-mappings";
 
 @singleton()
 export class CodeActionService {
@@ -27,15 +19,3 @@ export class CodeActionService {
         return listCodeActions(doc, params, settings.isGenerateTestFilesEnabled);
     };
 }
-
-// Refactorings should be shown when they are applicable at the current selection
-// - From characters: e.g. left is ' ' or ';' or ...
-// - From syntax: selection start is at a statement (for extract block)
-
-const listGenerateJsonCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean) =>
-    isGenerateTestFilesEnabled ? generateJsonCodeActions(refactorings, doc, params) : [];
-
-const listCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean) =>
-    listGenerateJsonCodeActions(doc, params, isGenerateTestFilesEnabled)
-        .concat(listActionsForRange(doc, params.range, refactorings))
-        .sort((a, b) => a.title.localeCompare(b.title));
