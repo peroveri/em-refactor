@@ -23,7 +23,8 @@ export class HoverService {
     };
 
     async showTypeOrMacroExpansion(params: TextDocumentPositionParams, binaryPath: string): Promise<Hover> {
-        const relativeFilePath = await this.connectionService.getRelativeFilePath(params.textDocument.uri);
+        const workspaceInfo = await this.connectionService.getWorkspaceUri();
+        const relativeFilePath = workspaceInfo?.getFileRelativePath(params.textDocument.uri);
         if (relativeFilePath === undefined) {
             return Promise.reject("unknown file path");
         }

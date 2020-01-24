@@ -14,7 +14,7 @@ export class ExecuteCommandService {
         @inject(NotificationService) private notificationService: NotificationService,
         @inject(ShellService) private shell: ShellService,
         @inject(WorkspaceService) private workspace: WorkspaceService,
-        ) {
+    ) {
     }
 
     handleExecuteCommand = async (params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void | any> => {
@@ -30,42 +30,49 @@ export class ExecuteCommandService {
 
     async handleExecuteRefactoringCommand(params: ExecuteCommandParams, binaryPath: string): Promise<ApplyWorkspaceEditParams | void> {
 
-        if (params.arguments && params.arguments[0]) {
-            let arg = params.arguments[0] as RefactorArgs;
-            if (!isValidArgs(arg))
-                return Promise.reject(`invalid args: ${JSON.stringify(params.arguments)}`);
-            let relativeFilePath = await this.workspace.getRelativeFilePath(arg.file);
-            let workspace_uri = await this.workspace.getWorkspaceUri();
-            if (relativeFilePath === undefined || workspace_uri === undefined)
-                return Promise.reject("unknown file path");
-
-            let result = this.shell.callRefactoring(relativeFilePath, arg, binaryPath)
-
-            if(result instanceof Error) {
-                this.notificationService.sendErrorNotification(result.message);
-                return Promise.reject(result.message);
-            }
-
-            if (result.code === 0) {
-                let edit = mapRefactorResultToWorkspaceEdit(arg, result.stdout, workspace_uri);
-
-                await this.workspace.applyEdit(edit);
-
-                this.notificationService.sendInfoNotification(`Applied: ${arg.refactoring}`);
-
-                return Promise.resolve();
-            }
-            else {
-                this.notificationService.sendErrorNotification(`Refactoring failed. \nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
-
-                return Promise.reject("refactoring failed");
-            }
+        let arg = mapToRefactorArgs(params);
+        if (arg === undefined) {
+            return Promise.reject(`invalid args: ${JSON.stringify(params.arguments)}`);
         }
-        return Promise.reject("empty argument list");
+
+        let workspaceInfo = await this.workspace.getWorkspaceUri();
+        let relativeFilePath = workspaceInfo?.getFileRelativePath(arg.file);
+        if (workspaceInfo === undefined || relativeFilePath === undefined) {
+            return Promise.reject("unknown file path");
+        }
+
+        let result = this.shell.callRefactoring(relativeFilePath, arg, binaryPath)
+
+        if (result instanceof Error) {
+            this.notificationService.sendErrorNotification(result.message);
+            return Promise.reject(result.message);
+        }
+
+        if (result.code === 0) {
+            let edit = mapRefactorResultToWorkspaceEdit(arg, result.stdout, workspaceInfo.uri);
+
+            await this.workspace.applyEdit(edit);
+
+            this.notificationService.sendInfoNotification(`Applied: ${arg.refactoring}`);
+
+            return Promise.resolve();
+        } else {
+            this.notificationService.sendErrorNotification(`Refactoring failed. \nstderr: ${result.stderr}\nstdout: ${result.stdout}`);
+
+            return Promise.reject("refactoring failed");
+        }
     }
 
 }
 
-const isValidArgs = (args: RefactorArgs) => {
-	return args && args.file;
+const mapToRefactorArgs = (params: ExecuteCommandParams): RefactorArgs | undefined => {
+    if (params && params.arguments && params.arguments[0]) {
+        let arg = params.arguments[0] as RefactorArgs;
+        if (!arg || !arg.file) {
+            return undefined;
+        }
+        return arg;
+    }
+
+    return undefined;
 }

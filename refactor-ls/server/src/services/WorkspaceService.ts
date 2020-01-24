@@ -1,6 +1,6 @@
 import { singleton, inject } from "tsyringe";
 import { Connection, ApplyWorkspaceEditParams } from "vscode-languageserver";
-import { getFileRelativePath } from "./mappings/workspace-mappings";
+import { WorkspaceFolderInfo } from "./mappings/workspace-mappings";
 
 @singleton()
 export class WorkspaceService {
@@ -8,13 +8,9 @@ export class WorkspaceService {
         @inject("Connection") private connection: Connection,
     ) { }
 
-    getRelativeFilePath(uri: string) {
-        return this.connection.workspace.getWorkspaceFolders()
-            .then(workspaceFolders => getFileRelativePath(uri, workspaceFolders));
-    }
     getWorkspaceUri() {
         return this.connection.workspace.getWorkspaceFolders()
-            .then(f => f === null ? undefined : f[0].uri);
+            .then(WorkspaceFolderInfo.map);
     }
 
     async applyEdits(params: ApplyWorkspaceEditParams[]) {

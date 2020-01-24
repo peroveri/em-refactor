@@ -43,18 +43,22 @@ export const mapRefactorResultToWorkspaceEdit = (arg: RefactorArgs, stdout: stri
     } as ApplyWorkspaceEditParams;
 }
 
+export class WorkspaceFolderInfo {
+    constructor(public uri: string){}
 
-export const getFileRelativePath = (fileUri: string, workspace: WorkspaceFolder[] | null) => {
-    if (workspace === null || workspace.length === 0) return undefined;
-    let workspaceUri = workspace[0].uri;
-    return getRelativePath(workspaceUri, fileUri);
-}
-
-const getRelativePath = (workspaceUri: string, fileUri: string) => {
-    if (fileUri.startsWith(workspaceUri)) {
-        let sub = fileUri.substring(workspaceUri.length);
-        if (sub.startsWith("/")) sub = sub.substring(1);
-        return sub;
+    getFileRelativePath(fileUri: string) {
+        if (fileUri.startsWith(this.uri)) {
+            let sub = fileUri.substring(this.uri.length);
+            if (sub.startsWith("/")) sub = sub.substring(1);
+            return sub;
+        }
+        return undefined;
     }
-    return undefined;
+
+    static map(folders: WorkspaceFolder[] | null) {
+        if(folders === null || folders.length <= 0 || !folders[0].uri) {
+            return undefined;
+        }
+        return new WorkspaceFolderInfo(folders[0].uri);
+    }
 }
