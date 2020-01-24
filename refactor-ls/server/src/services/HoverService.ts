@@ -1,5 +1,5 @@
 import { singleton, inject } from "tsyringe";
-import { TextDocuments, TextDocumentPositionParams, Hover, MarkedString } from 'vscode-languageserver';
+import { TextDocuments, TextDocumentPositionParams, Hover, MarkedString, Position, TextDocument } from 'vscode-languageserver';
 import { SettingsService } from "./SettingsService";
 import { ShellService } from './ShellService';
 import { WorkspaceService } from './WorkspaceService';
@@ -24,28 +24,34 @@ export class HoverService {
 
     async showTypeOrMacroExpansion(params: TextDocumentPositionParams, binaryPath: string): Promise<Hover> {
         const relativeFilePath = await this.connectionService.getRelativeFilePath(params.textDocument.uri);
-        if (relativeFilePath === undefined)
+        if (relativeFilePath === undefined) {
             return Promise.reject("unknown file path");
+        }
         const doc = this.documents.get(params.textDocument.uri);
         if (doc === undefined) {
             return Promise.reject();
         }
-        let pos = doc.offsetAt(params.position);
+        let content = this.shell.getHoverInfo(relativeFilePath, mapPositionToString(doc, params), binaryPath);
 
-        let content = this.shell.getHoverInfo(relativeFilePath, `${pos}:${pos}`, binaryPath);
-
-        if(content instanceof Error) {
+        if (content instanceof Error) {
             return Promise.reject(content.message);
-        } 
-        return Promise.resolve({
-            contents: {
-                language: 'rust',
-                value: content
-            } as MarkedString,
-            range: {
-                start: params.position,
-                end: params.position
-            }
-        } as Hover);
+        }
+        return Promise.resolve(mapToHoverInfo(content, params.position));
     }
 }
+const mapToHoverInfo = (content: string, position: Position): Hover => ({
+    contents: {
+        language: 'rust',
+        value: content
+    } as MarkedString,
+    range: {
+        start: position,
+        end: position
+    }
+});
+
+function mapPositionToString(doc: TextDocument, params: TextDocumentPositionParams) {
+    let pos = doc.offsetAt(params.position);
+    return `${pos}:${pos}`;
+}
+
