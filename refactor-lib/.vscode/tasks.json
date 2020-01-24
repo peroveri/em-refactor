@@ -31,6 +31,15 @@
             "group": "test"
         },
         {
+            "label": "test cli",
+            "type": "shell",
+            "command": "cargo test1 cli",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "test"
+        },
+        {
             "label": "test box field",
             "type": "shell",
             "command": "cargo test1 box_",
