@@ -1,4 +1,4 @@
-import { Range, ApplyWorkspaceEditParams, TextDocumentEdit, TextEdit } from "vscode-languageserver";
+import { Range, ApplyWorkspaceEditParams, TextDocumentEdit, TextEdit, WorkspaceFolder } from "vscode-languageserver";
 import { RefactorArgs } from "../../modules/"
 
 interface Change {
@@ -41,4 +41,20 @@ export const mapRefactorResultToWorkspaceEdit = (arg: RefactorArgs, stdout: stri
         },
         label: arg.refactoring
     } as ApplyWorkspaceEditParams;
+}
+
+
+export const getFileRelativePath = (fileUri: string, workspace: WorkspaceFolder[] | null) => {
+    if (workspace === null || workspace.length === 0) return undefined;
+    let workspaceUri = workspace[0].uri;
+    return getRelativePath(workspaceUri, fileUri);
+}
+
+const getRelativePath = (workspaceUri: string, fileUri: string) => {
+    if (fileUri.startsWith(workspaceUri)) {
+        let sub = fileUri.substring(workspaceUri.length);
+        if (sub.startsWith("/")) sub = sub.substring(1);
+        return sub;
+    }
+    return undefined;
 }
