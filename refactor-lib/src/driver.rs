@@ -21,7 +21,6 @@ mod refactor_definition;
 mod refactor_definition_parser;
 mod refactorings;
 mod refactoring_invocation;
-mod rustc_utils;
 mod arg_mappings;
 
 #[cfg(test)]

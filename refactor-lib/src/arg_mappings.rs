@@ -1,5 +1,5 @@
 use std::path::Path;
-use super::rustc_utils::get_sys_root;
+use crate::refactoring_invocation::get_sys_root;
 
 pub fn arg_value<'a>(
     args: impl IntoIterator<Item = &'a String>,
