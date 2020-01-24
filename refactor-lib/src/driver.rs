@@ -270,13 +270,33 @@ fn run_rustc() -> Result<(), i32> {
     }
 
     if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
-        print!("{}", my_refactor_callbacks::serialize_file_replacements(&replacements)?);
+        print!("Crate:{}", my_refactor_callbacks::serialize(&map_success_to_output(&rustc_args, replacements))?);
     } else {
         print!("{}", content);
     }
 
     Ok(())
 }
+
+fn map_success_to_output(rustc_args: &[String], replacements: Vec<change::FileReplaceContent>) -> change::RefactorOutput {
+    change::RefactorOutput {
+        crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap().to_owned(),
+        is_test: rustc_args.contains(&"--test".to_owned()),
+        replacements: replacements,
+        errors: vec![]
+        // root_path: "".to_owned()
+    }
+}
+
+// fn map_fail_to_output(rustc_args: &[String], error: change::RefactoringError) -> change::RefactorOutput {
+//     change::RefactorOutput {
+//         crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap().to_owned(),
+//         is_test: rustc_args.contains(&"--test".to_owned()),
+//         replacements: vec![],
+//         errors: vec![error]
+//         // root_path: "".to_owned()
+//     }
+// }
 
 pub fn main() {
     rustc_driver::init_rustc_env_logger();

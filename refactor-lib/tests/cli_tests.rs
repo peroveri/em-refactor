@@ -1,26 +1,9 @@
 use assert_cmd::prelude::*;
-use predicates::prelude::predicate;
-use std::process::Command;
-use tempdir::TempDir;
+use predicates::prelude::*;
 use serde_json::json;
+use cli_tests_utils::*;
 
-const WORKSPACE_ARG: &str = "--workspace-root=./tests/data/crates/hello_world";
-const WORKSPACE_ARG_MULTI_ROOT: &str = "--workspace-root=./tests/data/crates/multi_root";
-
-fn cargo_my_refactor() -> Command {
-    Command::cargo_bin("cargo-my-refactor").unwrap()
-}
-
-fn create_tmp_dir() -> TempDir {
-    let tmp_dir = TempDir::new("my_refactoring_tool").unwrap();
-    let tmp_dir_path = tmp_dir.path();
-    assert!(
-        tmp_dir_path.is_dir(),
-        "failed to create tmp dir: {}",
-        tmp_dir_path.to_str().unwrap_or("")
-    );
-    tmp_dir
-}
+mod cli_tests_utils;
 
 #[test]
 fn cli_should_display_help() {
@@ -74,18 +57,22 @@ fn cli_unknown_refactoring() {
 
 #[test]
 fn cli_output_json() {
-    let expected = format!("{}\n", json!([{
-        "byte_end": 40,
-        "byte_start": 16,
-        "char_end": 28,
-        "char_start": 4,
-        "file_name": "src/main.rs",
-        "line_end": 1,
-        "line_start": 1,
-        "replacement": "let s = \n{\nlet s = \"Hello, world!\";\ns};",
-    }]));
+    let replacement = FileReplaceContent {
+        byte_end: 40,
+        byte_start: 16,
+        char_end: 28,
+        char_start: 4,
+        file_name: "src/main.rs".to_owned(),
+        line_end: 1,
+        line_start: 1,
+        replacement: "let s = \n{\nlet s = \"Hello, world!\";\ns};".to_owned(),
+    };
+    let expected = vec![
+        create_output("hello_world", false, &replacement),
+        create_output("hello_world", true, &replacement),
+    ];
 
-    cargo_my_refactor()
+    let actual = cargo_my_refactor()
         .arg(WORKSPACE_ARG)
         .arg("--output-replacements-as-json")
         .arg("--refactoring=extract-block")
@@ -96,44 +83,16 @@ fn cli_output_json() {
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
         ))
-        .assert()
-        .success()
-        .stdout(expected);
-
-}
-
-#[test]
-fn cli_output_replacement_json() {
-    let expected = format!("{}\n", json!([{
-        "byte_end": 40,
-        "byte_start": 16,
-        "char_end": 28,
-        "char_start": 4,
-        "file_name": "src/main.rs",
-        "line_end": 1,
-        "line_start": 1,
-        "replacement": "let s = \n{\nlet s = \"Hello, world!\";\ns};",
-    }]));
-
-    cargo_my_refactor()
-        .arg(WORKSPACE_ARG)
-        .arg("--output-replacements-as-json")
-        .arg("--refactoring=extract-block")
-        .arg("--selection=16:40")
-        .arg("--file=src/main.rs")
-        .arg("--")
-        .arg(format!(
-            "--target-dir={}",
-            create_tmp_dir().path().to_str().unwrap()
-        ))
-        .assert()
-        .success()
-        .stdout(expected);
+        .output().unwrap();
+    
+    assert_json_eq(expected, actual);
 }
 
 #[test]
 fn cli_provide_type() {
-    let expected = format!("{}\n", json!([{
+    let expected = format!("{}\n{}\n", json!([{
+        "type": "fn foo(i32,u32) -> (i32)"
+    }]), json!([{
         "type": "fn foo(i32,u32) -> (i32)"
     }]));
 
@@ -154,18 +113,22 @@ fn cli_provide_type() {
 
 #[test]
 fn cli_multiroot_project_lib() {
-    let expected = format!("{}\n", json!([{
-        "byte_end": 21,
-        "byte_start": 18,
-        "char_end": 21,
-        "char_start": 18,
-        "file_name": "src/lib.rs",
-        "line_end": 0,
-        "line_start": 0,
-        "replacement": "Box<i32>",
-    }]));
+    let replacement = FileReplaceContent {
+        byte_end: 21,
+        byte_start: 18,
+        char_end: 21,
+        char_start: 18,
+        file_name: "src/lib.rs".to_owned(),
+        line_end: 0,
+        line_start: 0,
+        replacement: "Box<i32>".to_owned(),
+    };
+    let expected = vec![
+        create_output("lib", false, &replacement),
+        create_output("lib", true, &replacement),
+    ];
 
-    cargo_my_refactor()
+    let actual = cargo_my_refactor()
         .arg(WORKSPACE_ARG_MULTI_ROOT)
         .arg("--output-replacements-as-json")
         .arg("--ignore-missing-file")
@@ -176,26 +139,30 @@ fn cli_multiroot_project_lib() {
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
-        ))
-        .assert()
-        .success()
-        .stdout(expected);
+        )).output()
+        .unwrap();
+
+    assert_json_eq(expected, actual);
 }
 
 #[test]
 fn cli_multiroot_project_main() {
-    let expected = format!("{}\n", json!([{
-        "byte_end": 21,
-        "byte_start": 18,
-        "char_end": 21,
-        "char_start": 18,
-        "file_name": "src/main.rs",
-        "line_end": 0,
-        "line_start": 0,
-        "replacement": "Box<i32>",
-    }]));
+    let replacement = FileReplaceContent {
+        byte_end: 21,
+        byte_start: 18,
+        char_end: 21,
+        char_start: 18,
+        file_name: "src/main.rs".to_owned(),
+        line_end: 0,
+        line_start: 0,
+        replacement: "Box<i32>".to_owned(),
+    };
+    let expected = vec![
+        create_output("main", false, &replacement),
+        create_output("main", true, &replacement),
+    ];
 
-    cargo_my_refactor()
+    let actual = cargo_my_refactor()
         .arg(WORKSPACE_ARG_MULTI_ROOT)
         .arg("--output-replacements-as-json")
         .arg("--ignore-missing-file")
@@ -206,8 +173,7 @@ fn cli_multiroot_project_main() {
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
-        ))
-        .assert()
-        .success()
-        .stdout(expected);
+        )).output().unwrap();
+
+    assert_json_eq(expected, actual);
 }

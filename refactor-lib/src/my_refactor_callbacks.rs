@@ -97,8 +97,9 @@ impl MyRefactorCallbacks {
     }
 }
 
-pub fn serialize_file_replacements(replacements: &Vec<FileReplaceContent>) ->  Result<String, i32> {
-    if let Ok(serialized) = serde_json::to_string(replacements) {
+pub fn serialize<T>(t: &T) ->  Result<String, i32>
+    where T: serde::Serialize {
+    if let Ok(serialized) = serde_json::to_string(t) {
         Ok(serialized)
     } else {
         Err(4)
