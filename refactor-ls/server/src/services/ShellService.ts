@@ -5,8 +5,20 @@ import { NotificationService } from "./NotificationService";
 
 @singleton()
 export class ShellService {
+    private isExecuting: boolean = false;
     constructor(
         @inject(NotificationService) private notifications: NotificationService) { }
+
+    private shellExec(cmd: string) {
+        if(this.isExecuting) {
+            return new Error("Shell already executing");
+        }
+        this.isExecuting = true;
+        this.notifications.logInfo(`executing cmd:\n${cmd}`);
+        let result = shell.exec(cmd);
+        this.isExecuting = false;
+        return result;
+    }
 
     getHoverInfo(relativeFilePath: string, selection: string, binaryPath: string) {
         let cmd = convertToCmdProvideType(relativeFilePath, selection, binaryPath);
@@ -17,7 +29,10 @@ export class ShellService {
         if (shell.config.execPath === null) {
             shell.config.execPath = shell.which('node').toString();
         }
-        let result = shell.exec(cmd);
+        let result = this.shellExec(cmd);
+        if(result instanceof Error) {
+            return result;
+        }
         if (result.code === 0) {
             let res = JSON.parse(result.stdout) as Array<{
                 type: string;
@@ -40,10 +55,11 @@ export class ShellService {
             shell.config.execPath = shell.which('node').toString();
         }
 
-        this.notifications.logInfo(`executing cmd:\n${cmd}`);
-        let result = shell.exec(cmd);
-
-        if(result.code === 0) {
+        const result = this.shellExec(cmd);
+        if(result instanceof Error) {
+            return result;
+        }
+        if (result.code === 0) {
             this.notifications.logInfo(JSON.stringify(result));
         } else {
             this.notifications.logError(`Got error code: ${result.code}`);
