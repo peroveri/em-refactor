@@ -12,6 +12,13 @@ pub enum RefactorDefinition {
     // LiftClosure(SourceCodeRange),
 }
 
+// refactoring result pr crate
+// - crash (bad format on input, didnt compile, unhandled error, ++) => stop execution
+// - not applicable (didnt find file or ast-node, refactoring is not possible, refactoring is not safe)
+// - found valid refactoring (list of changes)
+
+// maybe generic implementation of rustc_driver::Callbacks?
+
 #[derive(PartialEq, Debug)]
 pub struct ExtractMethodArgs {
     pub range: SourceCodeRange,
