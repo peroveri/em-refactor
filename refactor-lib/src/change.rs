@@ -5,13 +5,13 @@ use serde::{Serialize, Deserialize};
 /// 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Change {
+    pub end: u32,
     pub file_name: String,
     pub file_start_pos: u32,
     /// Indexed relative to this file
-    pub start: u32,
     /// Indexed relative to this file
-    pub end: u32,
-    pub replacement: String
+    pub replacement: String,
+    pub start: u32
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
