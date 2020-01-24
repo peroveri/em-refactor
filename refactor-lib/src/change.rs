@@ -1,4 +1,5 @@
 use serde::{Serialize, Deserialize};
+use super::arg_mappings::arg_value;
 
 /// 
 /// Represents a file change applied by the refactorings
@@ -46,3 +47,23 @@ pub struct RefactorOutput {
     pub replacements: Vec<FileReplaceContent>,
     pub errors: Vec<RefactoringError>
 }
+
+pub fn map_success_to_output(rustc_args: &[String], replacements: Vec<FileReplaceContent>) -> RefactorOutput {
+    RefactorOutput {
+        crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap().to_owned(),
+        is_test: rustc_args.contains(&"--test".to_owned()),
+        replacements: replacements,
+        errors: vec![]
+        // root_path: "".to_owned()
+    }
+}
+
+// fn map_fail_to_output(rustc_args: &[String], error: change::RefactoringError) -> change::RefactorOutput {
+//     change::RefactorOutput {
+//         crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap().to_owned(),
+//         is_test: rustc_args.contains(&"--test".to_owned()),
+//         replacements: vec![],
+//         errors: vec![error]
+//         // root_path: "".to_owned()
+//     }
+// }

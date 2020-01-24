@@ -9,11 +9,12 @@ extern crate rustc_span;
 extern crate rustc_typeck;
 extern crate syntax;
 
-use std::path::{Path, PathBuf};
-use std::process::{exit, Command};
+use std::process::exit;
 use rustc_pass::{pass_to_rustc, should_pass_to_rustc};
 use refactor_invocation::run_refactoring;
 use rustc_rerun::{rustc_rerun, should_run_rustc_again};
+use arg_mappings::{arg_value, get_compiler_args, get_refactor_args};
+use change::map_success_to_output;
 
 mod change;
 mod extra;
@@ -25,6 +26,8 @@ mod refactorings;
 mod rustc_pass;
 mod refactor_invocation;
 mod rustc_rerun;
+mod rustc_utils;
+mod arg_mappings;
 
 #[cfg(test)]
 mod test_utils;
@@ -39,131 +42,6 @@ pub enum RefactorStatusCodes {
     // Serializing = 4,
     RustcPassFailed = 5,
     InternalRefactoringError = 6,
-}
-
-fn arg_value<'a>(
-    args: impl IntoIterator<Item = &'a String>,
-    find_arg: &str,
-    pred: impl Fn(&str) -> bool,
-) -> Option<&'a str> {
-    let mut args = args.into_iter().map(String::as_str);
-
-    while let Some(arg) = args.next() {
-        let arg: Vec<_> = arg.splitn(2, '=').collect();
-        if arg.get(0) != Some(&find_arg) {
-            continue;
-        }
-
-        let value = arg.get(1).cloned().or_else(|| args.next());
-        if value.as_ref().map_or(false, |p| pred(p)) {
-            return value;
-        }
-    }
-    None
-}
-
-// Call compiler with refactoring tools callbacks
-// Args to the compiler: file, sysroot, ++
-// args to the refactoring tools: refactoringargs
-// returns: a set of changes
-//
-fn is_wrapper_mode(args: &[String]) -> bool {
-    Path::new(&args[1]).file_stem() == Some("rustc".as_ref())
-}
-fn get_file_path(args: &[String]) -> Option<&String> {
-    args.iter().find(|s| !s.starts_with('-'))
-}
-fn get_refactor_args(args: &[String]) -> Vec<String> {
-    if is_wrapper_mode(&args) {
-        std::env::var("MY_REFACTOR_ARGS")
-            .unwrap()
-            .split(';')
-            .map(|s| s.to_string())
-            .collect()
-    } else {
-        let mut ret = args
-            .iter()
-            .skip_while(|s| *s != "--")
-            .skip(1)
-            .map(|s| s.to_string())
-            .collect::<Vec<_>>();
-
-        ret.push(format!("--file={}", get_file_path(args).unwrap()));
-        ret
-    }
-}
-
-fn get_sys_root() -> String {
-    std::env::var("SYSROOT")
-        .ok()
-        .map(PathBuf::from)
-        .or_else(|| {
-            let home = option_env!("RUSTUP_HOME").or(option_env!("MULTIRUST_HOME"));
-            let toolchain = option_env!("RUSTUP_TOOLCHAIN").or(option_env!("MULTIRUST_TOOLCHAIN"));
-            home.and_then(|home| {
-                toolchain.map(|toolchain| {
-                    let mut path = PathBuf::from(home);
-                    path.push("toolchains");
-                    path.push(toolchain);
-                    path
-                })
-            })
-        })
-        .or_else(|| {
-            Command::new("rustc")
-                .arg("--print")
-                .arg("sysroot")
-                .output()
-                .ok()
-                .and_then(|out| String::from_utf8(out.stdout).ok())
-                .map(|s| PathBuf::from(s.trim()))
-        })
-        .or_else(|| option_env!("SYSROOT").map(PathBuf::from))
-        .map(|pb| pb.to_string_lossy().to_string())
-        .expect(
-            "need to specify SYSROOT env var during clippy compilation, or use rustup or multirust",
-        )
-}
-
-///
-/// Collect all arguments until '--', which should be passed to rustc
-///
-fn get_compiler_args(args: &[String]) -> Vec<String> {
-    let have_sys_root = arg_value(args, "--sysroot", |_| true).is_some();
-    // Setting RUSTC_WRAPPER causes Cargo to pass 'rustc' as the first argument.
-    // We're invoking the compiler programmatically, so we ignore this/
-    let wrapper_mode = Path::new(&args[1]).file_stem() == Some("rustc".as_ref());
-
-    let mut rustc_args: Vec<_>;
-
-    if wrapper_mode {
-        // we still want to be able to invoke it normally though
-        rustc_args = args.iter().skip(1).map(|s| s.to_string()).collect();
-    } else {
-        rustc_args = args
-            .iter()
-            .skip(1)
-            .take_while(|s| *s != "--")
-            .map(|s| s.to_string())
-            .collect();
-        rustc_args.insert(0, "".to_owned());
-    }
-
-    // this conditional check for the --sysroot flag is there so users can call
-    // `clippy_driver` directly
-    // without having to pass --sysroot or anything
-    if !have_sys_root {
-        rustc_args.push("--sysroot".to_owned());
-        rustc_args.push(get_sys_root());
-    }
-    rustc_args.push("--allow".to_owned());
-    rustc_args.push("dead_code".to_owned());
-    rustc_args.push("--allow".to_owned());
-    rustc_args.push("deprecated".to_owned());
-    rustc_args.push("--allow".to_owned());
-    rustc_args.push("unused".to_owned());
-
-    rustc_args
 }
 
 ///
@@ -198,7 +76,7 @@ fn run_rustc() -> Result<(), i32> {
     }
     let refactor_res = refactor_res.unwrap();
     if let None = refactor_res {
-        return Ok(());
+        return Ok(()); // special rule with --ignore-missing-file, but this should be removed
     }
 
     // 1. Run refactoring callbacks
@@ -222,25 +100,6 @@ fn run_rustc() -> Result<(), i32> {
     Ok(())
 }
 
-fn map_success_to_output(rustc_args: &[String], replacements: Vec<change::FileReplaceContent>) -> change::RefactorOutput {
-    change::RefactorOutput {
-        crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap().to_owned(),
-        is_test: rustc_args.contains(&"--test".to_owned()),
-        replacements: replacements,
-        errors: vec![]
-        // root_path: "".to_owned()
-    }
-}
-
-// fn map_fail_to_output(rustc_args: &[String], error: change::RefactoringError) -> change::RefactorOutput {
-//     change::RefactorOutput {
-//         crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap().to_owned(),
-//         is_test: rustc_args.contains(&"--test".to_owned()),
-//         replacements: vec![],
-//         errors: vec![error]
-//         // root_path: "".to_owned()
-//     }
-// }
 
 pub fn main() {
     rustc_driver::init_rustc_env_logger();
