@@ -75,16 +75,19 @@ fn cli_unknown_refactoring() {
 #[test]
 fn cli_output_json() {
     let expected = format!("{}\n", json!([{
+        "byte_end": 40,
+        "byte_start": 16,
+        "char_end": 28,
+        "char_start": 4,
         "file_name": "src/main.rs",
-        "file_start_pos": 0,
-        "start": 16,
-        "end": 40,
+        "line_end": 1,
+        "line_start": 1,
         "replacement": "let s = \n{\nlet s = \"Hello, world!\";\ns};",
     }]));
 
     cargo_my_refactor()
         .arg(WORKSPACE_ARG)
-        .arg("--output-changes-as-json")
+        .arg("--output-replacements-as-json")
         .arg("--refactoring=extract-block")
         .arg("--selection=16:40")
         .arg("--file=src/main.rs")
@@ -150,18 +153,21 @@ fn cli_provide_type() {
 }
 
 #[test]
-fn multiroot_project_lib() {
+fn cli_multiroot_project_lib() {
     let expected = format!("{}\n", json!([{
+        "byte_end": 21,
+        "byte_start": 18,
+        "char_end": 21,
+        "char_start": 18,
         "file_name": "src/lib.rs",
-        "file_start_pos": 0,
-        "start": 18,
-        "end": 21,
+        "line_end": 0,
+        "line_start": 0,
         "replacement": "Box<i32>",
     }]));
 
     cargo_my_refactor()
         .arg(WORKSPACE_ARG_MULTI_ROOT)
-        .arg("--output-changes-as-json")
+        .arg("--output-replacements-as-json")
         .arg("--ignore-missing-file")
         .arg("--refactoring=box-field")
         .arg("--selection=11:16")
@@ -177,18 +183,21 @@ fn multiroot_project_lib() {
 }
 
 #[test]
-fn multiroot_project_main() {
+fn cli_multiroot_project_main() {
     let expected = format!("{}\n", json!([{
+        "byte_end": 21,
+        "byte_start": 18,
+        "char_end": 21,
+        "char_start": 18,
         "file_name": "src/main.rs",
-        "file_start_pos": 0,
-        "start": 18,
-        "end": 21,
+        "line_end": 0,
+        "line_start": 0,
         "replacement": "Box<i32>",
     }]));
 
     cargo_my_refactor()
         .arg(WORKSPACE_ARG_MULTI_ROOT)
-        .arg("--output-changes-as-json")
+        .arg("--output-replacements-as-json")
         .arg("--ignore-missing-file")
         .arg("--refactoring=box-field")
         .arg("--selection=11:16")

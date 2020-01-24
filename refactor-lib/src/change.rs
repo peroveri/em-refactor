@@ -3,7 +3,7 @@ use serde::{Serialize, Deserialize};
 /// 
 /// Represents a file change applied by the refactorings
 /// 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone)]
 pub struct Change {
     pub end: u32,
     pub file_name: String,
