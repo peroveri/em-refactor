@@ -7,24 +7,18 @@ import {
     TextDocuments,
     DidChangeConfigurationNotification,
     CodeActionKind} from 'vscode-languageserver';
-import { CodeActionService } from "./CodeActionService";
-import { ExecuteCommandService } from "./ExecuteCommandService";
-import { HoverService } from "./HoverService";
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
 
-export function bootstrap() {
+export function bootstrapAndReturnConnection() {
     const [connection, documents] = initConnection();
 
     container.register<Connection>("Connection", { useValue: connection });
     container.register<TextDocuments>("TextDocuments", { useValue: documents });
 
-    connection.onCodeAction(container.resolve(CodeActionService).handleCodeAction);
-    connection.onExecuteCommand(container.resolve(ExecuteCommandService).handleExecuteCommand);
-    connection.onHover(container.resolve(HoverService).handleOnHover);
+    return connection;
 }
-
 
 function initConnection(): [Connection, TextDocuments] {
     let connection = createConnection(ProposedFeatures.all);
@@ -83,8 +77,6 @@ function initConnection(): [Connection, TextDocuments] {
         };
     });
 
-
-
     connection.onDidChangeWatchedFiles(_change => {
         // Monitored files have change in VSCode
         connection.console.log('We received an file change event');
@@ -99,4 +91,3 @@ function initConnection(): [Connection, TextDocuments] {
 
     return [connection, documents];
 }
-
