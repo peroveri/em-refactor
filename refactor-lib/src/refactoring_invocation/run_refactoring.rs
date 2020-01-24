@@ -1,10 +1,9 @@
-use super::RefactorStatusCodes;
-use super::my_refactor_callbacks;
-use super::change::FileReplaceContent;
-use super::change::Change;
-use super::refactor_definition::RefactoringError;
+use crate::RefactorStatusCodes;
+use crate::my_refactor_callbacks;
+use crate::change::{Change, FileReplaceContent};
+use crate::refactor_definition::{RefactorDefinition, RefactoringError};
 
-pub fn run_refactoring(rustc_args: &[String], refactor_def: super::refactor_definition::RefactorDefinition, refactor_args: &[String]) -> Result<Option<(String, Vec<FileReplaceContent>, Result<Vec<Change>, RefactoringError>)>, i32> {
+pub fn run_refactoring(rustc_args: &[String], refactor_def: RefactorDefinition, refactor_args: &[String]) -> Result<Option<(String, Vec<FileReplaceContent>, Result<Vec<Change>, RefactoringError>)>, i32> {
 
     let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_def);
 

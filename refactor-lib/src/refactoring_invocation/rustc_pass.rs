@@ -1,4 +1,4 @@
-use super::RefactorStatusCodes;
+use crate::RefactorStatusCodes;
 use std::path::Path;
 use rustc_driver::{DefaultCallbacks, run_compiler};
 

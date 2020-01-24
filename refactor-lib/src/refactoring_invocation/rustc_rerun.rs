@@ -1,6 +1,6 @@
 use super::file_loader::InMemoryFileLoader;
-use super::change::Change;
-use super::RefactorStatusCodes;
+use crate::change::Change;
+use crate::RefactorStatusCodes;
 
 pub fn should_run_rustc_again(refactor_args: &[String]) -> bool {
     return !refactor_args.contains(&"--unsafe".to_owned());

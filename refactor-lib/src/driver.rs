@@ -10,22 +10,17 @@ extern crate rustc_typeck;
 extern crate syntax;
 
 use std::process::exit;
-use rustc_pass::{pass_to_rustc, should_pass_to_rustc};
-use refactor_invocation::run_refactoring;
-use rustc_rerun::{rustc_rerun, should_run_rustc_again};
+use refactoring_invocation::{pass_to_rustc, run_refactoring, rustc_rerun, should_pass_to_rustc, should_run_rustc_again};
 use arg_mappings::{arg_value, get_compiler_args, get_refactor_args};
 use change::map_success_to_output;
 
 mod change;
 mod extra;
-mod file_loader;
 mod my_refactor_callbacks;
 mod refactor_definition;
 mod refactor_definition_parser;
 mod refactorings;
-mod rustc_pass;
-mod refactor_invocation;
-mod rustc_rerun;
+mod refactoring_invocation;
 mod rustc_utils;
 mod arg_mappings;
 
