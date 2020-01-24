@@ -1,11 +1,14 @@
-import { singleton, inject } from "tsyringe";
-import { TextDocuments, CodeActionParams, Command, CodeAction } from 'vscode-languageserver';
+import { singleton, inject, container } from "tsyringe";
+import { TextDocuments, CodeActionParams, Command, CodeAction, TextDocument } from 'vscode-languageserver';
 import { generateJsonCodeActions, listActionsForRange } from "../modules";
 import { SettingsService } from "./SettingsService";
 
 export const refactorings = [
+    "box-field",
     "extract-block",
-    "box-field"
+    "extract-method",
+    "inline-macro",
+    "introduce-closure"
 ];
 
 @singleton()
@@ -21,11 +24,18 @@ export class CodeActionService {
         if (doc === undefined) {
             return Promise.resolve([]);
         }
-        let result: (Command | CodeAction)[] = [];
-        if (settings.isGenerateTestFilesEnabled) {
-            result = result.concat(generateJsonCodeActions(refactorings, doc, params));
-        }
-        result = result.concat(listActionsForRange(doc, params.range));
-        return Promise.resolve(result);
+        return listCodeActions(doc, params, settings.isGenerateTestFilesEnabled);
     };
 }
+
+// Refactorings should be shown when they are applicable at the current selection
+// - From characters: e.g. left is ' ' or ';' or ...
+// - From syntax: selection start is at a statement (for extract block)
+
+const listGenerateJsonCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean) =>
+    isGenerateTestFilesEnabled ? generateJsonCodeActions(refactorings, doc, params) : [];
+
+const listCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean) =>
+    listGenerateJsonCodeActions(doc, params, isGenerateTestFilesEnabled)
+        .concat(listActionsForRange(doc, params.range, refactorings))
+        .sort((a, b) => a.title.localeCompare(b.title));

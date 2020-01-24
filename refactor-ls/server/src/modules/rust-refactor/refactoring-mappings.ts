@@ -37,23 +37,13 @@ const mapToCodeAction = (range: ByteRange, refactoring: string, doc: TextDocumen
 /**
  * TODO: Query the refactoring tool for possible refactorings at a given range.
  */
-export function listActionsForRange(doc: TextDocument, range: Range): (Command | CodeAction)[] {
+export function listActionsForRange(doc: TextDocument, range: Range, refactorings: string[]): (Command | CodeAction)[] {
 
     const byteRange = ByteRange.fromRange(range, doc);
     if (!byteRange.isRange() || byteRange.isEmpty()) {
         return [];
     }
 
-    return [
-        mapToCodeAction(byteRange, 'box-field', doc, false),
-        mapToCodeAction(byteRange, 'extract-block', doc, false),
-        mapToCodeAction(byteRange, 'extract-method', doc, false),
-        mapToCodeAction(byteRange, 'inline-macro', doc, false),
-        mapToCodeAction(byteRange, 'introduce-closure', doc, false),
-        mapToCodeAction(byteRange, 'box-field', doc, true),
-        mapToCodeAction(byteRange, 'extract-block', doc, true),
-        mapToCodeAction(byteRange, 'extract-method', doc, true),
-        mapToCodeAction(byteRange, 'inline-macro', doc, true),
-        mapToCodeAction(byteRange, 'introduce-closure', doc, true),
-    ];
+    return refactorings.map(r => mapToCodeAction(byteRange, r, doc, false))
+        .concat(refactorings.map(r => mapToCodeAction(byteRange, r, doc, true)));
 }
