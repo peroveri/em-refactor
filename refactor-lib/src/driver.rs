@@ -208,9 +208,6 @@ fn run_rustc() -> Result<(), i32> {
         }
         return Err(RefactorStatusCodes::InputDoesNotCompile as i32);
     }
-
-    // 2. Rerun the compiler to check if any errors were introduced
-    // Runs with default callbacks
     let content = my_refactor.content.clone().unwrap_or_else(|| "".to_owned());
     let replacements = my_refactor.file_replace_content.clone();
 
@@ -223,6 +220,8 @@ fn run_rustc() -> Result<(), i32> {
         return Err(RefactorStatusCodes::InternalRefactoringError as i32);
     }
 
+    // 2. Rerun the compiler to check if any errors were introduced
+    // Runs with default callbacks
     if !refactor_args.contains(&"--unsafe".to_owned()) {
         let mut default = rustc_driver::DefaultCallbacks;
 
