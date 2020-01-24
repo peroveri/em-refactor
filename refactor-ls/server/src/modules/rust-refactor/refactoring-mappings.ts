@@ -25,7 +25,7 @@ const mapToRefactorArgs = (doc: TextDocument, range: ByteRange, refactoring: str
 });
 
 const mapToCodeAction = (range: ByteRange, refactoring: string, doc: TextDocument, unsafe: boolean): CodeAction => ({
-    title: `Refactor - ${refactoring}: ${range.toArgumentString()}` + (unsafe ? ' - unsafe' : ''),
+    title: `Refactor - ${refactoring}` + (unsafe ? ' - unsafe' : ''),
     command: {
         title: 'refactor',
         command: CodeActionKind.RefactorExtract + '.function', // TODO: this should be something else
@@ -37,13 +37,11 @@ const mapToCodeAction = (range: ByteRange, refactoring: string, doc: TextDocumen
 /**
  * TODO: Query the refactoring tool for possible refactorings at a given range.
  */
-export function listActionsForRange(doc: TextDocument, range: Range, refactorings: string[]): (Command | CodeAction)[] {
-
+export function listActionsForRange(doc: TextDocument, range: Range, refactorings: string[], isUnsafeRefactoringShown: boolean): (Command | CodeAction)[] {
     const byteRange = ByteRange.fromRange(range, doc);
     if (!byteRange.isRange() || byteRange.isEmpty()) {
         return [];
     }
-
     return refactorings.map(r => mapToCodeAction(byteRange, r, doc, false))
-        .concat(refactorings.map(r => mapToCodeAction(byteRange, r, doc, true)));
+        .concat(isUnsafeRefactoringShown ? refactorings.map(r => mapToCodeAction(byteRange, r, doc, true)) : [])
 }

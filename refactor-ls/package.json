@@ -37,6 +37,12 @@
 					"default": false,
 					"description": "Developer setting. Allows test files to be generated."
 				},
+				"languageServerExample.isUnsafeRefactoringShown": {
+					"scope": "window",
+					"type": "boolean",
+					"default": false,
+					"description": "Developer setting. Allows unsafe invocation of refactorings."
+				},
 				"languageServerExample.refactoringBinaryPath": {
 					"scope": "window",
 					"type": "string",

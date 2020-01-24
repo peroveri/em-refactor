@@ -18,7 +18,7 @@ const refactorings = [
 const listGenerateJsonCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean) =>
     isGenerateTestFilesEnabled ? generateJsonCodeActions(refactorings, doc, params) : [];
 
-export const listCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean) =>
+export const listCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean, isUnsafeRefactoringShown: boolean) =>
     listGenerateJsonCodeActions(doc, params, isGenerateTestFilesEnabled)
-        .concat(listActionsForRange(doc, params.range, refactorings))
+        .concat(listActionsForRange(doc, params.range, refactorings, isUnsafeRefactoringShown))
         .sort((a, b) => a.title.localeCompare(b.title));
