@@ -73,15 +73,6 @@
             "problemMatcher": [
                 "$rustc"
             ],
-            "group": "build"
-        },
-        {
-            "label": "build",
-            "type": "shell",
-            "command": "cargo build",
-            "problemMatcher": [
-                "$rustc"
-            ],
             "group": {"isDefault": true, "kind": "build"}
         },
     ]
