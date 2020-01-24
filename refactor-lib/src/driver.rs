@@ -11,6 +11,7 @@ extern crate syntax;
 
 use std::path::{Path, PathBuf};
 use std::process::{exit, Command};
+use rustc_pass::{pass_to_rustc, should_pass_to_rustc};
 
 mod change;
 mod extra;
@@ -19,13 +20,14 @@ mod my_refactor_callbacks;
 mod refactor_definition;
 mod refactor_definition_parser;
 mod refactorings;
+mod rustc_pass;
 
 #[cfg(test)]
 mod test_utils;
 #[cfg(test)]
 use test_utils::{create_test_span, run_after_analysis/*, run_after_expansion, run_after_parsing*/};
 
-enum RefactorStatusCodes {
+pub enum RefactorStatusCodes {
     Success = 0,
     InputDoesNotCompile = 1,
     RefactoringProcucedBrokenCode = 2,
@@ -160,16 +162,6 @@ fn get_compiler_args(args: &[String]) -> Vec<String> {
     rustc_args
 }
 
-/// Using Rerast's solution
-/// https://github.com/google/rerast/blob/46dacd520f6bc63f4c37d9593b1b5163fc81611c/src/lib.rs
-fn is_compiling_dependency(args: &[String]) -> bool {
-    if let Some(path) = args.iter().find(|arg| arg.ends_with(".rs")) {
-        Path::new(path).is_absolute()
-    } else {
-        false
-    }
-}
-
 ///
 /// 1. Run rustc with refactoring callbacks
 /// 2. Run rustc with no callbacks, but with changes applied by the refactorings
@@ -178,26 +170,14 @@ fn run_rustc() -> Result<(), i32> {
     // get compiler and refactoring args from input and environment
     let std_env_args = std::env::args().collect::<Vec<_>>();
     let rustc_args = get_compiler_args(&std_env_args);
-    if rustc_args.contains(&"--print=cfg".to_owned()) || is_compiling_dependency(&rustc_args) {
-        let mut default = rustc_driver::DefaultCallbacks;
-        let err = rustc_driver::run_compiler(&rustc_args, &mut default, None, None); /* Some(Box::new(Vec::new())) */
-        return if err.is_err() {
-            Err(RefactorStatusCodes::RustcPassFailed as i32)
-        } else {
-            Ok(())
-        };
+    if should_pass_to_rustc(&rustc_args) {
+        return pass_to_rustc(&rustc_args);
     }
 
     let refactor_args = get_refactor_args(&std_env_args);
 
-    if refactor_args.contains(&"--provide-type".to_owned()) {
-        let selection = arg_value(&refactor_args, "--selection", |_| true).unwrap();
-        let file_name = arg_value(&refactor_args, "--file", |_| true).unwrap();
-        if let Ok(()) = extra::provide_type(&rustc_args, file_name, selection) {
-            return Ok(());
-        } else {
-            return Err(RefactorStatusCodes::RustcPassFailed as i32);
-        }
+    if extra::should_provide_type(&refactor_args) {
+        return extra::provide_type(&refactor_args, &rustc_args);
     }
 
     let refactor_def = refactor_definition_parser::argument_list_to_refactor_def(&refactor_args);
