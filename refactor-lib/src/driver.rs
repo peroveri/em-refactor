@@ -10,7 +10,7 @@ extern crate rustc_typeck;
 extern crate syntax;
 
 use std::process::exit;
-use refactoring_invocation::{pass_to_rustc, run_refactoring, should_pass_to_rustc};
+use refactoring_invocation::{pass_to_rustc, should_pass_to_rustc, run_refactoring_and_output_result};
 use arg_mappings::{arg_value, get_compiler_args, get_refactor_args};
 
 mod change;
@@ -46,13 +46,7 @@ fn run_rustc() -> Result<(), i32> {
         return extra::provide_type(&refactor_args, &rustc_args);
     }
 
-    match run_refactoring(refactor_args, rustc_args) {
-        Err(e) => {
-            eprintln!("{}", e.message);
-            exit(-1);
-        }, 
-        _ => {Ok(())}
-    }
+    run_refactoring_and_output_result(refactor_args, rustc_args)
 }
 
 pub fn main() {
