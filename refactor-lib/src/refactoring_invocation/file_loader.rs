@@ -1,7 +1,7 @@
 use std::io;
 use std::path::{Path, PathBuf};
 use rustc_span::source_map::{FileLoader};
-use crate::change::Change;
+use crate::change::FileReplaceContent;
 
 ///
 /// Used for running the compiler with modified files without having to write the modifications to the filesystem.
@@ -9,7 +9,7 @@ use crate::change::Change;
 #[derive(Clone)]
 pub(crate) struct InMemoryFileLoader<T: FileLoader + Send + Sync> {
     inner_file_loader: T,
-    changes: Vec<Change>
+    changes: Vec<FileReplaceContent>
 }
 impl<T: FileLoader + Send + Sync> InMemoryFileLoader<T> {
     pub fn new(inner: T) -> InMemoryFileLoader<T> {
@@ -19,7 +19,7 @@ impl<T: FileLoader + Send + Sync> InMemoryFileLoader<T> {
         }
     }
 
-    pub fn add_changes(&mut self, changes: Vec<Change>) {
+    pub fn add_changes(&mut self, changes: Vec<FileReplaceContent>) {
         self.changes.extend(changes);
     }
 }
@@ -37,12 +37,12 @@ impl<T: FileLoader + Send + Sync> FileLoader for InMemoryFileLoader<T> {
 
         let mut content = self.inner_file_loader.read_file(path)?;
         let mut changes =  self.changes.clone();
-        changes.sort_by_key(|c| c.start);
+        changes.sort_by_key(|c| c.byte_start);
         changes.reverse();
         for change in changes {
             if change.file_name == path.file_name().unwrap().to_str().unwrap() || change.file_name == path.to_str().unwrap() {
-                let s1 = &content[..(change.start) as usize];
-                let s2 = &content[(change.end) as usize..];
+                let s1 = &content[..(change.byte_start) as usize];
+                let s2 = &content[(change.byte_end) as usize..];
                 content = format!("{}{}{}", s1, change.replacement, s2);
             }
         }

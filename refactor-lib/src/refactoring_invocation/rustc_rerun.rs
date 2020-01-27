@@ -1,11 +1,11 @@
 use super::file_loader::InMemoryFileLoader;
-use crate::change::Change;
+use crate::change::FileReplaceContent;
 use crate::RefactorStatusCodes;
 
 pub fn should_run_rustc_again(refactor_args: &[String]) -> bool {
     return !refactor_args.contains(&"--unsafe".to_owned());
 }
-pub fn rustc_rerun(changes: &Vec<Change>, rustc_args: &[String]) -> Result<(), i32> {
+pub fn rustc_rerun(changes: &Vec<FileReplaceContent>, rustc_args: &[String]) -> Result<(), i32> {
     let mut default = rustc_driver::DefaultCallbacks;
 
     let mut file_loader = Box::new(InMemoryFileLoader::new(

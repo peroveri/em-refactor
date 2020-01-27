@@ -23,12 +23,12 @@ pub fn run_refactoring(refactor_args: Vec<String>, rustc_args: Vec<String>) -> R
         return Err(err);
     }
 
-    let (content, replacements, result) = refactor_res.unwrap();
+    let (content, replacements, _) = refactor_res.unwrap();
 
     // 2. Rerun the compiler to check if any errors were introduced
     // Runs with default callbacks
     if should_run_rustc_again(&refactor_args) && !replacements.is_empty() {
-        let result = rustc_rerun(&result.unwrap(), &rustc_args);
+        let result = rustc_rerun(&replacements, &rustc_args);
         if result.is_err() {
             return result;
         }
