@@ -1,4 +1,3 @@
-use crate::RefactorStatusCodes;
 use std::path::Path;
 use rustc_driver::{DefaultCallbacks, run_compiler};
 
@@ -16,12 +15,11 @@ pub fn should_pass_to_rustc(rustc_args: &[String]) -> bool {
     return rustc_args.contains(&"--print=cfg".to_owned()) || is_compiling_dependency(&rustc_args);
 }
 
-pub fn pass_to_rustc(rustc_args: &[String]) -> Result<(), i32> {
+pub fn pass_to_rustc(rustc_args: &[String]) {
     let mut default = DefaultCallbacks;
     let err = run_compiler(&rustc_args, &mut default, None, None); /* Some(Box::new(Vec::new())) */
-    return if err.is_err() {
-        Err(RefactorStatusCodes::RustcPassFailed as i32)
-    } else {
-        Ok(())
-    };
+    if err.is_err() {
+        eprintln!("Error while compiling dependency");
+        std::process::exit(-1);
+    }
 }

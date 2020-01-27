@@ -27,17 +27,6 @@ mod test_utils;
 #[cfg(test)]
 use test_utils::{create_test_span, run_after_analysis/*, run_after_expansion, run_after_parsing*/};
 
-pub enum RefactorStatusCodes {
-    Success = 0,
-    InputDoesNotCompile = 1,
-    RefactoringProcucedBrokenCode = 2,
-    BadFormatOnInput = 3,
-    // Serializing = 4,
-    RustcPassFailed = 5,
-    InternalRefactoringError = 6,
-    MissingFile = 7,
-}
-
 ///
 /// 1. Run rustc with refactoring callbacks
 /// 2. Run rustc with no callbacks, but with changes applied by the refactorings
@@ -47,7 +36,8 @@ fn run_rustc() -> Result<(), i32> {
     let std_env_args = std::env::args().collect::<Vec<_>>();
     let rustc_args = get_compiler_args(&std_env_args);
     if should_pass_to_rustc(&rustc_args) {
-        return pass_to_rustc(&rustc_args);
+        pass_to_rustc(&rustc_args);
+        return Ok(());
     }
 
     let refactor_args = get_refactor_args(&std_env_args);
@@ -59,7 +49,7 @@ fn run_rustc() -> Result<(), i32> {
     match run_refactoring(refactor_args, rustc_args) {
         Err(e) => {
             eprintln!("{}", e.message);
-            std::process::exit(-1);
+            exit(-1);
         }, 
         _ => {Ok(())}
     }
@@ -71,6 +61,6 @@ pub fn main() {
     exit(
         run_rustc()
             .err()
-            .unwrap_or(RefactorStatusCodes::Success as i32),
+            .unwrap_or(0),
     )
 }
