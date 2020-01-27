@@ -43,10 +43,10 @@ pub fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) ->
     // 2. Rerun the compiler to check if any errors were introduced
     // Runs with default callbacks
     if_chain! {
-        if let RefactorResult::Success((_, b)) = &refactor_res;
-        if should_run_rustc_again(refactor_args) && !b.is_empty();
+        if let RefactorResult::Success((_, replacements)) = &refactor_res;
+        if should_run_rustc_again(refactor_args) && !replacements.is_empty();
         then {
-            rustc_rerun(&b, &rustc_args)?;
+            rustc_rerun(&replacements, &rustc_args)?;
         }
     }
 
