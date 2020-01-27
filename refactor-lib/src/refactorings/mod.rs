@@ -1,4 +1,4 @@
-use crate::change::Change;
+use crate::change::FileReplaceContent;
 use crate::refactor_definition::{RefactoringError, RefactorDefinition};
 use rustc::ty;
 
@@ -12,7 +12,7 @@ mod introduce_closure;
 pub mod utils;
 pub mod visitors;
 
-pub fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Vec<Change>, RefactoringError> {
+pub fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Vec<FileReplaceContent>, RefactoringError> {
     match args {
         RefactorDefinition::BoxField(range) => box_field::do_refactoring(ty, utils::map_range_to_span(&ty.sess.source_map(), range)?),
         RefactorDefinition::ExtractMethod(args) => {
@@ -31,7 +31,7 @@ pub fn is_after_expansion_refactoring(args: &RefactorDefinition) -> bool {
         false
     }
 }
-pub fn do_after_expansion_refactoring<'tcx>(queries:  &'tcx rustc_interface::Queries<'tcx>, compiler: &rustc_interface::interface::Compiler, args: &RefactorDefinition) -> Result<Vec<Change>, RefactoringError> {
+pub fn do_after_expansion_refactoring<'tcx>(queries:  &'tcx rustc_interface::Queries<'tcx>, compiler: &rustc_interface::interface::Compiler, args: &RefactorDefinition) -> Result<Vec<FileReplaceContent>, RefactoringError> {
 
     match args {
         RefactorDefinition::InlineMacro(range) =>{

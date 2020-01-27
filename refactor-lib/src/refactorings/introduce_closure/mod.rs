@@ -1,5 +1,5 @@
 use super::utils::{map_change_from_span, get_source};
-use crate::change::Change;
+use crate::change::FileReplaceContent;
 use crate::refactor_definition::RefactoringError;
 use block_collector::collect_block;
 use rustc::ty::TyCtxt;
@@ -7,16 +7,16 @@ use rustc_span::Span;
 
 mod block_collector;
 
-fn get_call(tcx: TyCtxt, span: Span) -> Change {
+fn get_call(tcx: TyCtxt, span: Span) -> FileReplaceContent {
     // TODO: find fresh name instead of using foo
     map_change_from_span(tcx.sess.source_map(), span, "foo()".to_owned())
 }
-fn get_decl(tcx: TyCtxt, span: Span, block_span: Span) -> Change {
+fn get_decl(tcx: TyCtxt, span: Span, block_span: Span) -> FileReplaceContent {
     let block_source = get_source(tcx, block_span);
     map_change_from_span(tcx.sess.source_map(), span, format!("let foo = || {};\n", block_source))
 }
 
-pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<Change>, RefactoringError> {
+pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileReplaceContent>, RefactoringError> {
     if let Some(result) = collect_block(tcx, span) {
         // option 1: the selection is just a block
         // option 2: the selection is an assignment where the rhs is a block

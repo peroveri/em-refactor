@@ -1,10 +1,10 @@
-use super::utils::{get_file_offset, map_range_to_span};
-use crate::change::Change;
+use super::utils::{map_range_to_span, map_change_from_span};
+use crate::change::FileReplaceContent;
 use crate::refactor_definition::{RefactoringError, SourceCodeRange};
 use expr_use_visit::{collect_vars, CollectVarsArgs};
 use rustc::ty;
 use stmts_visitor::visit_stmts;
-use rustc_span::Span;
+use rustc_span::{Span, BytePos};
 use rustc_span::source_map::SourceMap;
 
 pub mod expr_use_visit;
@@ -67,7 +67,7 @@ pub fn do_refactoring(
     ty: ty::TyCtxt,
     range: &SourceCodeRange,
     new_function: &str,
-) -> Result<Vec<Change>, RefactoringError> {
+) -> Result<Vec<FileReplaceContent>, RefactoringError> {
     let spi = map_range_to_span(ty.sess.source_map(), &range)?;
     let stmts_visit_res = visit_stmts(ty, spi);
 
@@ -103,27 +103,17 @@ pub fn do_refactoring(
             .collect::<Vec<_>>()
             .join(", ");
 
+        let source_map = ty.sess.source_map();
         let fn_call = format!("{}({});", new_function, arguments);
         let si_start = stmts.stmts.first().unwrap().span.lo().0;
         let si_end = stmts.stmts.last().unwrap().span.hi().0;
 
-        let file_offset = get_file_offset(ty.sess.source_map(), &range.file_name);
+        let span1 = Span::with_root_ctxt(BytePos(stmts.fn_decl_pos), BytePos(stmts.fn_decl_pos));
+        let span2 = Span::with_root_ctxt(BytePos(si_start), BytePos(si_end));
 
         Ok(vec![
-            Change {
-                file_name: range.file_name.to_string(),
-                file_start_pos: file_offset,
-                start: stmts.fn_decl_pos,
-                end: stmts.fn_decl_pos,
-                replacement: new_fn,
-            },
-            Change {
-                file_name: range.file_name.to_string(),
-                file_start_pos: file_offset,
-                start: si_start,
-                end: si_end,
-                replacement: fn_call,
-            },
+            map_change_from_span(source_map, span1, new_fn),
+            map_change_from_span(source_map, span2, fn_call),
         ])
     } else {
         Err(RefactoringError::invalid_selection(range.from, range.to))

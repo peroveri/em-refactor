@@ -2,7 +2,7 @@ use rustc::ty::TyCtxt;
 use rustc_hir::HirId;
 use rustc_span::Span;
 
-use crate::change::Change;
+use crate::change::FileReplaceContent;
 use crate::refactorings::utils::{get_source, map_change_from_span};
 use crate::refactor_definition::RefactoringError;
 use super::visitors::{collect_local_variable_use, collect_struct_field_access_expressions};
@@ -12,7 +12,7 @@ use struct_named_pattern_collector::collect_struct_named_patterns;
 mod struct_expression_collector;
 pub mod struct_named_pattern_collector;
 
-pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_ident: &str, field_ty_span: Span) -> Result<Vec<Change>, RefactoringError> {
+pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_ident: &str, field_ty_span: Span) -> Result<Vec<FileReplaceContent>, RefactoringError> {
 
     let struct_patterns = collect_struct_named_patterns(tcx, struct_hir_id, field_ident);
 

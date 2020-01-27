@@ -79,8 +79,8 @@ fn run_refactoring_internal(rustc_args: &[String], refactor_def: RefactorDefinit
 
     match my_refactor.result {
         Err(err) => { Ok(RefactorResult::Err(err)) },
-        Ok(_) => {
-            Ok(RefactorResult::Success((my_refactor.content.unwrap_or("".to_owned()), my_refactor.file_replace_content)))
+        Ok(replacements) => {
+            Ok(RefactorResult::Success((my_refactor.content.unwrap_or("".to_owned()), replacements)))
         }
     }
 }

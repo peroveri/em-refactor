@@ -1,4 +1,4 @@
-use crate::change::{Change, FileReplaceContent};
+use crate::change::{FileReplaceContent};
 use crate::refactor_definition::{InternalErrorCodes, RefactorDefinition, RefactoringError, RefactorFail};
 use crate::refactorings::{do_after_expansion_refactoring, do_ty_refactoring, is_after_expansion_refactoring};
 use rustc_driver;
@@ -15,9 +15,8 @@ use std::path::PathBuf;
 ///
 pub struct MyRefactorCallbacks {
     pub args: RefactorDefinition,
-    pub result: Result<Vec<Change>, RefactoringError>,
+    pub result: Result<Vec<FileReplaceContent>, RefactoringError>,
     pub content: Option<String>, // TODO: remove content
-    pub file_replace_content: Vec<FileReplaceContent>
 }
 
 impl MyRefactorCallbacks {
@@ -26,13 +25,12 @@ impl MyRefactorCallbacks {
             args: arg,
             result: Err(RefactoringError::new(InternalErrorCodes::Error, "".to_owned())), // shouldnt be Err by default, but something like None
             content: None,
-            file_replace_content: vec![]
         }
     }
 
-    pub fn get_file_content(changes: &[Change], source_map: &SourceMap) -> Option<String> {
+    pub fn get_file_content(changes: &[FileReplaceContent], source_map: &SourceMap) -> Option<String> {
         let mut changes = changes.to_vec();
-        changes.sort_by_key(|c| c.start);
+        changes.sort_by_key(|c| c.byte_start);
         changes.reverse();
 
         let file_name = FileName::Real(PathBuf::from(changes[0].file_name.to_string()));
@@ -44,48 +42,12 @@ impl MyRefactorCallbacks {
         };
 
         for change in &changes {
-            let s1 = &content[..(change.start) as usize];
-            let s2 = &content[(change.end) as usize..];
+            let s1 = &content[..(change.byte_start) as usize];
+            let s2 = &content[(change.byte_end) as usize..];
             content = format!("{}{}{}", s1, change.replacement, s2);
         }
 
         return Some(content);
-    }
-
-
-    fn map_file_replacements2(source_map: &SourceMap, changes: &[Change]) -> Vec<FileReplaceContent> {
-        let mut changes = changes.to_vec();
-        changes.sort_by_key(|c| c.start);
-        changes.reverse();
-        let mut ret = vec![];
-        for change in changes.iter() {
-            let replacement = Self::map_file_replacements(source_map, &change);
-            ret.push(replacement);
-        }
-        return ret;
-    }
-
-    fn map_file_replacements(source_map: &SourceMap, change: &Change) -> FileReplaceContent {
-        let range = crate::refactor_definition::SourceCodeRange {
-            file_name: change.file_name.to_string(),
-            from: change.start,
-            to: change.end
-        };
-        let span = crate::refactorings::utils::map_range_to_span(source_map, &range).unwrap();
-
-        let lines = source_map.span_to_lines(span).unwrap().lines;
-        let line_start = lines.first().unwrap();
-        let line_end = lines.last().unwrap();
-        FileReplaceContent {
-            byte_end: change.end,
-            byte_start: change.start,
-            char_end: line_end.end_col.0,
-            char_start: line_start.start_col.0,
-            file_name: change.file_name.to_string(),
-            line_end: line_end.line_index,
-            line_start: line_start.line_index,
-            replacement: change.replacement.to_string()
-        }
     }
 }
 
@@ -108,7 +70,6 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
             self.result = do_after_expansion_refactoring(&queries, compiler, &self.args);
             if let Ok(changes) = self.result.clone() {
                 self.content = Self::get_file_content(&changes, compiler.session().source_map());
-                self.file_replace_content = Self::map_file_replacements2(compiler.session().source_map(), &changes);
             }
             rustc_driver::Compilation::Stop
         } else {
@@ -125,7 +86,6 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
             self.result = do_ty_refactoring(tcx, &self.args);
             if let Ok(changes) = self.result.clone() {
                 self.content = MyRefactorCallbacks::get_file_content(&changes, tcx.sess.source_map());
-                self.file_replace_content = Self::map_file_replacements2(tcx.sess.source_map(), &changes);
             }
         });
         rustc_driver::Compilation::Stop

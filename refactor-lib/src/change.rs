@@ -1,20 +1,6 @@
 use serde::{Serialize, Deserialize};
 use super::arg_mappings::arg_value;
 
-/// 
-/// Represents a file change applied by the refactorings
-/// 
-#[derive(Clone)]
-pub struct Change {
-    pub end: u32,
-    pub file_name: String,
-    pub file_start_pos: u32,
-    /// Indexed relative to this file
-    /// Indexed relative to this file
-    pub replacement: String,
-    pub start: u32
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileReplaceContent {
     pub byte_end: u32,
