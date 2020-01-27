@@ -16,8 +16,7 @@ use std::path::PathBuf;
 pub struct MyRefactorCallbacks {
     pub args: RefactorDefinition,
     pub result: Result<Vec<Change>, RefactoringError>,
-    pub content: Option<String>, // TODO: remove content and multiple_files fields
-    pub multiple_files: bool,
+    pub content: Option<String>, // TODO: remove content
     pub ignore_missing_file: bool,
     pub file_replace_content: Vec<FileReplaceContent>
 }
@@ -28,52 +27,47 @@ impl MyRefactorCallbacks {
             args: arg,
             result: Err(RefactoringError::new(InternalErrorCodes::Error, "".to_owned())), // shouldnt be Err by default, but something like None
             content: None,
-            multiple_files: false,
             ignore_missing_file: false,
             file_replace_content: vec![]
         }
     }
 
-    fn output_changes(&mut self, source_map: &SourceMap, changes: &[Change]) {
-        if changes.is_empty() {
-            return;
-        }
-        self.map_file_replacements2(source_map, changes);
-        self.multiple_files = contains_multiple_files(changes);
-        if self.multiple_files {
-            return;
-        }
-        
-        let mut changes = changes.to_owned();
+    pub fn get_file_content(changes: &[Change], source_map: &SourceMap) -> Option<String> {
+        let mut changes = changes.to_vec();
         changes.sort_by_key(|c| c.start);
         changes.reverse();
+
         let file_name = FileName::Real(PathBuf::from(changes[0].file_name.to_string()));
         let source_file = source_map.get_source_file(&file_name).unwrap();
         let mut content = if let Some(s) = &source_file.src {
             s.to_string()
         } else {
-            panic!("")
+            return None;
         };
 
         for change in &changes {
             let s1 = &content[..(change.start) as usize];
             let s2 = &content[(change.end) as usize..];
             content = format!("{}{}{}", s1, change.replacement, s2);
-
         }
 
-        self.content = Some(content);
+        return Some(content);
     }
 
 
-    fn map_file_replacements2(&mut self, source_map: &SourceMap, changes: &[Change]) {
-        for change in changes {
-            let replacement = self.map_file_replacements(source_map, &change);
-            self.file_replace_content.push(replacement);
+    fn map_file_replacements2(source_map: &SourceMap, changes: &[Change]) -> Vec<FileReplaceContent> {
+        let mut changes = changes.to_vec();
+        changes.sort_by_key(|c| c.start);
+        changes.reverse();
+        let mut ret = vec![];
+        for change in changes.iter() {
+            let replacement = Self::map_file_replacements(source_map, &change);
+            ret.push(replacement);
         }
+        return ret;
     }
 
-    fn map_file_replacements(&mut self, source_map: &SourceMap, change: &Change) -> FileReplaceContent {
+    fn map_file_replacements(source_map: &SourceMap, change: &Change) -> FileReplaceContent {
         let range = crate::refactor_definition::SourceCodeRange {
             file_name: change.file_name.to_string(),
             from: change.start,
@@ -115,7 +109,8 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
         if is_after_expansion_refactoring(&self.args) {
             self.result = do_after_expansion_refactoring(&queries, compiler, &self.args);
             if let Ok(changes) = self.result.clone() {
-                self.output_changes(compiler.session().source_map(), &changes);
+                self.content = Self::get_file_content(&changes, compiler.session().source_map());
+                self.file_replace_content = Self::map_file_replacements2(compiler.session().source_map(), &changes);
             }
             rustc_driver::Compilation::Stop
         } else {
@@ -131,21 +126,10 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
         queries.global_ctxt().unwrap().peek_mut().enter(|tcx| {
             self.result = do_ty_refactoring(tcx, &self.args);
             if let Ok(changes) = self.result.clone() {
-                self.output_changes(tcx.sess.source_map(), &changes);
+                self.content = MyRefactorCallbacks::get_file_content(&changes, tcx.sess.source_map());
+                self.file_replace_content = Self::map_file_replacements2(tcx.sess.source_map(), &changes);
             }
         });
         rustc_driver::Compilation::Stop
     }
-}
-
-fn contains_multiple_files(changes: &[Change]) -> bool {
-    use std::collections::HashSet;
-    use std::iter::FromIterator;
-    let set: HashSet<String> = HashSet::from_iter(
-        changes
-            .iter()
-            .map(|c| c.file_name.to_string())
-            .collect::<Vec<_>>(),
-    );
-    set.len() > 1
 }
