@@ -76,12 +76,11 @@ fn run_refactoring_internal(rustc_args: &[String], refactor_def: RefactorDefinit
     if err.is_err() {
         return Err(RefactorFail::compile_err());
     }
-    let content = my_refactor.content.clone().unwrap_or_else(|| "".to_owned());
-    let replacements = my_refactor.file_replace_content.clone();
 
-    if let Err(err) = my_refactor.result {
-        return Ok(RefactorResult::Err(err));
+    match my_refactor.result {
+        Err(err) => { Ok(RefactorResult::Err(err)) },
+        Ok(_) => {
+            Ok(RefactorResult::Success((my_refactor.content.unwrap_or("".to_owned()), my_refactor.file_replace_content)))
+        }
     }
-
-    return Ok(RefactorResult::Success((content, replacements)));
 }
