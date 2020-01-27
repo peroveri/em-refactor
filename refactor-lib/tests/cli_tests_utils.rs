@@ -29,6 +29,15 @@ pub fn create_output(crate_name: &str, is_test: bool, replacement: &FileReplaceC
     }
 }
 
+pub fn create_output_empty(crate_name: &str, is_test: bool) -> RefactorOutput {
+    RefactorOutput {
+        crate_name: crate_name.to_owned(),
+        is_test: is_test,
+        replacements: vec![],
+        errors: vec![]
+    }
+}
+
 pub fn assert_json_eq(expected: Vec<RefactorOutput>, actual: std::process::Output) {
 
     let out_str = String::from_utf8(actual.stdout.clone()).unwrap();

@@ -20,10 +20,6 @@ pub fn run_refactoring(refactor_args: Vec<String>, rustc_args: Vec<String>) -> R
     let refactor_res = run_refactoring_internal(&rustc_args, refactor_def, &refactor_args);
 
     if let Err(err) = refactor_res {
-        // special rule with --ignore-missing-file, but this should be removed
-        if err == RefactorStatusCodes::MissingFile as i32 {
-            return Ok(());
-        }
         return Err(err);
     }
 
@@ -31,7 +27,7 @@ pub fn run_refactoring(refactor_args: Vec<String>, rustc_args: Vec<String>) -> R
 
     // 2. Rerun the compiler to check if any errors were introduced
     // Runs with default callbacks
-    if should_run_rustc_again(&refactor_args) {
+    if should_run_rustc_again(&refactor_args) && !replacements.is_empty() {
         let result = rustc_rerun(&result.unwrap(), &rustc_args);
         if result.is_err() {
             return result;
@@ -63,11 +59,7 @@ fn run_refactoring_internal(rustc_args: &[String], refactor_def: RefactorDefinit
     //     rustc_driver::run_compiler(&rustc_args, callbacks, None, Some(emitter))
     // });
     if err.is_err() {
-        if let Some(msg) = my_refactor.content {
-            eprintln!("{}", msg);
-        } else {
-            eprintln!("failed during refactoring");
-        }
+        eprintln!("failed during refactoring");
         return Err(RefactorStatusCodes::InputDoesNotCompile as i32);
     }
     let content = my_refactor.content.clone().unwrap_or_else(|| "".to_owned());
@@ -76,7 +68,7 @@ fn run_refactoring_internal(rustc_args: &[String], refactor_def: RefactorDefinit
     if let Err(err) = my_refactor.result {
         if err.code == crate::refactor_definition::InternalErrorCodes::FileNotFound &&
         refactor_args.contains(&"--ignore-missing-file".to_owned()) {
-            return Err(RefactorStatusCodes::MissingFile as i32);
+            return Ok((content, vec![], Ok(vec![])));
         }
         eprintln!("{}", err.message);
         return Err(RefactorStatusCodes::InternalRefactoringError as i32);
