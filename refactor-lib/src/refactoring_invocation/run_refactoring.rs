@@ -3,7 +3,7 @@ use crate::my_refactor_callbacks;
 use crate::change::{Change, FileReplaceContent};
 use crate::refactor_definition::{RefactorDefinition, RefactoringError};
 
-pub fn run_refactoring(rustc_args: &[String], refactor_def: RefactorDefinition, refactor_args: &[String]) -> Result<Option<(String, Vec<FileReplaceContent>, Result<Vec<Change>, RefactoringError>)>, i32> {
+pub fn run_refactoring(rustc_args: &[String], refactor_def: RefactorDefinition, refactor_args: &[String]) -> Result<(String, Vec<FileReplaceContent>, Result<Vec<Change>, RefactoringError>), i32> {
 
     let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_def);
 
@@ -32,11 +32,11 @@ pub fn run_refactoring(rustc_args: &[String], refactor_def: RefactorDefinition, 
     if let Err(err) = my_refactor.result {
         if err.code == crate::refactor_definition::InternalErrorCodes::FileNotFound &&
         refactor_args.contains(&"--ignore-missing-file".to_owned()) {
-            return Ok(None);
+            return Err(RefactorStatusCodes::MissingFile as i32);
         }
         eprintln!("{}", err.message);
         return Err(RefactorStatusCodes::InternalRefactoringError as i32);
     }
 
-    return Ok(Some((content, replacements, my_refactor.result)));
+    return Ok((content, replacements, my_refactor.result));
 }

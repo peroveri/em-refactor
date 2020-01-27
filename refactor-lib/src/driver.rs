@@ -36,6 +36,7 @@ pub enum RefactorStatusCodes {
     // Serializing = 4,
     RustcPassFailed = 5,
     InternalRefactoringError = 6,
+    MissingFile = 7,
 }
 
 ///
@@ -56,24 +57,26 @@ fn run_rustc() -> Result<(), i32> {
         return extra::provide_type(&refactor_args, &rustc_args);
     }
 
-    let refactor_def = refactor_definition_parser::argument_list_to_refactor_def(&refactor_args);
-    if let Err(err) = refactor_def {
-        eprintln!("{}", err);
-        return Err(RefactorStatusCodes::BadFormatOnInput as i32);
-    }
-    let refactor_def = refactor_def.unwrap();
+    let refactor_def =
+    match refactor_definition_parser::argument_list_to_refactor_def(&refactor_args) {
+        Err(err) =>  {
+            eprintln!("{}", err);
+            return Err(RefactorStatusCodes::BadFormatOnInput as i32);
+        },
+        Ok(v) => v
+    };
 
+    // 1. Run refactoring callbacks
     let refactor_res = run_refactoring(&rustc_args, refactor_def, &refactor_args);
 
     if let Err(err) = refactor_res {
+        // special rule with --ignore-missing-file, but this should be removed
+        if err == RefactorStatusCodes::MissingFile as i32 {
+            return Ok(());
+        }
         return Err(err);
     }
-    let refactor_res = refactor_res.unwrap();
-    if let None = refactor_res {
-        return Ok(()); // special rule with --ignore-missing-file, but this should be removed
-    }
 
-    // 1. Run refactoring callbacks
     let (content, replacements, result) = refactor_res.unwrap();
 
     // 2. Rerun the compiler to check if any errors were introduced
