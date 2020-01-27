@@ -17,7 +17,6 @@ pub struct MyRefactorCallbacks {
     pub args: RefactorDefinition,
     pub result: Result<Vec<Change>, RefactoringError>,
     pub content: Option<String>, // TODO: remove content
-    pub ignore_missing_file: bool,
     pub file_replace_content: Vec<FileReplaceContent>
 }
 
@@ -27,7 +26,6 @@ impl MyRefactorCallbacks {
             args: arg,
             result: Err(RefactoringError::new(InternalErrorCodes::Error, "".to_owned())), // shouldnt be Err by default, but something like None
             content: None,
-            ignore_missing_file: false,
             file_replace_content: vec![]
         }
     }

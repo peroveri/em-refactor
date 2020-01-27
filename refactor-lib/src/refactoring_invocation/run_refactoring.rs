@@ -28,7 +28,7 @@ pub fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) ->
     let refactor_def = argument_list_to_refactor_def(refactor_args)?;
 
     // 1. Run refactoring callbacks
-    let refactor_res = run_refactoring_internal(rustc_args, refactor_def, refactor_args)?;
+    let refactor_res = run_refactoring_internal(rustc_args, refactor_def)?;
 
     // 2. Rerun the compiler to check if any errors were introduced
     // Runs with default callbacks
@@ -39,7 +39,7 @@ pub fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) ->
     Ok(refactor_res)
 }
 
-fn run_refactoring_internal(rustc_args: &[String], refactor_def: RefactorDefinition, refactor_args: &[String]) -> Result<(String, Vec<FileReplaceContent>), RefactorFail> {
+fn run_refactoring_internal(rustc_args: &[String], refactor_def: RefactorDefinition) -> Result<(String, Vec<FileReplaceContent>), RefactorFail> {
 
     let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_def);
 
@@ -61,8 +61,7 @@ fn run_refactoring_internal(rustc_args: &[String], refactor_def: RefactorDefinit
     let replacements = my_refactor.file_replace_content.clone();
 
     if let Err(err) = my_refactor.result {
-        if err.code == crate::refactor_definition::InternalErrorCodes::FileNotFound &&
-        refactor_args.contains(&"--ignore-missing-file".to_owned()) {
+        if err.code == crate::refactor_definition::InternalErrorCodes::FileNotFound {
             return Ok((content, vec![]));
         }
         return Err(RefactorFail::int(&err.message));
