@@ -34,8 +34,8 @@ fn cli_multiroot_project_lib() {
     let expected = vec![
         create_output("lib", false, &replacement),
         create_output("lib", true, &replacement),
-        create_output_empty("main", false),
-        create_output_empty("main", true),
+        create_output_err("main", false, false, "Couldn't find file: src/lib.rs"),
+        create_output_err("main", true, false, "Couldn't find file: src/lib.rs"),
     ];
 
     let actual = cargo_my_refactor()
@@ -67,8 +67,8 @@ fn cli_multiroot_project_main() {
         replacement: "Box<i32>".to_owned(),
     };
     let expected = vec![
-        create_output_empty("lib", false),
-        create_output_empty("lib", true),
+        create_output_err("lib", false, false, "Couldn't find file: src/main.rs"),
+        create_output_err("lib", true, false, "Couldn't find file: src/main.rs"),
         create_output("main", false, &replacement),
         create_output("main", true, &replacement),
     ];

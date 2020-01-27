@@ -29,12 +29,15 @@ pub fn create_output(crate_name: &str, is_test: bool, replacement: &FileReplaceC
     }
 }
 
-pub fn create_output_empty(crate_name: &str, is_test: bool) -> RefactorOutput {
+pub fn create_output_err(crate_name: &str, is_test: bool, is_error: bool, message: &str) -> RefactorOutput {
     RefactorOutput {
         crate_name: crate_name.to_owned(),
         is_test: is_test,
         replacements: vec![],
-        errors: vec![]
+        errors: vec![RefactoringError {
+            is_error,
+            message: message.to_string()
+        }]
     }
 }
 
@@ -75,13 +78,14 @@ pub struct FileReplaceContent {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
 pub struct RefactoringError {
-    pub byte_end: u32,
-    pub byte_start: u32,
-    pub char_end: usize,
-    pub char_start: usize,
-    pub file_name: String,
-    pub line_end: usize,
-    pub line_start: usize,
+    // pub byte_end: u32,
+    // pub byte_start: u32,
+    // pub char_end: usize,
+    // pub char_start: usize,
+    // pub file_name: String,
+    // pub line_end: usize,
+    // pub line_start: usize,
+    pub is_error: bool,
     pub message: String
 }
 
