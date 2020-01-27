@@ -10,9 +10,8 @@ extern crate rustc_typeck;
 extern crate syntax;
 
 use std::process::exit;
-use refactoring_invocation::{pass_to_rustc, run_refactoring, rustc_rerun, should_pass_to_rustc, should_run_rustc_again};
+use refactoring_invocation::{pass_to_rustc, run_refactoring, should_pass_to_rustc};
 use arg_mappings::{arg_value, get_compiler_args, get_refactor_args};
-use change::map_success_to_output;
 
 mod change;
 mod extra;
@@ -57,46 +56,8 @@ fn run_rustc() -> Result<(), i32> {
         return extra::provide_type(&refactor_args, &rustc_args);
     }
 
-    let refactor_def =
-    match refactor_definition_parser::argument_list_to_refactor_def(&refactor_args) {
-        Err(err) =>  {
-            eprintln!("{}", err);
-            return Err(RefactorStatusCodes::BadFormatOnInput as i32);
-        },
-        Ok(v) => v
-    };
-
-    // 1. Run refactoring callbacks
-    let refactor_res = run_refactoring(&rustc_args, refactor_def, &refactor_args);
-
-    if let Err(err) = refactor_res {
-        // special rule with --ignore-missing-file, but this should be removed
-        if err == RefactorStatusCodes::MissingFile as i32 {
-            return Ok(());
-        }
-        return Err(err);
-    }
-
-    let (content, replacements, result) = refactor_res.unwrap();
-
-    // 2. Rerun the compiler to check if any errors were introduced
-    // Runs with default callbacks
-    if should_run_rustc_again(&refactor_args) {
-        let result = rustc_rerun(&result.unwrap(), &rustc_args);
-        if result.is_err() {
-            return result;
-        }
-    }
-
-    if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
-        print!("Crate:{}", my_refactor_callbacks::serialize(&map_success_to_output(&rustc_args, replacements))?);
-    } else {
-        print!("{}", content);
-    }
-
-    Ok(())
+    run_refactoring(refactor_args, rustc_args)
 }
-
 
 pub fn main() {
     rustc_driver::init_rustc_env_logger();
