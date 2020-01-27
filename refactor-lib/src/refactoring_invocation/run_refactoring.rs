@@ -1,6 +1,6 @@
-use crate::change::{Change, map_success_to_output, FileReplaceContent};
+use crate::change::{map_success_to_output, FileReplaceContent};
 use crate::my_refactor_callbacks;
-use crate::refactor_definition::{RefactorDefinition, RefactoringError};
+use crate::refactor_definition::{RefactorDefinition};
 use crate::refactor_definition_parser::argument_list_to_refactor_def;
 use crate::refactoring_invocation::{rustc_rerun, should_run_rustc_again};
 use crate::RefactorStatusCodes;
@@ -23,7 +23,7 @@ pub fn run_refactoring(refactor_args: Vec<String>, rustc_args: Vec<String>) -> R
         return Err(err);
     }
 
-    let (content, replacements, _) = refactor_res.unwrap();
+    let (content, replacements) = refactor_res.unwrap();
 
     // 2. Rerun the compiler to check if any errors were introduced
     // Runs with default callbacks
@@ -43,7 +43,7 @@ pub fn run_refactoring(refactor_args: Vec<String>, rustc_args: Vec<String>) -> R
     Ok(())
 }
 
-fn run_refactoring_internal(rustc_args: &[String], refactor_def: RefactorDefinition, refactor_args: &[String]) -> Result<(String, Vec<FileReplaceContent>, Result<Vec<Change>, RefactoringError>), i32> {
+fn run_refactoring_internal(rustc_args: &[String], refactor_def: RefactorDefinition, refactor_args: &[String]) -> Result<(String, Vec<FileReplaceContent>), i32> {
 
     let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_def);
 
@@ -68,11 +68,11 @@ fn run_refactoring_internal(rustc_args: &[String], refactor_def: RefactorDefinit
     if let Err(err) = my_refactor.result {
         if err.code == crate::refactor_definition::InternalErrorCodes::FileNotFound &&
         refactor_args.contains(&"--ignore-missing-file".to_owned()) {
-            return Ok((content, vec![], Ok(vec![])));
+            return Ok((content, vec![]));
         }
         eprintln!("{}", err.message);
         return Err(RefactorStatusCodes::InternalRefactoringError as i32);
     }
 
-    return Ok((content, replacements, my_refactor.result));
+    return Ok((content, replacements));
 }
