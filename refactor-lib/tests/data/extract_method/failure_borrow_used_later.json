@@ -6,7 +6,7 @@
         "new_function": "foo"
     },
     "expected": {
-        "code": 1,
+        "code": 255,
         "stderr": "A borrow declared in the selection is being used later"
     }
 }

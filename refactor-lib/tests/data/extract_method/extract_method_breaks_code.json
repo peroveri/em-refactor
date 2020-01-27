@@ -6,7 +6,7 @@
         "new_function": "foo"
     },
     "expected": {
-        "code": 2,
+        "code": 255,
         "stderr": "The refactoring broke the code\n"
     }
 }

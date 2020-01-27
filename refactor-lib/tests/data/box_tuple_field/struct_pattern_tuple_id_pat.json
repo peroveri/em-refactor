@@ -5,7 +5,7 @@
         "selection": "11:14"
     },
     "expected": {
-        "code": 6,
+        "code": 255,
         "stderr": "Field: 0 is used in a pattern and cannot be boxed.\n"
     }
 }

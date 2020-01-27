@@ -1,5 +1,5 @@
 use crate::change::{Change, FileReplaceContent};
-use crate::refactor_definition::{InternalErrorCodes, RefactorDefinition, RefactoringError};
+use crate::refactor_definition::{InternalErrorCodes, RefactorDefinition, RefactoringError, RefactorFail};
 use crate::refactorings::{do_after_expansion_refactoring, do_ty_refactoring, is_after_expansion_refactoring};
 use rustc_driver;
 use rustc_interface::interface;
@@ -91,12 +91,12 @@ impl MyRefactorCallbacks {
     }
 }
 
-pub fn serialize<T>(t: &T) ->  Result<String, i32>
+pub fn serialize<T>(t: &T) ->  Result<String, RefactorFail>
     where T: serde::Serialize {
     if let Ok(serialized) = serde_json::to_string(t) {
         Ok(serialized)
     } else {
-        Err(4)
+        Err(RefactorFail::int("serialization failed"))
     }
 }
 

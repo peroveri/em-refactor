@@ -56,7 +56,13 @@ fn run_rustc() -> Result<(), i32> {
         return extra::provide_type(&refactor_args, &rustc_args);
     }
 
-    run_refactoring(refactor_args, rustc_args)
+    match run_refactoring(refactor_args, rustc_args) {
+        Err(e) => {
+            eprintln!("{}", e.message);
+            std::process::exit(-1);
+        }, 
+        _ => {Ok(())}
+    }
 }
 
 pub fn main() {

@@ -1,11 +1,11 @@
 use super::file_loader::InMemoryFileLoader;
 use crate::change::FileReplaceContent;
-use crate::RefactorStatusCodes;
+use crate::refactor_definition::RefactorFail;
 
 pub fn should_run_rustc_again(refactor_args: &[String]) -> bool {
     return !refactor_args.contains(&"--unsafe".to_owned());
 }
-pub fn rustc_rerun(changes: &Vec<FileReplaceContent>, rustc_args: &[String]) -> Result<(), i32> {
+pub fn rustc_rerun(changes: &Vec<FileReplaceContent>, rustc_args: &[String]) -> Result<(), RefactorFail> {
     let mut default = rustc_driver::DefaultCallbacks;
 
     let mut file_loader = Box::new(InMemoryFileLoader::new(
@@ -25,8 +25,7 @@ pub fn rustc_rerun(changes: &Vec<FileReplaceContent>, rustc_args: &[String]) -> 
     // });
 
     if err.is_err() {
-        eprintln!("The refactoring broke the code");
-        return Err(RefactorStatusCodes::RefactoringProcucedBrokenCode as i32);
+        return Err(RefactorFail::int("The refactoring broke the code"));
     }
     return Ok(());
     // TODO: output message / status that the code was broken after refactoring

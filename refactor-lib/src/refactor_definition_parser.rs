@@ -1,11 +1,16 @@
-use crate::refactor_definition::{ExtractMethodArgs, RefactorDefinition, SourceCodeRange};
+use crate::refactor_definition::{ExtractMethodArgs, RefactorDefinition, SourceCodeRange, RefactorFail};
 
 ///
 /// converts an argument list to a refactoring definition
 ///
-pub fn argument_list_to_refactor_def(args: &[String]) -> Result<RefactorDefinition, String> {
+pub fn argument_list_to_refactor_def(args: &[String]) -> Result<RefactorDefinition, RefactorFail> {
     let parser = RefactorArgsParser { args };
-    parser.from_args()
+    let res = parser.from_args();
+
+    match res {
+        Err(err) => Err(RefactorFail::arg_def(&err)),
+        Ok(v) => Ok(v)
+    }
 }
 
 struct RefactorArgsParser<'a> {

@@ -41,6 +41,42 @@ pub struct RefactoringError {
     pub message: String
 }
 
+// Errors that should cause the tool to halt
+// this should erplace the other error types
+#[derive(Debug, PartialEq)]
+pub enum RefactorFailCode {
+    BadFormatOnInput = 1,
+    CompilerErr = 2,
+    InternalRefactoringError = 3,
+}
+
+#[derive(Debug, PartialEq)]
+pub struct RefactorFail {
+    pub code: RefactorFailCode,
+    pub message: String,
+}
+
+impl RefactorFail {
+    pub fn arg_def(s: &str) -> Self {
+        Self {
+            code: RefactorFailCode::BadFormatOnInput,
+            message: s.to_string(),
+        }
+    }
+    pub fn compile_err() -> Self {
+        Self {
+            code: RefactorFailCode::CompilerErr,
+            message: "failed during refactoring".to_string(),
+        }
+    }
+    pub fn int(s: &str) -> Self {
+        Self {
+            code: RefactorFailCode::InternalRefactoringError,
+            message: s.to_string(),
+        }
+    }
+}
+
 impl RefactoringError {
     pub fn new(code: InternalErrorCodes, message: String) -> Self {
         Self { code, message }
