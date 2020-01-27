@@ -5,7 +5,7 @@ import { SettingsService } from "./SettingsService";
 import { NotificationService } from "./NotificationService";
 import { ShellService } from "./ShellService";
 import { WorkspaceService } from "./WorkspaceService";
-import { mapRefactorResultToWorkspaceEdit } from "./mappings/workspace-mappings"
+import { mapRefactorResultToWorkspaceEdit, mapOutputToCrateList, getErrors } from "./mappings/workspace-mappings"
 
 @singleton()
 export class ExecuteCommandService {
@@ -49,11 +49,31 @@ export class ExecuteCommandService {
         }
 
         if (result.code === 0) {
-            let edit = mapRefactorResultToWorkspaceEdit(arg, result.stdout, workspaceInfo.uri);
+            let outputs;
+            try {
+                outputs = mapOutputToCrateList(result.stdout);
+            } catch(e) {
+                console.log(e);
+                throw e;
+            }
 
-            await this.workspace.applyEdit(edit);
+            let errors = getErrors(outputs);
+            if(errors.length > 0) {
+                this.notificationService.sendErrorNotification(errors[0].message);
+                return Promise.reject(errors[0].message);
+            }
+            
+            let edit = mapRefactorResultToWorkspaceEdit(arg, outputs, workspaceInfo.uri);
 
-            this.notificationService.sendInfoNotification(`Applied: ${arg.refactoring}`);
+            this.notificationService.logError(JSON.stringify(edit));
+            let editResponse = await this.workspace.applyEdit(edit);
+            
+            if(editResponse.applied) {
+                this.notificationService.sendInfoNotification(`Applied: ${arg.refactoring}`);
+            } else {
+                this.notificationService.sendErrorNotification(`Failed to apply: ${arg.refactoring}`);
+            }
+
 
             return Promise.resolve();
         } else {

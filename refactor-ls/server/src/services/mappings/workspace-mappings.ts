@@ -6,7 +6,7 @@ interface CrateOutput {
     // root_path: string;
     is_test: boolean;
     replacements: Change[];
-    errors: any[];
+    errors: RefactorError[];
 }
 
 interface Change {
@@ -18,6 +18,10 @@ interface Change {
     line_end: number;
     line_start: number;
     replacement: string;
+}
+interface RefactorError {
+    is_error: boolean;
+    message: string
 }
 
 const changeEquals = (c1: Change, c2: Change) => 
@@ -46,21 +50,14 @@ export const mapToUnionOfChanges = (output: CrateOutput[]) => {
     for(let i = 0; i < allChanges.length; i++) {
         for(let j = i + 1; j < allChanges.length; j++) {
             if(changeEquals(allChanges[i], allChanges[j])) {
-                allChanges.splice(j, 1);
+                allChanges.splice(j--, 1);
             }
         }
     }
     return allChanges;
 }
 
-export const mapRefactorResultToWorkspaceEdit = (arg: RefactorArgs, stdout: string, workspaceUri: string): ApplyWorkspaceEditParams => {
-    let outputs;
-    try {
-        outputs = mapOutputToCrateList(stdout);
-    } catch(e) {
-        console.log(e);
-        throw e;
-    }
+export const mapRefactorResultToWorkspaceEdit = (arg: RefactorArgs, outputs: CrateOutput[], workspaceUri: string): ApplyWorkspaceEditParams => {
     let changes = mapToUnionOfChanges(outputs);
 
     let documentChanges: TextDocumentEdit[] = [];
@@ -84,6 +81,9 @@ export const mapRefactorResultToWorkspaceEdit = (arg: RefactorArgs, stdout: stri
         label: arg.refactoring
     } as ApplyWorkspaceEditParams;
 }
+
+export const getErrors = (outputs: CrateOutput[]) => 
+    outputs.map(e => e.errors).reduce((acc, x) => acc.concat(x), []).filter(e => e.is_error);
 
 export class WorkspaceFolderInfo {
     constructor(public uri: string){}
