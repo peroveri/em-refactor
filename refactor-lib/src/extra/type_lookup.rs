@@ -9,7 +9,7 @@ use rustc::hir::map::Map;
 use syntax::ast::{Crate};
 use crate::refactorings::utils::map_range_to_span;
 use crate::refactorings::visitors::collect_inline_macro;
-use crate::refactor_definition::SourceCodeRange;
+use crate::refactoring_invocation::SourceCodeRange;
 
 struct RustcAfterAnalysisCallbacks<F>(F, SourceCodeRange);
 

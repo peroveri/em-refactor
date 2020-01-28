@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use super::arg_mappings::arg_value;
+use crate::refactoring_invocation::{arg_value, InternalErrorCodes, RefactoringErrorInternal};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FileReplaceContent {
@@ -45,14 +45,14 @@ pub fn map_success_to_output(rustc_args: &[String], replacements: Vec<FileReplac
     }
 }
 
-pub fn map_fail_to_output(rustc_args: &[String], error: crate::refactor_definition::RefactoringError) -> RefactorOutput {
+pub fn map_fail_to_output(rustc_args: &[String], error: RefactoringErrorInternal) -> RefactorOutput {
     RefactorOutput {
         crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap_or("").to_owned(),
         is_test: rustc_args.contains(&"--test".to_owned()),
         replacements: vec![],
         errors: vec![RefactoringError {
             message: error.message,
-            is_error: error.code != crate::refactor_definition::InternalErrorCodes::FileNotFound
+            is_error: error.code != InternalErrorCodes::FileNotFound
         }]
         // root_path: "".to_owned()
     }

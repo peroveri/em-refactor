@@ -1,6 +1,5 @@
 use super::utils::{map_range_to_span, map_change_from_span};
-use crate::change::FileReplaceContent;
-use crate::refactor_definition::{RefactoringError, SourceCodeRange};
+use crate::refactoring_invocation::{FileReplaceContent, RefactoringErrorInternal, SourceCodeRange};
 use expr_use_visit::{collect_vars, CollectVarsArgs};
 use rustc::ty;
 use stmts_visitor::visit_stmts;
@@ -67,7 +66,7 @@ pub fn do_refactoring(
     ty: ty::TyCtxt,
     range: &SourceCodeRange,
     new_function: &str,
-) -> Result<Vec<FileReplaceContent>, RefactoringError> {
+) -> Result<Vec<FileReplaceContent>, RefactoringErrorInternal> {
     let spi = map_range_to_span(ty.sess.source_map(), &range)?;
     let stmts_visit_res = visit_stmts(ty, spi);
 
@@ -79,7 +78,7 @@ pub fn do_refactoring(
         let vars_used = collect_vars(ty, collect_args);
 
         if vars_used.get_return_values().len() > 1 {
-            return Err(RefactoringError::multiple_returnvalues());
+            return Err(RefactoringErrorInternal::multiple_returnvalues());
         }
 
         let params = vars_used
@@ -116,7 +115,7 @@ pub fn do_refactoring(
             map_change_from_span(source_map, span2, fn_call),
         ])
     } else {
-        Err(RefactoringError::invalid_selection(range.from, range.to))
+        Err(RefactoringErrorInternal::invalid_selection(range.from, range.to))
     }
 }
 

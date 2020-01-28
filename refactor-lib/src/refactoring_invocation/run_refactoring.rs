@@ -1,8 +1,4 @@
-use crate::change::{map_success_to_output, map_fail_to_output, FileReplaceContent};
-use crate::my_refactor_callbacks;
-use crate::refactor_definition::{RefactorDefinition, RefactorFail, RefactoringError};
-use crate::refactor_definition_parser::argument_list_to_refactor_def;
-use crate::refactoring_invocation::{rustc_rerun, should_run_rustc_again};
+use crate::refactoring_invocation::{argument_list_to_refactor_def, map_success_to_output, map_fail_to_output, FileReplaceContent, MyRefactorCallbacks, RefactorDefinition, RefactorFail, RefactoringErrorInternal, rustc_rerun, serialize, should_run_rustc_again};
 use if_chain::if_chain;
 
 pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args: Vec<String>) -> Result<(), i32> {
@@ -14,7 +10,7 @@ pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args:
         }, 
         Ok(RefactorResult::Success((content, replacements))) => {
             if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
-                print!("Crate:{}", my_refactor_callbacks::serialize(&map_success_to_output(&rustc_args, replacements)).unwrap());
+                print!("Crate:{}", serialize(&map_success_to_output(&rustc_args, replacements)).unwrap());
             } else {
                 print!("{}", content);
             }
@@ -22,7 +18,7 @@ pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args:
         }, 
         Ok(RefactorResult::Err(err)) => {
             if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
-                println!("Crate:{}", my_refactor_callbacks::serialize(&map_fail_to_output(&rustc_args, err)).unwrap());
+                println!("Crate:{}", serialize(&map_fail_to_output(&rustc_args, err)).unwrap());
                 Ok(())
             } else {
                 eprintln!("{}", err.message);
@@ -55,12 +51,12 @@ pub fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) ->
 
 pub enum RefactorResult {
     Success((String, Vec<FileReplaceContent>)),
-    Err(RefactoringError)
+    Err(RefactoringErrorInternal)
 }
 
 fn run_refactoring_internal(rustc_args: &[String], refactor_def: RefactorDefinition) -> Result<RefactorResult, RefactorFail> {
 
-    let mut my_refactor = my_refactor_callbacks::MyRefactorCallbacks::from_arg(refactor_def);
+    let mut my_refactor = MyRefactorCallbacks::from_arg(refactor_def);
 
     let callbacks: &mut (dyn rustc_driver::Callbacks + Send) = &mut my_refactor;
 

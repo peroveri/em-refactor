@@ -1,6 +1,5 @@
 use super::utils::{map_change_from_span, get_source};
-use crate::change::FileReplaceContent;
-use crate::refactor_definition::RefactoringError;
+use crate::refactoring_invocation::{FileReplaceContent, RefactoringErrorInternal};
 use block_collector::collect_block;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
@@ -16,7 +15,7 @@ fn get_decl(tcx: TyCtxt, span: Span, block_span: Span) -> FileReplaceContent {
     map_change_from_span(tcx.sess.source_map(), span, format!("let foo = || {};\n", block_source))
 }
 
-pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileReplaceContent>, RefactoringError> {
+pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileReplaceContent>, RefactoringErrorInternal> {
     if let Some(result) = collect_block(tcx, span) {
         // option 1: the selection is just a block
         // option 2: the selection is an assignment where the rhs is a block
@@ -28,6 +27,6 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileReplaceContent>
         ])
         
     } else {
-        Err(RefactoringError::invalid_selection(span.lo().0, span.hi().0))
+        Err(RefactoringErrorInternal::invalid_selection(span.lo().0, span.hi().0))
     }
 }

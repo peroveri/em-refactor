@@ -1,9 +1,8 @@
-use crate::change::FileReplaceContent;
 use rustc::ty::TyCtxt;
 use rustc_hir::HirId;
 use rustc_span::Span;
 
-use crate::refactor_definition::RefactoringError;
+use crate::refactoring_invocation::{FileReplaceContent, RefactoringErrorInternal};
 use super::utils::{get_source, get_struct_hir_id};
 use super::{box_named_field, box_tuple_field};
 use super::visitors::collect_field;
@@ -33,7 +32,7 @@ pub struct StructPatternCollection {
 ///   - Add Box::new around V
 /// - for F' in Fs
 ///   - Add * around F'
-pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileReplaceContent>, RefactoringError> {
+pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileReplaceContent>, RefactoringErrorInternal> {
     if let Some((field, index)) = collect_field(tcx, span) {
         let struct_hir_id = get_struct_hir_id(tcx, &field);
 
@@ -44,7 +43,7 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileReplaceContent>
         }
         
     } else {
-        Err(RefactoringError::invalid_selection_with_code(
+        Err(RefactoringErrorInternal::invalid_selection_with_code(
             span.lo().0,
             span.hi().0,
             &get_source(tcx, span)

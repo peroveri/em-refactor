@@ -2,9 +2,8 @@ use rustc::ty::TyCtxt;
 use rustc_hir::HirId;
 use rustc_span::Span;
 
-use crate::change::FileReplaceContent;
 use crate::refactorings::utils::{get_source, map_change_from_span};
-use crate::refactor_definition::RefactoringError;
+use crate::refactoring_invocation::{FileReplaceContent, RefactoringErrorInternal};
 use super::visitors::{collect_local_variable_use, collect_struct_field_access_expressions};
 use struct_expression_collector::collect_struct_expressions;
 use struct_named_pattern_collector::collect_struct_named_patterns;
@@ -12,12 +11,12 @@ use struct_named_pattern_collector::collect_struct_named_patterns;
 mod struct_expression_collector;
 pub mod struct_named_pattern_collector;
 
-pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_ident: &str, field_ty_span: Span) -> Result<Vec<FileReplaceContent>, RefactoringError> {
+pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_ident: &str, field_ty_span: Span) -> Result<Vec<FileReplaceContent>, RefactoringErrorInternal> {
 
     let struct_patterns = collect_struct_named_patterns(tcx, struct_hir_id, field_ident);
 
     if !struct_patterns.other.is_empty() {
-        return Err(RefactoringError::used_in_pattern(&field_ident));
+        return Err(RefactoringErrorInternal::used_in_pattern(&field_ident));
     }
     let source_map = tcx.sess.source_map();
     

@@ -1,5 +1,4 @@
-use crate::change::{FileReplaceContent};
-use crate::refactor_definition::{InternalErrorCodes, RefactorDefinition, RefactoringError, RefactorFail};
+use crate::refactoring_invocation::{InternalErrorCodes, FileReplaceContent,  RefactorDefinition, RefactoringErrorInternal, RefactorFail};
 use crate::refactorings::{do_after_expansion_refactoring, do_ty_refactoring, is_after_expansion_refactoring};
 use rustc_driver;
 use rustc_interface::interface;
@@ -15,7 +14,7 @@ use std::path::PathBuf;
 ///
 pub struct MyRefactorCallbacks {
     pub args: RefactorDefinition,
-    pub result: Result<Vec<FileReplaceContent>, RefactoringError>,
+    pub result: Result<Vec<FileReplaceContent>, RefactoringErrorInternal>,
     pub content: Option<String>, // TODO: remove content
 }
 
@@ -23,7 +22,7 @@ impl MyRefactorCallbacks {
     pub fn from_arg(arg: RefactorDefinition) -> MyRefactorCallbacks {
         MyRefactorCallbacks {
             args: arg,
-            result: Err(RefactoringError::new(InternalErrorCodes::Error, "".to_owned())), // shouldnt be Err by default, but something like None
+            result: Err(RefactoringErrorInternal::new(InternalErrorCodes::Error, "".to_owned())), // shouldnt be Err by default, but something like None
             content: None,
         }
     }

@@ -1,5 +1,4 @@
-use crate::change::FileReplaceContent;
-use crate::refactor_definition::{RefactoringError, SourceCodeRange};
+use crate::refactoring_invocation::{FileReplaceContent, RefactoringErrorInternal, SourceCodeRange};
 use rustc::ty::TyCtxt;
 use rustc_hir::{HirId, StructField};
 use rustc_span::{BytePos, FileName, Span};
@@ -21,7 +20,7 @@ fn get_filename(source_map: &SourceMap, span: Span) -> String {
     panic!("unexpected file type: {:?}", filename);
 }
 
-pub fn map_range_to_span(source_map: &SourceMap, range: &SourceCodeRange) -> Result<Span, RefactoringError> {
+pub fn map_range_to_span(source_map: &SourceMap, range: &SourceCodeRange) -> Result<Span, RefactoringErrorInternal> {
     let filename = FileName::Real(std::path::PathBuf::from(&range.file_name));
     if let Some(source_file) = source_map.get_source_file(&filename) {
         Ok(Span::with_root_ctxt(
@@ -29,7 +28,7 @@ pub fn map_range_to_span(source_map: &SourceMap, range: &SourceCodeRange) -> Res
             BytePos(range.to + source_file.start_pos.0),
         ))
     } else {
-        Err(RefactoringError::file_not_found(&range.file_name))
+        Err(RefactoringErrorInternal::file_not_found(&range.file_name))
     }
 }
 

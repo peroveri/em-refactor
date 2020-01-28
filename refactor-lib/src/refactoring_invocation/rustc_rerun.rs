@@ -1,6 +1,4 @@
-use super::file_loader::InMemoryFileLoader;
-use crate::change::FileReplaceContent;
-use crate::refactor_definition::RefactorFail;
+use crate::refactoring_invocation::{FileReplaceContent, RefactorFail, InMemoryFileLoader};
 
 pub fn should_run_rustc_again(refactor_args: &[String]) -> bool {
     return !refactor_args.contains(&"--unsafe".to_owned());

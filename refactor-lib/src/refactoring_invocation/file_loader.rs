@@ -1,13 +1,13 @@
 use std::io;
 use std::path::{Path, PathBuf};
 use rustc_span::source_map::{FileLoader};
-use crate::change::FileReplaceContent;
+use crate::refactoring_invocation::FileReplaceContent;
 
 ///
 /// Used for running the compiler with modified files without having to write the modifications to the filesystem.
 /// 
 #[derive(Clone)]
-pub(crate) struct InMemoryFileLoader<T: FileLoader + Send + Sync> {
+pub struct InMemoryFileLoader<T: FileLoader + Send + Sync> {
     inner_file_loader: T,
     changes: Vec<FileReplaceContent>
 }

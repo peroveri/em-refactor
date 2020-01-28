@@ -11,16 +11,11 @@ extern crate syntax;
 
 use std::process::exit;
 use refactoring_invocation::{pass_to_rustc, should_pass_to_rustc, run_refactoring_and_output_result};
-use arg_mappings::{arg_value, get_compiler_args, get_refactor_args};
+use refactoring_invocation::{arg_value, get_compiler_args, get_refactor_args};
 
-mod change;
 mod extra;
-mod my_refactor_callbacks;
-mod refactor_definition;
-mod refactor_definition_parser;
 mod refactorings;
 mod refactoring_invocation;
-mod arg_mappings;
 
 #[cfg(test)]
 mod test_utils;

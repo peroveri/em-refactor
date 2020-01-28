@@ -1,4 +1,4 @@
-use crate::refactor_definition::{ExtractMethodArgs, RefactorDefinition, SourceCodeRange, RefactorFail};
+use crate::refactoring_invocation::{ExtractMethodArgs, RefactorDefinition, SourceCodeRange, RefactorFail};
 
 ///
 /// converts an argument list to a refactoring definition

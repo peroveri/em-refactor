@@ -36,7 +36,7 @@ pub struct SourceCodeRange {
 }
 
 #[derive(Debug, Clone)]
-pub struct RefactoringError {
+pub struct RefactoringErrorInternal {
     pub code: InternalErrorCodes,
     pub message: String
 }
@@ -77,7 +77,7 @@ impl RefactorFail {
     }
 }
 
-impl RefactoringError {
+impl RefactoringErrorInternal {
     pub fn new(code: InternalErrorCodes, message: String) -> Self {
         Self { code, message }
     }
