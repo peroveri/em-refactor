@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::PathBuf;
 use std::process::Command;
-use tempdir::TempDir;
+use tempfile::TempDir;
 
 // These tests are currently not thread safe for multiple tests on a single .rs file
 // run single threaded with: cargo test -- --test-threads=1
@@ -85,7 +85,7 @@ pub fn run_testcase(folder: &str, name: &str) -> std::io::Result<()> {
 
 fn run_tool_and_assert(test: TestCase, folder: &str) -> std::io::Result<()> {
     let path: PathBuf = [TEST_CASE_PATH, folder].iter().collect();
-    let tmp_dir = TempDir::new("my_refactoring_tool")?;
+    let tmp_dir = TempDir::new()?;
     let tmp_dir_path = tmp_dir.path();
     assert!(
         tmp_dir_path.is_dir(),

@@ -1,6 +1,6 @@
 use assert_cmd::prelude::*;
 use std::process::Command;
-use tempdir::TempDir;
+use tempfile::TempDir;
 
 pub const WORKSPACE_ARG: &str = "--workspace-root=./tests/data/crates/hello_world";
 pub const WORKSPACE_ARG_MULTI_ROOT: &str = "--workspace-root=./tests/data/crates/multi_root";
@@ -10,7 +10,7 @@ pub fn cargo_my_refactor() -> Command {
 }
 
 pub fn create_tmp_dir() -> TempDir {
-    let tmp_dir = TempDir::new("my_refactoring_tool").unwrap();
+    let tmp_dir = TempDir::new().unwrap();
     let tmp_dir_path = tmp_dir.path();
     assert!(
         tmp_dir_path.is_dir(),

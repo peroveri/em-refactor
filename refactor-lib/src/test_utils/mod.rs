@@ -4,7 +4,7 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
 use rustc_span::{BytePos, Span};
-use tempdir::TempDir;
+use tempfile::TempDir;
 use crate::refactoring_invocation::get_sys_root;
 
 /**
@@ -113,8 +113,7 @@ where
 
 fn init_main_rs_and_get_args(program: &str) -> (Vec<String>, TempDir)
 {
-    let tmp_dir =
-        TempDir::new("my_refactoring_tool").unwrap_or_else(|_| panic!("failed to create tmp dir"));
+    let tmp_dir = TempDir::new().unwrap_or_else(|_| panic!("failed to create tmp dir"));
     let tmp_dir_path = tmp_dir.path();
     set_main_rs(tmp_dir_path, program).unwrap_or_else(|_| panic!("failed to set main rs"));
 

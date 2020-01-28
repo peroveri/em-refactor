@@ -113,7 +113,7 @@ where
 // in order to ensure that all the files in the current crate actually get built
 // when we run cargo check. Hopefully eventually there'll be a nicer way to
 // integrate with cargo such that we won't need to do this.
-fn clean_local_targets(target_dir: Option<String>) -> Result<(), failure::Error> {
+fn clean_local_targets(target_dir: Option<String>) -> Result<(), std::io::Error> {
     let output = std::process::Command::new("cargo")
         .args(vec!["metadata", "--no-deps", "--format-version=1"])
         .stdout(std::process::Stdio::piped())
@@ -121,9 +121,9 @@ fn clean_local_targets(target_dir: Option<String>) -> Result<(), failure::Error>
     assert!(
         output.status.success(),
         "cargo metadata failed:\n{}",
-        std::str::from_utf8(output.stderr.as_slice())?
+        std::str::from_utf8(output.stderr.as_slice()).unwrap()
     );
-    let metadata_str = std::str::from_utf8(output.stdout.as_slice())?;
+    let metadata_str = std::str::from_utf8(output.stdout.as_slice()).unwrap();
     let parsed: serde_json::Value = match serde_json::from_str(metadata_str) {
         Ok(v) => v,
         Err(e) => panic!("Error parsing metadata JSON: {:?}", e),
