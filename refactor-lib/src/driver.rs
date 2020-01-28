@@ -10,8 +10,7 @@ extern crate rustc_typeck;
 extern crate syntax;
 
 use std::process::exit;
-use refactoring_invocation::{pass_to_rustc, should_pass_to_rustc, run_refactoring_and_output_result};
-use refactoring_invocation::{arg_value, get_compiler_args, get_refactor_args};
+use refactoring_invocation::{arg_value, get_compiler_args, get_refactor_args, pass_to_rustc, run_refactoring_and_output_result, should_pass_to_rustc};
 
 mod extra;
 mod refactorings;
