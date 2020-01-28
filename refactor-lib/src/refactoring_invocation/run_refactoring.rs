@@ -29,7 +29,7 @@ pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args:
 
 }
 
-pub fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) -> Result<RefactorResult, RefactorFail> {
+fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) -> Result<RefactorResult, RefactorFail> {
 
     let refactor_def = argument_list_to_refactor_def(refactor_args)?;
 

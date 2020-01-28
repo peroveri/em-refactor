@@ -15,7 +15,7 @@ pub use file_loader::InMemoryFileLoader;
 pub use my_refactor_callbacks::{MyRefactorCallbacks, serialize};
 pub use refactor_definition::{ExtractMethodArgs, InternalErrorCodes, RefactorDefinition, RefactoringErrorInternal, RefactorFail, SourceCodeRange};
 pub use refactor_definition_parser::argument_list_to_refactor_def;
-pub use run_refactoring::{run_refactoring, run_refactoring_and_output_result};
+pub use run_refactoring::{run_refactoring_and_output_result};
 pub use rustc_pass::{pass_to_rustc, should_pass_to_rustc};
 pub use rustc_rerun::{rustc_rerun, should_run_rustc_again};
 pub use rustc_utils::get_sys_root;
