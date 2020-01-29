@@ -6,7 +6,8 @@ import {
     TextDocument,
 } from 'vscode-languageserver';
 
-import { ByteRange } from '../';
+import { ByteRange } from '../../modules';
+import config from './config';
 
 export interface RefactorArgs {
     file: string;
@@ -28,7 +29,7 @@ const mapToCodeAction = (range: ByteRange, refactoring: string, doc: TextDocumen
     title: `Refactor - ${refactoring}` + (unsafe ? ' - unsafe' : ''),
     command: {
         title: 'refactor',
-        command: 'mrefactor.refactor', // TODO: this should be something else
+        command: config.refactorCommand,
         arguments: [mapToRefactorArgs(doc, range, refactoring, unsafe)]
     },
     kind: CodeActionKind.Refactor
@@ -37,7 +38,7 @@ const mapToCodeAction = (range: ByteRange, refactoring: string, doc: TextDocumen
 /**
  * TODO: Query the refactoring tool for possible refactorings at a given range.
  */
-export function listActionsForRange(doc: TextDocument, range: Range, refactorings: string[], isUnsafeRefactoringShown: boolean): (Command | CodeAction)[] {
+export function listRefactorCodeActions(doc: TextDocument, range: Range, refactorings: string[], isUnsafeRefactoringShown: boolean): (Command | CodeAction)[] {
     const byteRange = ByteRange.fromRange(range, doc);
     if (!byteRange.isRange() || byteRange.isEmpty()) {
         return [];

@@ -1,5 +1,7 @@
-import { TextDocument, CodeActionParams } from "vscode-languageserver";
-import { generateJsonCodeActions, listActionsForRange } from "../../modules";
+import { TextDocument, CodeActionParams, CodeActionKind } from "vscode-languageserver";
+import { generateJsonCodeActions } from "../../modules";
+import { listRefactorCodeActions } from './code-action-refactoring-mappings';
+import config from "./config";
 
 const refactorings = [
     "box-field",
@@ -20,5 +22,14 @@ const listGenerateJsonCodeActions = (doc: TextDocument, params: CodeActionParams
 
 export const listCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean, isUnsafeRefactoringShown: boolean) =>
     listGenerateJsonCodeActions(doc, params, isGenerateTestFilesEnabled)
-        .concat(listActionsForRange(doc, params.range, refactorings, isUnsafeRefactoringShown))
+        .concat(listRefactorCodeActions(doc, params.range, refactorings, isUnsafeRefactoringShown))
         .sort((a, b) => a.title.localeCompare(b.title));
+
+export const listAllCommands = () => [
+        config.refactorCommand,
+        config.generateTestJsonCommand,
+    ];
+
+export const listAllCodeActionKinds = () => [
+        CodeActionKind.Refactor
+    ];

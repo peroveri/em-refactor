@@ -6,9 +6,9 @@ import {
     InitializeParams,
     TextDocuments,
     DidChangeConfigurationNotification,
-    CodeActionKind
 } from 'vscode-languageserver';
 import { CodeActionService } from "./CodeActionService";
+import { listAllCommands, listAllCodeActionKinds } from "./mappings/code-action-mappings";
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
@@ -64,10 +64,10 @@ function initConnection(): [Connection, TextDocuments] {
             capabilities: {
                 textDocumentSync: documents.syncKind,
                 codeActionProvider: !!hasCodeActionLiteralSupport ? {
-                    codeActionKinds: listCodeActionKinds()
+                    codeActionKinds: listAllCodeActionKinds()
                 } : undefined,
                 executeCommandProvider: {
-                    commands: listCommands()
+                    commands: listAllCommands()
                 },
                 hoverProvider: true
             }
@@ -88,16 +88,3 @@ function initConnection(): [Connection, TextDocuments] {
 
     return [connection, documents];
 }
-function listCommands(): string[] {
-    return [
-        'mrefactor.refactor',
-        'mrefactor.generate_test_file',
-    ];
-}
-
-function listCodeActionKinds() {
-    return [
-        CodeActionKind.Refactor
-    ];
-}
-
