@@ -1,5 +1,5 @@
 import { Range, ApplyWorkspaceEditParams, TextDocumentEdit, TextEdit, WorkspaceFolder } from "vscode-languageserver";
-import { RefactorArgs } from "../../modules/"
+import { RefactorArgs } from "./code-action-refactoring-mappings";
 
 interface CrateOutput {
     crate_name: string;
