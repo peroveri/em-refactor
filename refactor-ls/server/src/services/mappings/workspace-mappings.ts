@@ -1,5 +1,6 @@
 import { Range, ApplyWorkspaceEditParams, TextDocumentEdit, TextEdit, WorkspaceFolder } from "vscode-languageserver";
 import { RefactorArgs } from "./code-action-refactoring-mappings";
+import * as path from "path";
 
 interface CrateOutput {
     crate_name: string;
@@ -24,32 +25,28 @@ interface RefactorError {
     message: string
 }
 
-const changeEquals = (c1: Change, c2: Change) => 
-    c1.char_end === c2.char_end && 
-    c1.char_start === c2.char_start && 
+const changeEquals = (c1: Change, c2: Change) =>
+    c1.char_end === c2.char_end &&
+    c1.char_start === c2.char_start &&
     c1.file_name === c2.file_name &&
-    c1.line_end === c2.line_end && 
-    c1.line_start === c2.line_start && 
+    c1.line_end === c2.line_end &&
+    c1.line_start === c2.line_start &&
     c1.replacement === c2.replacement;
-    
-
-const concatUris = (uri: string, relativePath: string) =>
-    uri + "/" + relativePath; // TODO: combine properly
 
 const mapRange = (change: Change): Range =>
     Range.create(change.line_start, change.char_start, change.line_end, change.char_end);
 
-export const mapOutputToCrateList = (stdout: string) => 
+export const mapOutputToCrateList = (stdout: string) =>
     stdout.split("\n")
         .filter(e => e.trim().length > 0)
         .map(e => JSON.parse(e.substr(e.indexOf("{"))) as CrateOutput);
 
 export const mapToUnionOfChanges = (output: CrateOutput[]) => {
     const allChanges = output.map(e => e.replacements).reduce((acc, x) => acc.concat(x), []);
-    
-    for(let i = 0; i < allChanges.length; i++) {
-        for(let j = i + 1; j < allChanges.length; j++) {
-            if(changeEquals(allChanges[i], allChanges[j])) {
+
+    for (let i = 0; i < allChanges.length; i++) {
+        for (let j = i + 1; j < allChanges.length; j++) {
+            if (changeEquals(allChanges[i], allChanges[j])) {
                 allChanges.splice(j--, 1);
             }
         }
@@ -63,7 +60,7 @@ export const mapRefactorResultToWorkspaceEdit = (arg: RefactorArgs, outputs: Cra
     let documentChanges: TextDocumentEdit[] = [];
 
     for (const change of changes) {
-        let uri = concatUris(workspaceUri, change.file_name);
+        let uri = path.join(workspaceUri, change.file_name);
         let documentChange = documentChanges.find(e => e.textDocument.uri === uri);
         if (documentChange === undefined) {
             documentChange = TextDocumentEdit.create({
@@ -82,23 +79,18 @@ export const mapRefactorResultToWorkspaceEdit = (arg: RefactorArgs, outputs: Cra
     } as ApplyWorkspaceEditParams;
 }
 
-export const getErrors = (outputs: CrateOutput[]) => 
+export const getErrors = (outputs: CrateOutput[]) =>
     outputs.map(e => e.errors).reduce((acc, x) => acc.concat(x), []).filter(e => e.is_error);
 
 export class WorkspaceFolderInfo {
-    constructor(public uri: string){}
+    constructor(public uri: string) { }
 
     getFileRelativePath(fileUri: string) {
-        if (fileUri.startsWith(this.uri)) {
-            let sub = fileUri.substring(this.uri.length);
-            if (sub.startsWith("/")) sub = sub.substring(1);
-            return sub;
-        }
-        return undefined;
+        return path.relative(this.uri, fileUri);
     }
 
     static map(folders: WorkspaceFolder[] | null) {
-        if(folders === null || folders.length <= 0 || !folders[0].uri) {
+        if (folders === null || folders.length <= 0 || !folders[0].uri) {
             return undefined;
         }
         return new WorkspaceFolderInfo(folders[0].uri);
