@@ -1,4 +1,4 @@
-use crate::refactoring_invocation::{argument_list_to_refactor_def, map_success_to_output, map_fail_to_output, FileStringReplacement, MyRefactorCallbacks, RefactorDefinition, RefactorFail, RefactoringErrorInternal, rustc_rerun, serialize, should_run_rustc_again};
+use crate::refactoring_invocation::{argument_list_to_refactor_def, FileStringReplacement, MyRefactorCallbacks, RefactorDefinition, RefactorFail, RefactoringErrorInternal, RefactorOutput, rustc_rerun, serialize, should_run_rustc_again};
 use if_chain::if_chain;
 
 pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args: Vec<String>) -> Result<(), i32> {
@@ -10,7 +10,7 @@ pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args:
         }, 
         Ok(RefactorResult::Success((content, replacements))) => {
             if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
-                print!("Crate:{}", serialize(&map_success_to_output(&rustc_args, replacements)).unwrap());
+                print!("Crate:{}", serialize(&RefactorOutput::from_success(&rustc_args, replacements)).unwrap());
             } else {
                 print!("{}", content);
             }
@@ -18,7 +18,7 @@ pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args:
         }, 
         Ok(RefactorResult::Err(err)) => {
             if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
-                println!("Crate:{}", serialize(&map_fail_to_output(&rustc_args, err)).unwrap());
+                println!("Crate:{}", serialize(&RefactorOutput::from_error(&rustc_args, err)).unwrap());
                 Ok(())
             } else {
                 eprintln!("{}", err.message);

@@ -29,31 +29,30 @@ pub struct RefactoringError {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RefactorOutput {
     pub crate_name: String,
-    // pub root_path: String,
     pub is_test: bool,
     pub replacements: Vec<FileStringReplacement>,
     pub errors: Vec<RefactoringError>
 }
 
-pub fn map_success_to_output(rustc_args: &[String], replacements: Vec<FileStringReplacement>) -> RefactorOutput {
-    RefactorOutput {
-        crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap().to_owned(),
-        is_test: rustc_args.contains(&"--test".to_owned()),
-        replacements: replacements,
-        errors: vec![]
-        // root_path: "".to_owned()
+impl RefactorOutput {
+    pub fn from_success(rustc_args: &[String], replacements: Vec<FileStringReplacement>) -> Self {
+        Self {
+            crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap().to_owned(),
+            is_test: rustc_args.contains(&"--test".to_owned()),
+            replacements: replacements,
+            errors: vec![]
+        }
     }
-}
-
-pub fn map_fail_to_output(rustc_args: &[String], error: RefactoringErrorInternal) -> RefactorOutput {
-    RefactorOutput {
-        crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap_or("").to_owned(),
-        is_test: rustc_args.contains(&"--test".to_owned()),
-        replacements: vec![],
-        errors: vec![RefactoringError {
-            message: error.message,
-            is_error: error.code != InternalErrorCodes::FileNotFound
-        }]
-        // root_path: "".to_owned()
+    
+    pub fn from_error(rustc_args: &[String], error: RefactoringErrorInternal) -> Self {
+        Self {
+            crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap_or("").to_owned(),
+            is_test: rustc_args.contains(&"--test".to_owned()),
+            replacements: vec![],
+            errors: vec![RefactoringError {
+                message: error.message,
+                is_error: error.code != InternalErrorCodes::FileNotFound
+            }]
+        }
     }
 }

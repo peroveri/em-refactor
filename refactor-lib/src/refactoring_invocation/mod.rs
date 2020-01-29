@@ -10,7 +10,7 @@ mod rustc_rerun;
 mod rustc_utils;
 
 pub use arg_mappings::{arg_value, get_compiler_args, get_refactor_args};
-pub use change::{FileStringReplacement, map_fail_to_output, map_success_to_output, RefactoringError};
+pub use change::{FileStringReplacement, RefactoringError, RefactorOutput};
 pub use file_loader::InMemoryFileLoader;
 pub use my_refactor_callbacks::{MyRefactorCallbacks, serialize};
 pub use refactor_definition::{ExtractMethodArgs, InternalErrorCodes, RefactorDefinition, RefactoringErrorInternal, RefactorFail, SourceCodeRange};
