@@ -1,4 +1,4 @@
-use crate::refactoring_invocation::{FileReplaceContent, RefactoringErrorInternal, SourceCodeRange};
+use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal, SourceCodeRange};
 use rustc::ty::TyCtxt;
 use rustc_hir::{HirId, StructField};
 use rustc_span::{BytePos, FileName, Span};
@@ -32,13 +32,13 @@ pub fn map_range_to_span(source_map: &SourceMap, range: &SourceCodeRange) -> Res
     }
 }
 
-pub fn map_change_from_span(source_map: &SourceMap, span: Span, replacement: String) -> FileReplaceContent {
+pub fn map_change_from_span(source_map: &SourceMap, span: Span, replacement: String) -> FileStringReplacement {
     let filename = get_filename(source_map, span);
     let file_offset = get_file_offset(source_map, &filename);
     let lines = source_map.span_to_lines(span).unwrap().lines;
     let line_start = lines.first().unwrap();
     let line_end = lines.last().unwrap();
-    FileReplaceContent {
+    FileStringReplacement {
         file_name: filename,
         byte_start: span.lo().0 - file_offset,
         byte_end: span.hi().0 - file_offset,

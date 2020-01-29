@@ -1,4 +1,4 @@
-use crate::refactoring_invocation::{FileReplaceContent, RefactoringErrorInternal, RefactorDefinition};
+use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal, RefactorDefinition};
 use rustc::ty;
 
 mod box_field;
@@ -11,7 +11,7 @@ mod introduce_closure;
 pub mod utils;
 pub mod visitors;
 
-pub fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Vec<FileReplaceContent>, RefactoringErrorInternal> {
+pub fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
     match args {
         RefactorDefinition::BoxField(range) => box_field::do_refactoring(ty, utils::map_range_to_span(&ty.sess.source_map(), range)?),
         RefactorDefinition::ExtractMethod(args) => {
@@ -30,7 +30,7 @@ pub fn is_after_expansion_refactoring(args: &RefactorDefinition) -> bool {
         false
     }
 }
-pub fn do_after_expansion_refactoring<'tcx>(queries:  &'tcx rustc_interface::Queries<'tcx>, compiler: &rustc_interface::interface::Compiler, args: &RefactorDefinition) -> Result<Vec<FileReplaceContent>, RefactoringErrorInternal> {
+pub fn do_after_expansion_refactoring<'tcx>(queries:  &'tcx rustc_interface::Queries<'tcx>, compiler: &rustc_interface::interface::Compiler, args: &RefactorDefinition) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
 
     match args {
         RefactorDefinition::InlineMacro(range) =>{

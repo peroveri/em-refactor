@@ -2,7 +2,7 @@ use rustc::ty::TyCtxt;
 use rustc_hir::HirId;
 use rustc_span::Span;
 
-use crate::refactoring_invocation::{FileReplaceContent, RefactoringErrorInternal};
+use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
 use crate::refactorings::utils::{get_source, map_change_from_span};
 use crate::refactorings::visitors::{collect_local_variable_use, collect_struct_field_access_expressions};
 use struct_constructor_call_collector::collect_struct_constructor_calls;
@@ -11,7 +11,7 @@ use struct_tuple_pattern_collector::collect_struct_tuple_patterns;
 mod struct_constructor_call_collector;
 mod struct_tuple_pattern_collector;
 
-pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_index: usize, field_ty_span: Span) -> Result<Vec<FileReplaceContent>, RefactoringErrorInternal> {
+pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_index: usize, field_ty_span: Span) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
 
     let struct_patterns = collect_struct_tuple_patterns(tcx, struct_hir_id, field_index); 
 

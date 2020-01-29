@@ -1,5 +1,5 @@
 use super::utils::{map_range_to_span, map_change_from_span};
-use crate::refactoring_invocation::{FileReplaceContent, RefactoringErrorInternal, SourceCodeRange};
+use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal, SourceCodeRange};
 use expr_use_visit::{collect_vars, CollectVarsArgs};
 use rustc::ty;
 use stmts_visitor::visit_stmts;
@@ -66,7 +66,7 @@ pub fn do_refactoring(
     ty: ty::TyCtxt,
     range: &SourceCodeRange,
     new_function: &str,
-) -> Result<Vec<FileReplaceContent>, RefactoringErrorInternal> {
+) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
     let spi = map_range_to_span(ty.sess.source_map(), &range)?;
     let stmts_visit_res = visit_stmts(ty, spi);
 

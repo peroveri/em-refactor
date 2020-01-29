@@ -1,4 +1,4 @@
-use crate::refactoring_invocation::{argument_list_to_refactor_def, map_success_to_output, map_fail_to_output, FileReplaceContent, MyRefactorCallbacks, RefactorDefinition, RefactorFail, RefactoringErrorInternal, rustc_rerun, serialize, should_run_rustc_again};
+use crate::refactoring_invocation::{argument_list_to_refactor_def, map_success_to_output, map_fail_to_output, FileStringReplacement, MyRefactorCallbacks, RefactorDefinition, RefactorFail, RefactoringErrorInternal, rustc_rerun, serialize, should_run_rustc_again};
 use if_chain::if_chain;
 
 pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args: Vec<String>) -> Result<(), i32> {
@@ -50,7 +50,7 @@ fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) -> Res
 }
 
 pub enum RefactorResult {
-    Success((String, Vec<FileReplaceContent>)),
+    Success((String, Vec<FileStringReplacement>)),
     Err(RefactoringErrorInternal)
 }
 

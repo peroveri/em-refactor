@@ -1,7 +1,7 @@
 use std::io;
 use std::path::{Path, PathBuf};
 use rustc_span::source_map::{FileLoader};
-use crate::refactoring_invocation::FileReplaceContent;
+use crate::refactoring_invocation::FileStringReplacement;
 
 ///
 /// Used for running the compiler with modified files without having to write the modifications to the filesystem.
@@ -9,7 +9,7 @@ use crate::refactoring_invocation::FileReplaceContent;
 #[derive(Clone)]
 pub struct InMemoryFileLoader<T: FileLoader + Send + Sync> {
     inner_file_loader: T,
-    changes: Vec<FileReplaceContent>
+    changes: Vec<FileStringReplacement>
 }
 impl<T: FileLoader + Send + Sync> InMemoryFileLoader<T> {
     pub fn new(inner: T) -> InMemoryFileLoader<T> {
@@ -19,7 +19,7 @@ impl<T: FileLoader + Send + Sync> InMemoryFileLoader<T> {
         }
     }
 
-    pub fn add_changes(&mut self, changes: Vec<FileReplaceContent>) {
+    pub fn add_changes(&mut self, changes: Vec<FileStringReplacement>) {
         self.changes.extend(changes);
     }
 }

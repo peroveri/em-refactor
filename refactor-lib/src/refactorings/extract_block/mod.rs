@@ -1,5 +1,5 @@
 use super::utils::{map_change_from_span, get_source};
-use crate::refactoring_invocation::{FileReplaceContent, RefactoringErrorInternal};
+use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
 use block_collector::collect_block;
 use rustc_hir::{BodyId};
 use rustc::ty::TyCtxt;
@@ -55,7 +55,7 @@ fn extract_block(
 /// how should it be moved?
 /// a. identical (cut & paste)
 /// b. add declaration and assign at start of block + add var in expression at end of block
-pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileReplaceContent>, RefactoringErrorInternal> {
+pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
     if let Some(selection) = collect_block(tcx, span) {
         let source_map = tcx.sess.source_map();
         let source = source_map.span_to_snippet(span).unwrap();

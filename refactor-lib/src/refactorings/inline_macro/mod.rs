@@ -1,9 +1,9 @@
 use rustc_span::Span;
-use crate::refactoring_invocation::{FileReplaceContent, RefactoringErrorInternal};
+use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
 use super::utils::map_change_from_span;
 use super::visitors::collect_inline_macro;
 
-pub fn do_refactoring<'tcx>(compiler: &rustc_interface::interface::Compiler,queries:  &'tcx rustc_interface::Queries<'tcx>, span: Span) -> Result<Vec<FileReplaceContent>, RefactoringErrorInternal>{
+pub fn do_refactoring<'tcx>(compiler: &rustc_interface::interface::Compiler,queries:  &'tcx rustc_interface::Queries<'tcx>, span: Span) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal>{
 
     let (crate_, ..) = 
     &*queries

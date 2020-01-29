@@ -1,9 +1,9 @@
-use crate::refactoring_invocation::{FileReplaceContent, RefactorFail, InMemoryFileLoader};
+use crate::refactoring_invocation::{FileStringReplacement, RefactorFail, InMemoryFileLoader};
 
 pub fn should_run_rustc_again(refactor_args: &[String]) -> bool {
     return !refactor_args.contains(&"--unsafe".to_owned());
 }
-pub fn rustc_rerun(changes: &Vec<FileReplaceContent>, rustc_args: &[String]) -> Result<(), RefactorFail> {
+pub fn rustc_rerun(changes: &Vec<FileStringReplacement>, rustc_args: &[String]) -> Result<(), RefactorFail> {
     let mut default = rustc_driver::DefaultCallbacks;
 
     let mut file_loader = Box::new(InMemoryFileLoader::new(
