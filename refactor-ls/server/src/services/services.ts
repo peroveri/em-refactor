@@ -6,10 +6,13 @@ import {
     InitializeParams,
     TextDocuments,
     DidChangeConfigurationNotification,
-    CodeActionKind} from 'vscode-languageserver';
+    CodeActionKind
+} from 'vscode-languageserver';
+import { CodeActionService } from "./CodeActionService";
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
+let hasCodeActionLiteralSupport: boolean = false;
 
 export function bootstrapAndReturnConnection() {
     const [connection, documents] = initConnection();
@@ -29,7 +32,6 @@ function initConnection(): [Connection, TextDocuments] {
 
 
     connection.onInitialized(() => {
-
         if (hasConfigurationCapability) {
             // Register for all configuration changes.
             connection.client.register(DidChangeConfigurationNotification.type, undefined);
@@ -39,9 +41,8 @@ function initConnection(): [Connection, TextDocuments] {
                 connection.console.log('Workspace folder change event received.');
             });
         }
-        let hasEditCapability = true;
-        if (hasEditCapability) {
-            // connection.client.register()
+        if (hasCodeActionLiteralSupport) {
+            connection.onCodeAction(e => container.resolve(CodeActionService).handleCodeAction(e));
         }
     });
 
@@ -57,20 +58,16 @@ function initConnection(): [Connection, TextDocuments] {
             capabilities.workspace && !!capabilities.workspace.workspaceFolders
         );
 
+        hasCodeActionLiteralSupport = !!capabilities?.textDocument?.codeAction?.codeActionLiteralSupport?.codeActionKind?.valueSet;
+
         return {
             capabilities: {
                 textDocumentSync: documents.syncKind,
-                codeActionProvider: { // TODO: code actions literal support
-                    codeActionKinds: [
-                        CodeActionKind.RefactorExtract + '.function',
-                        `${CodeActionKind.Refactor}.generate_test_file`
-                    ]
-                },
+                codeActionProvider: !!hasCodeActionLiteralSupport ? {
+                    codeActionKinds: listCodeActionKinds()
+                } : undefined,
                 executeCommandProvider: {
-                    commands: [
-                        'refactor.extract.function',
-                        `${CodeActionKind.Refactor}.generate_test_file`
-                    ]
+                    commands: listCommands()
                 },
                 hoverProvider: true
             }
@@ -91,3 +88,16 @@ function initConnection(): [Connection, TextDocuments] {
 
     return [connection, documents];
 }
+function listCommands(): string[] {
+    return [
+        'mrefactor.refactor',
+        'mrefactor.generate_test_file',
+    ];
+}
+
+function listCodeActionKinds() {
+    return [
+        CodeActionKind.Refactor
+    ];
+}
+

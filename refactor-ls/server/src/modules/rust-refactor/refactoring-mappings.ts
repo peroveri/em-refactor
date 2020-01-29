@@ -28,10 +28,10 @@ const mapToCodeAction = (range: ByteRange, refactoring: string, doc: TextDocumen
     title: `Refactor - ${refactoring}` + (unsafe ? ' - unsafe' : ''),
     command: {
         title: 'refactor',
-        command: CodeActionKind.RefactorExtract + '.function', // TODO: this should be something else
+        command: 'mrefactor.refactor', // TODO: this should be something else
         arguments: [mapToRefactorArgs(doc, range, refactoring, unsafe)]
     },
-    kind: CodeActionKind.RefactorExtract + '.function'
+    kind: CodeActionKind.Refactor
 });
 
 /**
