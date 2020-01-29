@@ -14,8 +14,10 @@ export let platformEol: string;
 /**
  * Activates the vscode.lsp-sample extension
  */
-export async function activate(docUri: vscode.Uri) {
+export async function activate(docUri: vscode.Uri, wsUri: vscode.Uri) {
 	// The extensionId is `publisher.name` from package.json
+	await vscode.commands.executeCommand('vscode.openFolder', wsUri);
+	await sleep(1000);
 	const ext = vscode.extensions.getExtension('test-publisher.lsp-refactoring-sample')!;
 	await ext.activate();
 	try {
@@ -43,5 +45,5 @@ export async function setTestContent(content: string): Promise<boolean> {
 		doc.positionAt(0),
 		doc.positionAt(doc.getText().length)
 	);
-	return editor.edit(eb => eb.replace(all, content));
+	return editor.edit(eb => eb.replace(all, content)).then(() => doc.save());
 }

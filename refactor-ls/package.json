@@ -64,11 +64,11 @@
 		}
 	},
 	"scripts": {
-		"vscode:prepublish": "cd client && npm run update-vscode && cd .. && npm run compile",
+		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
-		"test": "sh ./scripts/e2e.sh",
+		"test": "node ./client/out/test/runTest.js",
 		"vscode-package": "vsce package",
 		"vscode-install": "code --install-extension lsp-refactoring-sample-1.0.0.vsix",
 		"vscode-uninstall": "code --uninstall-extension lsp-refactoring-sample-1.0.0.vsix"
