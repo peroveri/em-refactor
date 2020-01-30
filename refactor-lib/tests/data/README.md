@@ -76,6 +76,8 @@ Control flow statements
 * Return, Break, Continue
 x Conditionals
 
+Grammar / structure of the input
+* The selection is a block
 Assignment to block (body of the new closure)
 * The block is assigned to
 * The block is an expression in another block
@@ -85,7 +87,7 @@ Return value
 
 Mutating vars
 * 
-* Other closure inside mutating implicit vars
+* Other closure inside mutating implicit vars isn't possible (without passing args)
 
 ## Inline macro
 Call site (statement)

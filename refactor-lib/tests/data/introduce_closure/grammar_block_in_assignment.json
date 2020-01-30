@@ -1,0 +1,11 @@
+{
+	"file": "grammar_block_in_assignment.rs",
+	"args": {
+		"refactoring": "introduce-closure",
+		"selection": "24:29"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "grammar_block_in_assignment_after.rs"
+	}
+}
