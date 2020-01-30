@@ -47,3 +47,8 @@ export async function setTestContent(content: string): Promise<boolean> {
 	);
 	return editor.edit(eb => eb.replace(all, content)).then(() => doc.save());
 }
+
+export const getFileContent = (p: string) => {
+	return vscode.workspace.openTextDocument(p)
+		.then(e => e.getText());
+}
