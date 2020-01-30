@@ -28,6 +28,11 @@
 			"problemMatcher": [
 				"$tsc-watch"
 			]
+		},
+		{
+			"type": "npm",
+			"script": "test-server",
+			"group": "test"
 		}
 	]
 }

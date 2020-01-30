@@ -18,5 +18,11 @@
 		"tsyringe": "^4.0.1",
 		"vscode-languageserver": "~5.2.1"
 	},
-	"scripts": {}
+	"devDependencies": {
+		"mocha": "^6.1.4"
+	},
+	"scripts": {
+		"pretest": "cd .. && npm run compile",
+		"test": "mocha 'out/**/*.js'"		
+	}
 }
