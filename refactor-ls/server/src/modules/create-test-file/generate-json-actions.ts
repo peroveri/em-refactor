@@ -5,7 +5,7 @@ import { GenerateTestFileArgs } from './GenerateTestFileArgs';
 const getDocName = (doc: TextDocumentIdentifier): string =>
     doc.uri.substring(doc.uri.lastIndexOf("/") + 1, doc.uri.lastIndexOf("."));
 
-const mapToCodeAction = (params: CodeActionParams, refactoring: string, should_fail: boolean, selection: string): CodeAction => ({
+export const mapToCodeAction = (params: CodeActionParams, refactoring: string, should_fail: boolean, selection: string): CodeAction => ({
     title: `Generate ${getDocName(params.textDocument)}.json for ${refactoring} ${should_fail ? ' (failing)' : ''}`,
     command: {
         title: 'generate',

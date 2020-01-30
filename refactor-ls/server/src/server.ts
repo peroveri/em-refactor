@@ -5,7 +5,12 @@ import { container } from "tsyringe";
 import { ExecuteCommandService } from "./services/ExecuteCommandService";
 import { HoverService } from "./services/HoverService";
 
-const connection = bootstrapAndReturnConnection();
+// don't create a connection if we're testing
+// should perhaps use mocks instead
+if(typeof global.it !== 'function') { 
 
-connection.onExecuteCommand(container.resolve(ExecuteCommandService).handleExecuteCommand);
-connection.onHover(container.resolve(HoverService).handleOnHover);
+    const connection = bootstrapAndReturnConnection();
+    
+    connection.onExecuteCommand(container.resolve(ExecuteCommandService).handleExecuteCommand);
+    connection.onHover(container.resolve(HoverService).handleOnHover);
+}

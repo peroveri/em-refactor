@@ -19,13 +19,17 @@ export class ExecuteCommandService {
     }
 
     handleExecuteCommand = async (params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void | any> => {
-        let settings = await this.settings.getSettings();
-        if (settings.isGenerateTestFilesEnabled && canExecuteGenerateTestCommand(params)) {
-            const edits = await handleExecuteGenerateTestCommand(params);
-            await this.workspace.applyEdits(edits);
-            return Promise.resolve();
+        try {
+            let settings = await this.settings.getSettings();
+            if (settings.isGenerateTestFilesEnabled && canExecuteGenerateTestCommand(params)) {
+                const edits = handleExecuteGenerateTestCommand(params);
+                await this.workspace.applyEdits(edits);
+                return Promise.resolve();
+            }
+            return this.handleExecuteRefactoringCommand(params, settings.refactoringBinaryPath);
+        } catch (e) {
+            return Promise.reject(`Unhandled expection in handleExecuteCommand:\n${JSON.stringify(e)}`);
         }
-        return this.handleExecuteRefactoringCommand(params, settings.refactoringBinaryPath);
     };
 
 
