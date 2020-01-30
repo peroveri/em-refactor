@@ -36,8 +36,3 @@ fn introduce_closure_grammar_block_in_assignment() {
 fn introduce_closure_mutate_in_same_statement() {
     run_test("mutate_in_same_statement");
 }
-#[test]
-#[ignore]
-fn introduce_closure_mutate_single_variable() {
-    run_test("mutate_single_variable");
-}
