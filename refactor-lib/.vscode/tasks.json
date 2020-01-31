@@ -67,6 +67,15 @@
             "group": "test"
         },
         {
+            "label": "test introduce-closure",
+            "type": "shell",
+            "command": "cargo test1 introduce_closure",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "test"
+        },
+        {
             "label": "build binary",
             "type": "shell",
             "command": "cargo build --bins --release",
