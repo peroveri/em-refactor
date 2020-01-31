@@ -1,13 +1,12 @@
 fn main() {
     for i in 0..2 {
-        let foo = || -> usize {
+        match (|| {
             if i == 1 {
                 return 1;
             }
             print!("{}", i);
             0
-        };
-        match foo() {
+        })() {
             1 => break,
             _ => {}
         }

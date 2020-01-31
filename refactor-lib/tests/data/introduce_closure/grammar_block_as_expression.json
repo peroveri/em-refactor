@@ -1,7 +1,7 @@
 {
 	"file": "grammar_block_as_expression.rs",
 	"args": {
-		"refactoring": "extract-block",
+		"refactoring": "introduce-closure",
 		"selection": "22:27"
 	},
 	"expected": {

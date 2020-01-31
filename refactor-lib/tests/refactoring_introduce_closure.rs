@@ -7,7 +7,6 @@ fn run_test(name: &str) {
 }
 
 #[test]
-#[ignore]
 fn introduce_closure_assignment_single_variable() {
     run_test("assignment_single_variable");
 }
@@ -17,22 +16,18 @@ fn introduce_closure_control_flow_break() {
     run_test("control_flow_break");
 }
 #[test]
-#[ignore]
 fn introduce_closure_grammar_block_as_expression() {
     run_test("grammar_block_as_expression");
 }
 #[test]
-#[ignore]
 fn introduce_closure_grammar_block_as_statement() {
     run_test("grammar_block_as_statement");
 }
 #[test]
-#[ignore]
 fn introduce_closure_grammar_block_in_assignment() {
-    run_test("grammar_block_in_statement");
+    run_test("grammar_block_in_assignment");
 }
 #[test]
-#[ignore]
 fn introduce_closure_mutate_in_same_statement() {
     run_test("mutate_in_same_statement");
 }
