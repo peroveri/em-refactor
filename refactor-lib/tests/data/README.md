@@ -30,6 +30,8 @@ C <- Statements after B
 Grammars
 * Block structure, B = Expression
 * Block structure, B = Statements + Expression
+* Should also support single expressions, 
+  not 100% sure, but since declarations (use, struct, fn, ...), etc must appear in blocks it will always be safe to wrap an expression with a block without further actions?
 
 Item declarations
 * Function
