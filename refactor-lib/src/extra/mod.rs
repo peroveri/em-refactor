@@ -1,6 +1,8 @@
-mod type_lookup;
-
 use super::{arg_value};
+pub use query_candidates::*;
+
+mod type_lookup;
+mod query_candidates;
 
 pub fn should_provide_type(refactor_args: &[String]) -> bool {
     return refactor_args.contains(&"--provide-type".to_owned());
