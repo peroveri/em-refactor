@@ -145,6 +145,27 @@ fn cli_provide_type() {
 }
 
 #[test]
+#[ignore]
+fn cli_query_candidates() {
+    let expected = format!("{}", json!([{
+        "file": "src/main.rs",
+        "selection": "16:40"
+    }]));
+
+    cargo_my_refactor()
+        .arg(WORKSPACE_ARG)
+        .arg("--query-candidates=extract-block")
+        .arg("--")
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
+        .assert()
+        .success()
+        .stdout(expected);
+}
+
+#[test]
 fn cli_should_display_help() {
     cargo_my_refactor()
         .arg("--help")
