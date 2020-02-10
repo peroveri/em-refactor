@@ -35,7 +35,7 @@ Grammars
 
 Item declarations
 * Function
-* Use
+* Use - actually visible thoughout the block
 * Mod
 * Struct
 * ++
