@@ -211,4 +211,29 @@ mod test {
             assert_eq!(get_source(tcx, block.get_span()), "baz ( ) ; { 1 }");
         });
     }
+    #[test]
+    fn block_collector_shouldnt_collect_cfg_omitted() {
+        run_after_analysis(quote! {
+            fn f ( ) { # [ cfg ( test ) ] { 1 } ; } fn f2 ( ) { # [ cfg ( not ( test ) ) ] { 1 } ; }
+        }, |tcx| {
+            // let cfg0 = 11;
+            // let block0 = 30;
+            // let block1 = 37;
+            // let span1 = (block0, block1);
+
+            let cfg10 = 52;
+            // let block10 = 78;
+            let block11 = 86;
+            let span11 = (cfg10, block11);
+            let span = span11;
+            let block = collect_block(tcx, create_test_span(span.0, span.1));
+
+            if !block.is_some() {
+                panic!(get_source(tcx, create_test_span(span.0, span.1)));
+            }
+            let block = block.unwrap();
+
+            assert_eq!(get_source(tcx, block.get_span()), "{ 1 } ;");
+        });
+    }
 }
