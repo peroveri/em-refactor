@@ -84,5 +84,14 @@
             ],
             "group": {"isDefault": true, "kind": "build"}
         },
+        {
+            "label": "run experiment",
+            "type": "shell",
+            "command": "cargo test --test experiments -- --test-threads=1 --ignored",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "test"
+        },
     ]
 }

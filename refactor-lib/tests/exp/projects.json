@@ -1,0 +1,8 @@
+{
+    "projects": [
+        {
+            "git_repo": "https://github.uio.no/perori/refactor-rust",
+            "subdir": "refactor-lib"
+        }
+    ]
+}
