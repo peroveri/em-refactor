@@ -145,15 +145,72 @@ fn cli_provide_type() {
 }
 
 #[test]
-#[ignore]
-fn cli_query_candidates() {
-    let expected = format!("{}", json!([{
-        "file": "src/main.rs",
-        "selection": "16:40"
-    }]));
+fn cli_query_candidates_1() {
+    let expected_main = format!("{}", json!({
+        "candidates": [{
+            "file": "src/main.rs",
+            "from": 16,
+            "to": 40
+        },{
+            "file": "src/main.rs",
+            "from": 16,
+            "to": 63
+        },{
+            "file": "src/main.rs",
+            "from": 45,
+            "to": 63
+        },{
+            "file": "src/main.rs",
+            "from": 100,
+            "to": 101
+        }],
+        "refactoring": "extract-block"
+    }));
+    let expected = format!("{}\n{}\n", expected_main, expected_main);
 
     cargo_my_refactor()
         .arg(WORKSPACE_ARG)
+        .arg("--query-candidates=extract-block")
+        .arg("--")
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
+        .assert()
+        .success()
+        .stdout(expected);
+}
+
+#[test]
+fn cli_query_candidates_multi_root_overlap() {
+    let expected_lib = format!("{}", json!({
+        "candidates": [{
+            "file": "src/submod.rs",
+            "from": 47,
+            "to": 52
+        },{
+            "file": "src/lib.rs",
+            "from": 28,
+            "to": 41
+        }],
+        "refactoring": "extract-block"
+    }));
+    let expected_main = format!("{}", json!({
+        "candidates": [{
+            "file": "src/submod.rs",
+            "from": 47,
+            "to": 52
+        },{
+            "file": "src/main.rs",
+            "from": 29,
+            "to": 42
+        }],
+        "refactoring": "extract-block"
+    }));
+    let expected = format!("{}\n{}\n{}\n{}\n", expected_lib, expected_lib, expected_main, expected_main);
+
+    cargo_my_refactor()
+        .arg(WORKSPACE_ARG_MULTI_ROOT_OVERLAP)
         .arg("--query-candidates=extract-block")
         .arg("--")
         .arg(format!(

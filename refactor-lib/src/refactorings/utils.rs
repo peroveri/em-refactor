@@ -54,7 +54,41 @@ pub fn get_source(tcx: TyCtxt, span: Span) -> String {
     tcx.sess.source_map().span_to_snippet(span).unwrap()
 }
 
+#[cfg(test)]
+pub fn get_source_from_compiler(compiler: &rustc_interface::interface::Compiler, span: Span) -> String {
+    compiler.source_map().span_to_snippet(span).unwrap()
+}
 pub fn get_struct_hir_id(tcx: TyCtxt<'_>, field: &StructField) -> HirId {
     let struct_def_id = field.hir_id.owner_def_id();
     tcx.hir().as_local_hir_id(struct_def_id).unwrap()
+}
+
+pub fn map_span_to_index(source_map: &SourceMap, span: Span) -> (String, Range) {
+    let filename = get_filename(source_map, span);
+    let file_offset = get_file_offset(source_map, &filename);
+    let lines = source_map.span_to_lines(span).unwrap().lines;
+    let line_start = lines.first().unwrap();
+    let line_end = lines.last().unwrap();
+    (filename, Range {
+        from: Position {
+            byte: span.lo().0 - file_offset,
+            character: line_start.start_col.0,
+            line: line_start.line_index
+        },
+        to: Position {
+            byte: span.hi().0 - file_offset,
+            character: line_end.end_col.0,
+            line: line_end.line_index
+        }
+    })
+}
+
+pub struct Position {
+    pub byte: u32,
+    pub character: usize,
+    pub line: usize
+}
+pub struct Range {
+    pub from: Position,
+    pub to: Position
 }

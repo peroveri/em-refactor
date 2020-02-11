@@ -1,5 +1,5 @@
 use rustc::ty::TyCtxt;
-use rustc_interface::{interface, Queries};
+use rustc_interface::{interface, Queries, interface::Compiler};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
@@ -29,7 +29,7 @@ where
 #[allow(unused)]
 pub fn run_after_expansion<F>(program: quote::__rt::TokenStream, func: F)
 where
-    F: Fn(&Queries<'_>) -> (),
+    F: Fn(&Queries<'_>, &Compiler) -> (),
     F: Send,
 {
     let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
@@ -45,7 +45,7 @@ where
 #[allow(unused)]
 pub fn run_after_parsing<F>(program: quote::__rt::TokenStream, func: F)
 where
-    F: Fn(&Queries<'_>) -> (),
+    F: Fn(&Queries<'_>, &Compiler) -> (),
     F: Send,
 {
     let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
@@ -82,7 +82,7 @@ where
 struct RustcAfterParsingCallbacks<F>(F);
 impl<F> rustc_driver::Callbacks for RustcAfterParsingCallbacks<F>
 where
-    F: Fn(&Queries<'_>) -> ()
+    F: Fn(&Queries<'_>, &Compiler) -> ()
 {
     fn after_parsing<'tcx>(
         &mut self, 
@@ -90,7 +90,7 @@ where
         queries: &'tcx rustc_interface::Queries<'tcx>
     ) -> rustc_driver::Compilation {
         compiler.session().abort_if_errors();
-        self.0(queries);
+        self.0(queries, compiler);
         rustc_driver::Compilation::Stop
     }
 }

@@ -1,8 +1,12 @@
 use super::{arg_value};
 pub use query_candidates::*;
+pub use extract_block_candidate_collector::collect_extract_block_candidates;
+pub use candidates::*;
 
-mod type_lookup;
+mod candidates;
+mod extract_block_candidate_collector;
 mod query_candidates;
+mod type_lookup;
 
 pub fn should_provide_type(refactor_args: &[String]) -> bool {
     return refactor_args.contains(&"--provide-type".to_owned());
