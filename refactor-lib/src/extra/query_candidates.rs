@@ -39,7 +39,7 @@ impl rustc_driver::Callbacks for RustcAfterParsing
             "box-field" => collect_box_field_candidates(queries, CollectFieldMode::All),
             "box-named-field" => collect_box_field_candidates(queries, CollectFieldMode::Named),
             "box-tuple-field" => collect_box_field_candidates(queries, CollectFieldMode::Tuple),
-            _ => panic!("unknown {}", self.0)
+            _ => panic!("Unknown argument to query-candidate: `{}`", self.0)
         };
 
         print_candidates(compiler, &self.0, &self.1, &candidates);
