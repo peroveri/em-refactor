@@ -1,4 +1,4 @@
-use super::{arg_value, collect_extract_block_candidates, CandidateOutput, CandidatePosition};
+use super::{arg_value, collect_extract_block_candidates, collect_box_field_candidates, CollectFieldMode, CandidateOutput, CandidatePosition};
 use rustc_interface::interface;
 use rustc_span::Span;
 use crate::refactorings::utils::map_span_to_index;
@@ -36,6 +36,9 @@ impl rustc_driver::Callbacks for RustcAfterParsing
         let candidates = 
         match self.0.as_ref() {
             "extract-block" => collect_extract_block_candidates(queries),
+            "box-field" => collect_box_field_candidates(queries, CollectFieldMode::All),
+            "box-named-field" => collect_box_field_candidates(queries, CollectFieldMode::Named),
+            "box-tuple-field" => collect_box_field_candidates(queries, CollectFieldMode::Tuple),
             _ => panic!("unknown {}", self.0)
         };
 
