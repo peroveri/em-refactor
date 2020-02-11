@@ -11,7 +11,9 @@ pub fn list_candidates(refactor_args: &[String], rustc_args: &[String]) -> Resul
 
     let c = arg_value(refactor_args, "--query-candidates", |_| true).unwrap();
 
-    let mut callbacks = RustcAfterParsing(c.to_string());
+    let crate_name = arg_value(rustc_args, "--crate-name", |_| true).unwrap();
+
+    let mut callbacks = RustcAfterParsing(c.to_string(), crate_name.to_string());
 
     let emitter = Box::new(Vec::new());
     std::env::set_var("RUST_BACKTRACE", "1");
@@ -21,7 +23,7 @@ pub fn list_candidates(refactor_args: &[String], rustc_args: &[String]) -> Resul
 }
 
 
-struct RustcAfterParsing(String); // TODO: after parsing or expansion?
+struct RustcAfterParsing(String, String); // TODO: after parsing or expansion?
 
 impl rustc_driver::Callbacks for RustcAfterParsing
 {
@@ -37,13 +39,14 @@ impl rustc_driver::Callbacks for RustcAfterParsing
             _ => panic!("unknown {}", self.0)
         };
 
-        print_candidates(compiler, &self.0, &candidates);
+        print_candidates(compiler, &self.0, &self.1, &candidates);
         rustc_driver::Compilation::Continue
     }
 }
 
-fn print_candidates(compiler: &interface::Compiler, refactoring: &str, candidates: &[Span]) {
+fn print_candidates(compiler: &interface::Compiler, refactoring: &str, crate_name: &str, candidates: &[Span]) {
     let c = CandidateOutput {
+        crate_name: crate_name.to_string(),
         refactoring: refactoring.to_string(),
         candidates: candidates.iter().map(|s| 
             map_span_to_index(compiler.session().source_map(), *s)

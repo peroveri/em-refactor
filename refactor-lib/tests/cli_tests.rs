@@ -164,6 +164,7 @@ fn cli_query_candidates_1() {
             "from": 100,
             "to": 101
         }],
+        "crate_name": "hello_world",
         "refactoring": "extract-block"
     }));
     let expected = format!("{}\n{}\n", expected_main, expected_main);
@@ -193,6 +194,7 @@ fn cli_query_candidates_multi_root_overlap() {
             "from": 28,
             "to": 41
         }],
+        "crate_name": "lib",
         "refactoring": "extract-block"
     }));
     let expected_main = format!("{}", json!({
@@ -205,6 +207,7 @@ fn cli_query_candidates_multi_root_overlap() {
             "from": 29,
             "to": 42
         }],
+        "crate_name": "main",
         "refactoring": "extract-block"
     }));
     let expected = format!("{}\n{}\n{}\n{}\n", expected_lib, expected_lib, expected_main, expected_main);
