@@ -42,7 +42,15 @@ impl rustc_driver::Callbacks for RustcAfterParsing
             _ => panic!("Unknown argument to query-candidate: `{}`", self.0)
         };
 
-        print_candidates(compiler, &self.0, &self.1, &candidates);
+        let refactoring = match self.0.as_ref() {
+            "box-named-field" |
+            "box-tuple-field"  => {
+                "box-field"
+            },
+            r => r
+        };
+
+        print_candidates(compiler, refactoring, &self.1, &candidates);
         rustc_driver::Compilation::Continue
     }
 }

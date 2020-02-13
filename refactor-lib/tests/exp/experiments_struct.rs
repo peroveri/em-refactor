@@ -7,5 +7,6 @@ pub struct Config {
 pub struct Project {
     pub git_repo: String,
     pub git_hash: Option<String>,
-    pub subdir: Option<String>
+    pub subdir: Option<String>,
+    pub skip: Option<bool>
 }

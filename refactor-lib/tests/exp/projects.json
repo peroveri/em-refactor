@@ -2,7 +2,11 @@
     "projects": [
         {
             "git_repo": "https://github.uio.no/perori/refactor-rust",
-            "subdir": "refactor-lib"
+            "subdir": "refactor-lib",
+            "skip": true
+        },
+        {
+            "git_repo": "./hello-world"
         }
     ]
 }
