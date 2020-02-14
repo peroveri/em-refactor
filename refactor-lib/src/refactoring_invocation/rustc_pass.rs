@@ -1,6 +1,8 @@
 use std::path::Path;
-use rustc_driver::{DefaultCallbacks, run_compiler};
+use rustc_driver::run_compiler;
 
+struct DefaultCallbacks;
+impl rustc_driver::Callbacks for DefaultCallbacks {}
 /// Using Rerast's solution
 /// https://github.com/google/rerast/blob/46dacd520f6bc63f4c37d9593b1b5163fc81611c/src/lib.rs
 fn is_compiling_dependency(args: &[String]) -> bool {
