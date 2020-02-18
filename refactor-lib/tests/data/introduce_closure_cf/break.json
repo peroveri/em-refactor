@@ -2,7 +2,7 @@
 	"file": "break.rs",
 	"args": {
 		"refactoring": "introduce-closure",
-		"selection": "40:141"
+		"selection": "42:144"
 	},
 	"expected": {
 		"code": 0,

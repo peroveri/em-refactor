@@ -1,0 +1,11 @@
+{
+	"file": "return_and_expr.rs",
+	"args": {
+		"refactoring": "introduce-closure",
+		"selection": "78:170"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "return_and_expr_after.rs"
+	}
+}

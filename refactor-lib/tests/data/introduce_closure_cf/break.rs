@@ -1,7 +1,7 @@
 fn main() {
-    for i in 0..2 {
+    for i in 10..12 {
         {
-            if i == 1 {
+            if i == 11 {
                 break;
             }
             print!("{}", i);

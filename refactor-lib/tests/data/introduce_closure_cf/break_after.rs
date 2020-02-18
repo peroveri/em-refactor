@@ -1,7 +1,7 @@
 fn main() {
     for i in 0..2 {
         match (|| {
-            if i == 1 {
+            if i == 11 {
                 return 1;
             }
             print!("{}", i);
