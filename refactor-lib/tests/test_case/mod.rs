@@ -46,16 +46,13 @@ impl TestCase {
     }
     fn json_str_to_param_vec(v: &Value) -> serde_json::Result<Vec<String>> {
         let args_serde = &v["args"];
-        let mut args = vec![
+        let args = vec![
             format!(
                 "--refactoring={}",
                 args_serde["refactoring"].as_str().unwrap()
             ),
             format!("--selection={}", args_serde["selection"].as_str().unwrap()),
         ];
-        if let Some(new_fn) = args_serde["new_function"].as_str() {
-            args.push(format!("--new_function={}", new_fn))
-        }
         Ok(args)
     }
 }
