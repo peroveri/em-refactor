@@ -1,0 +1,11 @@
+{
+	"file": "redeclare_var_2.rs",
+	"args": {
+		"refactoring": "extract-block",
+		"selection": "41:61"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "redeclare_var_2_after.rs"
+	}
+}
