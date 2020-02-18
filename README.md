@@ -43,4 +43,4 @@ main.rs calls ```cargo check``` with the executable from driver.rs as argument. 
 
 The tool can be invoked like this:
 
-`cargo run --bin my-refactor-driver refactor-examples/extract_method/owned_mut_value.rs  -- --refactoring=extract-method --selection=39:46 --new_function=foo`
+`cargo run --bin my-refactor-driver refactor-examples/extract_method/owned_mut_value.rs  -- --refactoring=extract-block --selection=39:46`
