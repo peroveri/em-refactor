@@ -8,20 +8,6 @@ fn run_test(name: &str) {
 
 #[test]
 #[ignore]
-fn extract_block_borrow_field() {
-    run_test("borrow_field");
-}
-#[test]
-#[ignore]
-fn extract_block_deref() {
-    run_test("deref");
-}
-#[test]
-fn extract_block_with_expr() {
-    run_test("extract_block_with_expr");
-}
-#[test]
-#[ignore]
 fn extract_block_items_fn_declaration_1() {
     run_test("items_fn_declaration_1");
 }
