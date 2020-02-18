@@ -7,8 +7,8 @@ fn run_test(name: &str) {
 }
 
 #[test]
-fn extract_block_vars_1() {
-    run_test("extract_block_1");
+fn extract_block_vars_redeclare_var() {
+    run_test("redeclare_var");
 }
 #[test]
 fn extract_block_vars_field_used_later() {
