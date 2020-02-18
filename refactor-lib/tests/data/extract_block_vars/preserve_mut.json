@@ -1,11 +1,11 @@
 {
-    "file": "extract_block_mut.rs",
+    "file": "preserve_mut.rs",
     "args": {
         "refactoring": "extract-block",
         "selection": "31:57"
     },
     "expected": {
         "code": 0,
-        "stdout_file": "extract_block_mut_after.rs"
+        "stdout_file": "preserve_mut_after.rs"
     }
 }
