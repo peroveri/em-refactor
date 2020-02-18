@@ -8,7 +8,7 @@ fn run_test(name: &str) {
 
 #[test]
 fn extract_block_ownership_borrow_outlives() {
-    run_test("borrow_outlives");
+    run_test("borrow_outlives"); // TODO: change error message assert
 }
 #[test]
 fn extract_block_ownership_borrow_same_lifetime() {
