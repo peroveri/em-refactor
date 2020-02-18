@@ -1,0 +1,11 @@
+{
+	"file": "borrow_field.rs",
+	"args": {
+		"refactoring": "extract-block",
+		"selection": "31:62"
+	},
+	"expected": {
+		"code": 255,
+		"stderr": "The refactoring broke the code\n"
+	}
+}
