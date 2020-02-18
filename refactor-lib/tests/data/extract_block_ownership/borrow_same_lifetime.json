@@ -1,0 +1,11 @@
+{
+	"file": "borrow_same_lifetime.rs",
+	"args": {
+		"refactoring": "extract-block",
+		"selection": "31:57"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "borrow_same_lifetime_after.rs"
+	}
+}
