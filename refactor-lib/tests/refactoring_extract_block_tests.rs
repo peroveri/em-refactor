@@ -3,7 +3,7 @@ use crate::test_case::run_testcase;
 mod test_case;
 
 fn run_test(name: &str) {
-    run_testcase("extract_block", name).unwrap();
+    run_testcase("extract_block_items", name).unwrap();
 }
 
 #[test]
