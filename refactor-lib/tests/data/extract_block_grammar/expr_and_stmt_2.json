@@ -6,6 +6,6 @@
 	},
 	"expected": {
 		"code": 0,
-		"stdout_file": "expr_and_stmt_3_after.rs"
+		"stdout_file": "expr_and_stmt_2_after.rs"
 	}
 }

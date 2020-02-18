@@ -7,7 +7,6 @@ fn run_test(name: &str) {
 }
 
 #[test]
-#[ignore]
 fn extract_block_grammar_expr_and_stmt_2() {
     run_test("expr_and_stmt_2");
 }
