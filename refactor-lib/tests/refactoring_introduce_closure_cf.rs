@@ -8,6 +8,6 @@ fn run_test(name: &str) {
 
 #[test]
 #[ignore]
-fn introduce_closure_control_flow_break() {
-    run_test("control_flow_break");
+fn introduce_closure_cf_break() {
+    run_test("break");
 }
