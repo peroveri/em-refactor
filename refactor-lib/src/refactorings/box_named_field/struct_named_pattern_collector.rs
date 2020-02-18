@@ -1,5 +1,5 @@
-use rustc_hir::{HirId, Pat, PatKind};
-use rustc_hir::intravisit::{walk_pat, walk_crate, NestedVisitorMap, Visitor};
+use rustc_hir::{HirId, Item, Pat, PatKind};
+use rustc_hir::intravisit::{walk_item, walk_pat, walk_crate, NestedVisitorMap, Visitor};
 use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
@@ -114,6 +114,11 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
         }
         walk_pat(self, p);
     }
+    fn visit_item(&mut self, i: &'v Item<'v>) {
+        if !super::is_impl_from_std_derive_expansion(&i) {
+            walk_item(self, i);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -181,12 +186,22 @@ mod test {
             }
         }
     }
+    fn create_program_match_6() -> quote::__rt::TokenStream {
+        quote! {
+            # [ derive ( Eq , PartialEq , Ord , PartialOrd , Clone , Hash , Default , Debug ) ] struct S { foo : u32 }
+        }
+    }
     fn get_struct_hir_id(tcx: TyCtxt<'_>) -> HirId {
         let (field, _) = collect_field(tcx, create_test_span(11, 16)).unwrap();
         let struct_def_id = field.hir_id.owner_def_id();
         tcx.hir().as_local_hir_id(struct_def_id).unwrap()
     }
 
+    fn get_struct_hir_id6(tcx: TyCtxt<'_>) -> HirId {
+        let (field, _) = collect_field(tcx, create_test_span(95, 98)).unwrap();
+        let struct_def_id = field.hir_id.owner_def_id();
+        tcx.hir().as_local_hir_id(struct_def_id).unwrap()
+    }
     #[test]
     fn struct_pattern_collector_should_collect_match_pattern() {
         run_after_analysis(create_program_match(), |tcx| {
@@ -230,6 +245,16 @@ mod test {
             let fields = collect_struct_named_patterns(tcx, struct_hir_id, "field");
 
             assert_eq!(fields.new_bindings.len(), 1);
+        });
+    }
+    #[test]
+    fn struct_pattern_collector_should_not_collect_in_std_derives() {
+        run_after_analysis(create_program_match_6(), |tcx| {
+            let struct_hir_id = get_struct_hir_id6(tcx);
+            let fields = collect_struct_named_patterns(tcx, struct_hir_id, "foo");
+
+            assert_eq!(fields.new_bindings.len(), 0);
+            assert_eq!(fields.other.len(), 0);
         });
     }
 }

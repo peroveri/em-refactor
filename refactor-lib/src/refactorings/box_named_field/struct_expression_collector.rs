@@ -1,5 +1,5 @@
-use rustc_hir::{BodyId, Expr, ExprKind, Field, FnDecl, HirId};
-use rustc_hir::intravisit::{FnKind, walk_expr, walk_fn, walk_crate, NestedVisitorMap, Visitor};
+use rustc_hir::{BodyId, Expr, ExprKind, Field, FnDecl, HirId, Item};
+use rustc_hir::intravisit::{FnKind, walk_expr, walk_fn, walk_item, walk_crate, NestedVisitorMap, Visitor};
 use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
@@ -102,6 +102,11 @@ impl<'v> Visitor<'v> for StructExpressionCollector<'v> {
         }
         walk_expr(self, expr);
     }
+    fn visit_item(&mut self, i: &'v Item<'v>) {
+        if !super::is_impl_from_std_derive_expansion(&i) {
+            walk_item(self, i);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -158,8 +163,18 @@ mod test {
         }
     }
 
+    fn create_program_match_6() -> quote::__rt::TokenStream {
+        quote! {
+            # [ derive ( Eq , PartialEq , Ord , PartialOrd , Clone , Hash , Default , Debug ) ] struct S { foo : u32 }
+        }
+    }
     fn get_struct_hir_id(tcx: TyCtxt<'_>) -> HirId {
         let (field, _) = collect_field(tcx, create_test_span(11, 14)).unwrap();
+        let struct_def_id = field.hir_id.owner_def_id();
+        tcx.hir().as_local_hir_id(struct_def_id).unwrap()
+    }
+    fn get_struct_hir_id6(tcx: TyCtxt<'_>) -> HirId {
+        let (field, _) = collect_field(tcx, create_test_span(95, 98)).unwrap();
         let struct_def_id = field.hir_id.owner_def_id();
         tcx.hir().as_local_hir_id(struct_def_id).unwrap()
     }
@@ -214,6 +229,16 @@ mod test {
             assert_eq!(shorthands.len(), 1);
             assert_eq!(get_source(tcx, shorthands[0].0), "foo");
             assert_eq!(shorthands[0].1, "foo");
+        });
+    }
+    #[test]
+    fn struct_expression_collector_should_collect_6() {
+        run_after_analysis(create_program_match_6(), |tcx| {
+            let hir_id = get_struct_hir_id6(tcx);
+            let (fields, shorthands) = collect_struct_expressions(tcx, hir_id, "foo");
+            assert_eq!(fields.len(), 0);
+            assert_eq!(shorthands.len(), 0);
+            // assert_eq!("", get_source(tcx, create_test_span(0, 40)));
         });
     }
 }

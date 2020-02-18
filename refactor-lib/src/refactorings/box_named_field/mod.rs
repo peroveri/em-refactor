@@ -7,6 +7,7 @@ use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInter
 use super::visitors::{collect_local_variable_use, collect_struct_field_access_expressions};
 use struct_expression_collector::collect_struct_expressions;
 use struct_named_pattern_collector::collect_struct_named_patterns;
+use rustc_hir::{Item, ItemKind, print};
 
 mod struct_expression_collector;
 pub mod struct_named_pattern_collector;
@@ -51,4 +52,31 @@ pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_ident: &str, fiel
     }
 
     Ok(changes)
+}
+
+/// Used to skip visiting derived std implementations
+/// of Clone, Default, etc.
+pub fn is_impl_from_std_derive_expansion(i: &Item<'_>) -> bool {
+    let skip_derive_types = vec![
+        "::core::clone::Clone".to_owned(),
+        "::core::default::Default".to_owned(),
+        "::core::fmt::Debug".to_owned(),
+        "::core::cmp::Eq".to_owned(),
+        "::core::hash::Hash".to_owned(),
+        "::core::cmp::Ord".to_owned(),
+        "::core::cmp::PartialEq".to_owned(),
+        "::core::cmp::PartialOrd".to_owned(),
+    ];
+
+    if let ItemKind::Impl {
+        of_trait: Some(ref t),
+        ..
+    } = i.kind {
+        let repr: String = print::to_string(print::NO_ANN, |s| s.print_path(t.path, false));
+
+        i.span.in_derive_expansion() &&
+         skip_derive_types.contains(&repr)
+    } else {
+        false
+    }
 }

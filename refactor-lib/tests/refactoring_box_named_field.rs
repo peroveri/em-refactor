@@ -15,7 +15,6 @@ fn box_field_assignment_expression_2() {
     run_test("assignment_expression_2");
 }
 #[test]
-#[ignore]
 fn box_field_attribute_macro_debug() {
     run_test("attribute_macro_debug");
 }
