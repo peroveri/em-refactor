@@ -23,13 +23,11 @@ Type system / other
 
 ## Extract block
 
-A <- Statements before B
-B <- Extracted statements 
-C <- Statements after B 
+S <- Zero or more statements, zero or one expression
 
 Grammars
-* Block structure, B = Expression
-* Block structure, B = Statements + Expression
+* Block structure, S = Expression
+* Block structure, S = Statements + Expression
 * Should also support single expressions, 
   not 100% sure, but since declarations (use, struct, fn, ...), etc must appear in blocks it will always be safe to wrap an expression with a block without further actions?
 
