@@ -11,11 +11,6 @@ fn introduce_closure_assignment_single_variable() {
     run_test("assignment_single_variable");
 }
 #[test]
-#[ignore]
-fn introduce_closure_control_flow_break() {
-    run_test("control_flow_break");
-}
-#[test]
 fn introduce_closure_grammar_block_as_expression() {
     run_test("grammar_block_as_expression");
 }
