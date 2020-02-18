@@ -46,7 +46,7 @@ export class ShellService {
 
     callRefactoring(relativeFilePath: string, arg: RefactorArgs, binaryPath: string) {
 
-        let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.refactoring === 'extract-method' ? 'foo' : null, arg.unsafe, binaryPath);
+        let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.unsafe, binaryPath);
         if (cmd instanceof Error) {
             return new Error(cmd.message);
         }
@@ -75,11 +75,11 @@ const trimWhitespace = (s: string) =>
         return '\n' + ' '.repeat((p1.length) / 8);
     });
 
-const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, new_fn: string | null, unsafe: boolean, binaryPath: string): string | Error => {
+const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, unsafe: boolean, binaryPath: string): string | Error => {
     if (!isValidBinaryPath(binaryPath)) {
         return new Error(`'${binaryPath}' is not a valid binary file`);
     }
-    const refactorArgs = `--output-replacements-as-json --ignore-missing-file --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (new_fn === null ? '' : ` --new_function=${new_fn}`) + (unsafe ? ' --unsafe' : '');
+    const refactorArgs = `--output-replacements-as-json --ignore-missing-file --file=${relativeFilePath} --refactoring=${refactoring} --selection=${selection}` + (unsafe ? ' --unsafe' : '');
 
     return `${binaryPath} ${refactorArgs}`;
 }

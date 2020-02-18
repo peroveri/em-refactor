@@ -6,7 +6,6 @@ import config from "./config";
 const refactorings = [
     "box-field",
     "extract-block",
-    "extract-method",
     "inline-macro",
     "introduce-closure"
 ];
