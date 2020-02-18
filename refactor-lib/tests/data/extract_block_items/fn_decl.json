@@ -1,0 +1,11 @@
+{
+	"file": "fn_decl.rs",
+	"args": {
+		"refactoring": "extract-block",
+		"selection": "39:61"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "fn_decl_after.rs"
+	}
+}

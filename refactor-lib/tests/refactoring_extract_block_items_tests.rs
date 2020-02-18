@@ -8,8 +8,8 @@ fn run_test(name: &str) {
 
 #[test]
 #[ignore]
-fn extract_block_items_fn_declaration_1() {
-    run_test("items_fn_declaration_1");
+fn extract_block_items_fn_decl() {
+    run_test("items_fn_decl");
 }
 #[test]
 #[ignore]
