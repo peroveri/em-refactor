@@ -1,4 +1,4 @@
-use crate::refactoring_invocation::{ExtractMethodArgs, RefactorDefinition, SourceCodeRange, RefactorFail};
+use crate::refactoring_invocation::{RefactorDefinition, SourceCodeRange, RefactorFail};
 
 ///
 /// converts an argument list to a refactoring definition
@@ -22,10 +22,6 @@ impl RefactorArgsParser<'_> {
         match self.get_param("--refactoring")? {
             "box-field" => Ok(RefactorDefinition::BoxField(self.parse_range()?)),
             "extract-block" => Ok(RefactorDefinition::ExtractBlock(self.parse_range()?)),
-            "extract-method" => Ok(RefactorDefinition::ExtractMethod(ExtractMethodArgs {
-                range: self.parse_range()?,
-                new_function: self.get_param("--new_function")?.to_owned(),
-            })),
             "introduce-closure" => Ok(RefactorDefinition::IntroduceClosure(self.parse_range()?)),
             "inline-macro" => Ok(RefactorDefinition::InlineMacro(self.parse_range()?)),
             s => Err(format!("Unknown refactoring: {}", s)),
@@ -70,20 +66,16 @@ mod test {
     #[test]
     fn refactor_def_from_args() {
         let args = vec![
-            "--refactoring=extract-method".to_owned(),
+            "--refactoring=extract-block".to_owned(),
             "--file=main.rs".to_owned(),
             "--selection=1:2".to_owned(),
-            "--new_function=foo".to_owned(),
         ];
         let range = SourceCodeRange {
             from: 1,
             to: 2,
             file_name: "main.rs".to_owned(),
         };
-        let rd = RefactorDefinition::ExtractMethod(ExtractMethodArgs {
-            range,
-            new_function: "foo".to_owned(),
-        });
+        let rd = RefactorDefinition::ExtractBlock(range);
         let expected = Ok(rd);
 
         let actual = argument_list_to_refactor_def(&args);

@@ -3,7 +3,6 @@
 ///
 #[derive(PartialEq, Debug)]
 pub enum RefactorDefinition {
-    ExtractMethod(ExtractMethodArgs),
     ExtractBlock(SourceCodeRange),
     BoxField(SourceCodeRange),
     IntroduceClosure(SourceCodeRange),
@@ -18,12 +17,6 @@ pub enum RefactorDefinition {
 // - found valid refactoring (list of changes)
 
 // maybe generic implementation of rustc_driver::Callbacks?
-
-#[derive(PartialEq, Debug)]
-pub struct ExtractMethodArgs {
-    pub range: SourceCodeRange,
-    pub new_function: String,
-}
 
 ///
 /// A range in a file. This will later be converted to syntax_pos::Span
@@ -104,10 +97,6 @@ impl RefactoringErrorInternal {
             format!(
                 "{}:{} is not a valid selection! `{}`",
                 from, to, selection))
-    }
-    pub fn multiple_returnvalues() -> Self {
-        Self::new(InternalErrorCodes::Error, 
-                "Multiple returnvalues not implemented".to_owned())
     }
 }
 
