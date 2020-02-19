@@ -3,7 +3,7 @@ use rustc_interface::interface;
 use rustc_span::Span;
 use rustc_hir::print;
 use rustc_hir::intravisit::{walk_crate, NestedVisitorMap, Visitor};
-use rustc_hir::{Expr, FunctionRetTy, Item, ItemKind, Stmt};
+use rustc_hir::{Expr, FnRetTy, Item, ItemKind, Stmt};
 use rustc_hir::intravisit::{walk_expr, walk_item, walk_stmt};
 use rustc::hir::map::Map;
 use syntax::ast::{Crate};
@@ -86,7 +86,7 @@ impl<'v> Visitor<'v> for IdentCollector<'v> {
             let a = decl.inputs.iter().map(|t| 
                 print::to_string(print::NO_ANN, |s| s.print_type(t))).collect::<Vec<_>>();
             let inputs = a.join(",");
-            let output = if let FunctionRetTy::Return(t) = &decl.output {
+            let output = if let FnRetTy::Return(t) = &decl.output {
                 print::to_string(print::NO_ANN, |s| s.print_type(t))
             } else {
                 "".to_owned()
