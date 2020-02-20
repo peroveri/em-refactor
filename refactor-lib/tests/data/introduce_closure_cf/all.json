@@ -1,0 +1,11 @@
+{
+	"file": "all.rs",
+	"args": {
+		"refactoring": "introduce-closure",
+		"selection": "61:291"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "all_after.rs"
+	}
+}
