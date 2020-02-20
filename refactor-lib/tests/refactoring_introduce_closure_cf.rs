@@ -16,6 +16,10 @@ fn introduce_closure_cf_break() {
     run_test("break");
 }
 #[test]
+fn introduce_closure_loop_all() {
+    run_test("loop_all");
+}
+#[test]
 fn introduce_closure_cf_return_and_expr() {
     run_test("return_and_expr");
 }

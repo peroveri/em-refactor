@@ -1,0 +1,11 @@
+{
+	"file": "loop_all.rs",
+	"args": {
+		"refactoring": "introduce-closure",
+		"selection": "67:270"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "loop_all_after.rs"
+	}
+}
