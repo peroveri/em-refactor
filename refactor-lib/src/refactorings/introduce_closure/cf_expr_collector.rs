@@ -43,6 +43,7 @@ pub fn collect_cfs(tcx: TyCtxt<'_>, block_hir_id: HirId) -> ControlFlowExprColle
 
 impl BlockCollector<'_> {
     fn points_outside(&self, dest: &Destination) -> bool {
+        // TODO: span here is the whole while/for/.. expression
         let hir_id = dest.target_id.unwrap();
         let span = self.tcx.hir().span(hir_id);
         self.block_span.overlaps(span)
