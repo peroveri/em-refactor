@@ -2,15 +2,14 @@ fn main() {}
 fn foo() -> i32 {
     for i in 10..12 {
         let j = 
-        match(||{
+        match (|| {
             if i == 11 {
                 return (3, Some(20), None);
             }
             (0, None, Some(30))
         })() {
-            (3, Some(r), _) => return r,
-            (_, _, e) => e.unwrap()
-        };
+(3, a, _) => return a.unwrap(),
+(_, _, a) => a.unwrap()};
     }
     return 0;
 }

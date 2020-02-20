@@ -56,9 +56,7 @@ pub fn collect_block(tcx: TyCtxt, pos: Span) -> Option<BlockInsideBlock> {
 
 impl BlockCollector<'_> {
     fn selection_contains_span(&self, span: Span) -> bool {
-        (self.pos.lo() == self.pos.hi() 
-        && self.pos.lo() == span.lo())
-        || self.pos.contains(span)
+        self.pos == span.shrink_to_lo() || self.pos.contains(span)
     }
 }
 
@@ -91,6 +89,7 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
         }
         if self.selection_contains_span(block.span) {
             self.selected_block = Some(block);
+            return;
         }
         if !block.span.contains(self.pos) {
             return;
@@ -200,6 +199,60 @@ mod test {
                 let block = collect_block(tcx, create_test_span(i, i));
                 assert!(block.is_none(), format!("position: ({}, {}) shouldn't result in a block", i, i));
             }
+        });
+    }
+    #[test]
+    fn block_collector_should_collect_1() {
+        run_after_analysis(quote! {
+            fn foo ( ) { { } }
+        }, |tcx| {
+            assert_block_collects(tcx, 13, 16, "{ }");
+        });
+    }
+    #[test]
+    fn block_collector_should_collect_2() {
+        run_after_analysis(quote! {
+            fn foo ( ) { if true { { } } }
+        }, |tcx| {
+            assert_block_collects(tcx, 23, 26, "{ }");
+        });
+    }
+    #[test]
+    fn block_collector_should_collect_3() {
+        run_after_analysis(quote! {
+            fn foo ( ) { while true { { } } }
+        }, |tcx| {
+            assert_block_collects(tcx, 23, 29, "{ }");
+        });
+    }
+    #[test]
+    fn block_collector_should_collect_4() {
+        run_after_analysis(quote! {
+            fn foo ( ) { for i in 0 .. 1 { { if i == 0 { } } } }
+        }, |tcx| {
+            assert_block_collects(tcx, 31, 48, "{ if i == 0 { } }");
+        });
+    }
+    #[test]
+    fn block_collector_should_collect_5() {
+        run_after_analysis(quote! {
+            fn foo ( ) { while true { { if true { } } } }
+        }, |tcx| {
+            assert_block_collects(tcx, 26, 41, "{ if true { } }");
+        });
+    }
+    fn assert_block_collects(tcx: TyCtxt, from: u32, to: u32, s: &str) {
+        let block = collect_block(tcx, create_test_span(from, to));
+        assert!(block.is_some(), format!("position: ({}, {}) shouldn't result in a block", from, to));
+        assert_eq!(s, get_source(tcx, block.unwrap().selected_block.span));
+    }
+    #[test]
+    fn block_collector_should_collect_6() {
+        run_after_analysis(quote! {
+            fn foo ( ) { loop { let _ = { if true { } 1 } ; } }
+        }, |tcx| {
+            let block = collect_block(tcx, create_test_span(28, 45));
+            assert!(block.is_some(), format!("position: ({}, {}) should result in a block", 28, 45));
         });
     }
 }

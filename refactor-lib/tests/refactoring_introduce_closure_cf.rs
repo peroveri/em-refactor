@@ -7,12 +7,15 @@ fn run_test(name: &str) {
 }
 
 #[test]
+fn introduce_closure_cf_all() {
+    run_test("all");
+}
+#[test]
 #[ignore]
 fn introduce_closure_cf_break() {
     run_test("break");
 }
 #[test]
-#[ignore]
 fn introduce_closure_cf_return_and_expr() {
     run_test("return_and_expr");
 }
