@@ -45,8 +45,14 @@ impl BlockCollector<'_> {
     fn points_outside(&self, dest: &Destination) -> bool {
         // TODO: span here is the whole while/for/.. expression
         let hir_id = dest.target_id.unwrap();
-        let span = self.tcx.hir().span(hir_id);
-        self.block_span.overlaps(span)
+        let node = self.tcx.hir().get(hir_id);
+
+        if let Node::Expr(e) = node {
+            if let ExprKind::Loop(b, ..) = e.kind {
+                return !b.span.shrink_to_lo().overlaps(self.block_span);
+            }
+        }
+        false
     }
 }
 
