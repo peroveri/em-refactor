@@ -16,13 +16,11 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileStringReplaceme
         let source_map = tcx.sess.source_map();
         let mut res = vec![];
 
-        if let Some(item_span) = item_declarations.items.iter().min() {
-            res.push(map_change_from_span(
-                source_map,
-                span.with_lo(span.lo() - BytePos(0)).shrink_to_lo(),
-                item_declarations.items.iter().map(|s| get_source(tcx, *s)).collect::<Vec<_>>().join("\n")
-            ));
-        }
+        res.push(map_change_from_span(
+            source_map,
+            span.with_lo(span.lo() - BytePos(0)).shrink_to_lo(),
+            item_declarations.items.iter().map(|s| get_source(tcx, *s)).collect::<Vec<_>>().join("\n")
+        ));
         for delete in item_declarations.items {
             res.push(map_change_from_span(
                 source_map,
