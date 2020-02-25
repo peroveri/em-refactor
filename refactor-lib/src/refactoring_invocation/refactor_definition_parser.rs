@@ -24,6 +24,7 @@ impl RefactorArgsParser<'_> {
             "extract-block" => Ok(RefactorDefinition::ExtractBlock(self.parse_range()?)),
             "introduce-closure" => Ok(RefactorDefinition::IntroduceClosure(self.parse_range()?)),
             "inline-macro" => Ok(RefactorDefinition::InlineMacro(self.parse_range()?)),
+            "pull-up-item-declaration" => Ok(RefactorDefinition::PullUpItemDeclaration(self.parse_range()?)),
             s => Err(format!("Unknown refactoring: {}", s)),
         }
     }

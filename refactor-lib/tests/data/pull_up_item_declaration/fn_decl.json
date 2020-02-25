@@ -1,0 +1,11 @@
+{
+	"file": "fn_decl.rs",
+	"args": {
+		"refactoring": "pull-up-item-declaration",
+		"selection": "16:34"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "fn_decl_after.rs"
+	}
+}

@@ -7,7 +7,8 @@ const refactorings = [
     "box-field",
     "extract-block",
     "inline-macro",
-    "introduce-closure"
+    "introduce-closure",
+    "pull-up-item-declaration"
 ];
 
 // Refactorings should be shown when they are applicable at the current selection

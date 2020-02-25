@@ -1,4 +1,4 @@
-use rustc_hir::{Arm, BodyId, Block, FnDecl, HirId, ExprKind, MatchSource};
+use rustc_hir::{Arm, BodyId, Block, FnDecl, HirId, ExprKind, MatchSource, Stmt};
 use rustc_hir::intravisit::{NestedVisitorMap, Visitor, FnKind, walk_fn, walk_expr, walk_block, walk_crate};
 use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
@@ -119,6 +119,13 @@ impl BlockSelection<'_> {
         };
 
         start.with_hi(end.hi())
+    }
+    pub fn get_stmts(&self) -> &[Stmt] {
+        if self.contains_stmt {
+            &self.block.stmts[self.start..self.end+1]
+        } else {
+            &[]
+        }
     }
 }
 

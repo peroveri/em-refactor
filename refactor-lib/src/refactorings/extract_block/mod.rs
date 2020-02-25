@@ -1,11 +1,10 @@
 use super::utils::{map_change_from_span, get_source};
+use super::visitors::collect_block;
 use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
-use block_collector::collect_block;
 use rustc_hir::{BodyId};
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
 
-mod block_collector;
 mod expr_use_visit;
 mod push_stmt_into_block;
 

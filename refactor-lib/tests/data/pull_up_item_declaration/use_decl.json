@@ -1,0 +1,11 @@
+{
+	"file": "use_decl.rs",
+	"args": {
+		"refactoring": "pull-up-item-declaration",
+		"selection": "16:41"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "use_decl_after.rs"
+	}
+}

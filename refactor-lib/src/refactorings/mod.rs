@@ -7,6 +7,7 @@ mod box_tuple_field;
 mod extract_block;
 mod inline_macro;
 mod introduce_closure;
+mod pull_up_item_declaration;
 pub mod utils;
 pub mod visitors;
 
@@ -15,6 +16,7 @@ pub fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Ve
         RefactorDefinition::BoxField(range) => box_field::do_refactoring(ty, utils::map_range_to_span(&ty.sess.source_map(), range)?),
         RefactorDefinition::ExtractBlock(range) => extract_block::do_refactoring(ty, utils::map_range_to_span(&ty.sess.source_map(), range)?),
         RefactorDefinition::IntroduceClosure(range) => introduce_closure::do_refactoring(ty, utils::map_range_to_span(&ty.sess.source_map(), range)?),
+        RefactorDefinition::PullUpItemDeclaration(range) => pull_up_item_declaration::do_refactoring(ty, utils::map_range_to_span(&ty.sess.source_map(), range)?),
         _ => panic!("")
     }
 }

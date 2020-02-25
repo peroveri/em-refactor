@@ -106,3 +106,9 @@ Standard macros have some special rules (cannot be inlined?)
 - format! use of libraries
 - vec! box syntax
 - try! deprecated
+
+## Pull up item declaration
+All item declaration types
+- Struct, Fn, Tuple Struct, ++
+
+If the item declaration is not used outside, should it be left where it is?

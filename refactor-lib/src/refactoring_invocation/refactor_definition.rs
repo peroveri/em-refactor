@@ -7,6 +7,7 @@ pub enum RefactorDefinition {
     BoxField(SourceCodeRange),
     IntroduceClosure(SourceCodeRange),
     InlineMacro(SourceCodeRange),
+    PullUpItemDeclaration(SourceCodeRange),
     // CloseOverVariables(SourceCodeRange),
     // LiftClosure(SourceCodeRange),
 }
