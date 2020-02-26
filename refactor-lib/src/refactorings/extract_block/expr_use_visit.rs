@@ -126,3 +126,44 @@ pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, body_id: BodyId, span: Span) -> 
         v.usages
     })
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use super::super::*;
+    use quote::quote;
+    use crate::{create_test_span, run_after_analysis};
+
+
+    #[test]
+    fn expr_use_visit_should_collect_mut1() {
+        run_after_analysis(quote! {
+            fn foo ( ) { let i = & mut 0 ; let j = i ; mut_ ( j ) ; } 
+            fn mut_(_: &mut i32) {}
+        }, |tcx| {
+            let body_id = collect_block(tcx, create_test_span(31, 42)).unwrap().function_body_id;
+            let vars = collect_vars(tcx, body_id, create_test_span(31, 42));
+
+
+            assert_eq!(1, vars.return_values.len());
+            let rv = &vars.return_values[0];
+            assert!(rv.is_mutated);
+            assert_eq!("j", rv.ident);
+        });
+    }
+    #[test]
+    fn expr_use_visit_should_collect_borrow() {
+        run_after_analysis(quote! {
+            fn foo ( ) { let i = & mut 0 ; let j = i ; borrow ( j ) ; } 
+            fn borrow(_: &i32) {}
+        }, |tcx| {
+            let body_id = collect_block(tcx, create_test_span(31, 42)).unwrap().function_body_id;
+            let vars = collect_vars(tcx, body_id, create_test_span(31, 42));
+
+            assert_eq!(1, vars.return_values.len());
+            let rv = &vars.return_values[0];
+            assert!(!rv.is_mutated);
+            assert_eq!("j", rv.ident);
+        });
+    }
+}
