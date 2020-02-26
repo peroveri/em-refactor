@@ -7,6 +7,7 @@ use rustc_span::Span;
 
 mod expr_use_visit;
 mod push_stmt_into_block;
+mod variable_use_collection;
 
 fn extract_block(
     tcx: TyCtxt,

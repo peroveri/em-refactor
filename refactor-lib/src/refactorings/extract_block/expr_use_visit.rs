@@ -2,8 +2,8 @@ use rustc::ty::{self, TyCtxt};
 use rustc_hir::{BodyId, Node};
 use rustc_infer::infer::{TyCtxtInferExt};
 use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Place, PlaceBase};
-use std::collections::HashMap;
 use rustc_span::Span;
+use super::variable_use_collection::VariableUseCollection;
 
 struct VariableCollectorDelegate<'tcx> {
     tcx: TyCtxt<'tcx>,
@@ -38,10 +38,7 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
         if let Some((ident, decl_span)) = self.get_ident_and_decl_span(place) {
             if !self.extract_span.contains(used_span) && self.extract_span.contains(decl_span) {
                 // should be ret val
-                self.usages.return_values.push(VariableUse {
-                    ident,
-                    is_mutated,
-                });
+                self.usages.add_return_value(ident, is_mutated);
             }
         }
     }
@@ -63,47 +60,6 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
         // }
         self.var_used(place.span, &place, true);
     }
-}
-
-// find a name
-pub struct VariableUseCollection {
-    /**
-     * Variables declared in 'span', used after 'span'
-     */
-    return_values: Vec<VariableUse>,
-}
-impl VariableUseCollection {
-    fn new() -> Self {
-        VariableUseCollection {
-            return_values: vec![],
-        }
-    }
-    pub fn get_return_values(&self) -> Vec<VariableUse> {
-        let mut map: HashMap<String, VariableUse> = HashMap::new();
-
-        let mut ids = vec![]; // HashMap doesnt preserve order
-
-        for rv in self.return_values.iter() {
-            if !ids.contains(&rv.ident) {
-                ids.push(rv.ident.to_string());
-            }
-            if let Some(entry) = map.get_mut(&rv.ident) {
-                entry.is_mutated = entry.is_mutated || rv.is_mutated;
-            } else {
-                let e = rv.clone();
-                map.insert(rv.ident.clone(), e);
-            }
-        }
-
-        ids.iter()
-            .map(|id| map.get(id).unwrap().clone())
-            .collect::<Vec<_>>()
-    }
-}
-#[derive(Clone)]
-pub struct VariableUse {
-    pub is_mutated: bool,
-    pub ident: String,
 }
 
 pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, body_id: BodyId, span: Span) -> VariableUseCollection {
@@ -145,8 +101,8 @@ mod test {
             let vars = collect_vars(tcx, body_id, create_test_span(31, 42));
 
 
-            assert_eq!(1, vars.return_values.len());
-            let rv = &vars.return_values[0];
+            assert_eq!(1, vars.return_values().len());
+            let rv = &vars.return_values()[0];
             assert!(rv.is_mutated);
             assert_eq!("j", rv.ident);
         });
@@ -160,8 +116,8 @@ mod test {
             let body_id = collect_block(tcx, create_test_span(31, 42)).unwrap().function_body_id;
             let vars = collect_vars(tcx, body_id, create_test_span(31, 42));
 
-            assert_eq!(1, vars.return_values.len());
-            let rv = &vars.return_values[0];
+            assert_eq!(1, vars.return_values().len());
+            let rv = &vars.return_values()[0];
             assert!(!rv.is_mutated);
             assert_eq!("j", rv.ident);
         });
