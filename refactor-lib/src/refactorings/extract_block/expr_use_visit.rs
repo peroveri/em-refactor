@@ -8,7 +8,7 @@ use rustc_span::Span;
 struct VariableCollectorDelegate<'tcx> {
     tcx: TyCtxt<'tcx>,
     extract_span: Span,
-    usages: VariableUsages,
+    usages: VariableUseCollection,
 }
 
 impl<'tcx> VariableCollectorDelegate<'tcx> {
@@ -38,7 +38,7 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
         if let Some((ident, decl_span)) = self.get_ident_and_decl_span(place) {
             if !self.extract_span.contains(used_span) && self.extract_span.contains(decl_span) {
                 // should be ret val
-                self.usages.return_values.push(VariableUsage {
+                self.usages.return_values.push(VariableUse {
                     ident,
                     is_mutated,
                 });
@@ -66,20 +66,20 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
 }
 
 // find a name
-pub struct VariableUsages {
+pub struct VariableUseCollection {
     /**
      * Variables declared in 'span', used after 'span'
      */
-    return_values: Vec<VariableUsage>,
+    return_values: Vec<VariableUse>,
 }
-impl VariableUsages {
+impl VariableUseCollection {
     fn new() -> Self {
-        VariableUsages {
+        VariableUseCollection {
             return_values: vec![],
         }
     }
-    pub fn get_return_values(&self) -> Vec<VariableUsage> {
-        let mut map: HashMap<String, VariableUsage> = HashMap::new();
+    pub fn get_return_values(&self) -> Vec<VariableUse> {
+        let mut map: HashMap<String, VariableUse> = HashMap::new();
 
         let mut ids = vec![]; // HashMap doesnt preserve order
 
@@ -101,18 +101,18 @@ impl VariableUsages {
     }
 }
 #[derive(Clone)]
-pub struct VariableUsage {
+pub struct VariableUse {
     pub is_mutated: bool,
     pub ident: String,
 }
 
-pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, body_id: BodyId, span: Span) -> VariableUsages {
+pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, body_id: BodyId, span: Span) -> VariableUseCollection {
     let def_id = body_id.hir_id.owner_def_id();
     tcx.infer_ctxt().enter(|inf| {
         let mut v = VariableCollectorDelegate {
             tcx,
             extract_span: span,
-            usages: VariableUsages::new(),
+            usages: VariableUseCollection::new(),
         };
         ExprUseVisitor::new(
             &mut v,
