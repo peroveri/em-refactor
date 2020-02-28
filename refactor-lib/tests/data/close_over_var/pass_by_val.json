@@ -1,0 +1,11 @@
+{
+	"file": "pass_by_val.rs",
+	"args": {
+		"refactoring": "close-over-variables",
+		"selection": "31:64"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "pass_by_val_after.rs"
+	}
+}
