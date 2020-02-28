@@ -66,12 +66,18 @@ pub fn run_unit_tests(absp: &std::path::PathBuf, repo_name: &str) -> std::io::Re
     f.write_all(serde_json::to_string(&result)?.as_bytes())?;
     Ok(())
 }
-pub fn query_candidates(absp: &std::path::PathBuf) -> std::io::Result<String> {
+pub fn write_result(content: &str, name: &str) -> std::io::Result<()> {
+    let p1: std::path::PathBuf = ["./tests/exp/work_dir", &format!("{}.json", name)].iter().collect();
+    let mut f = std::fs::File::create(p1)?;
+    f.write_all(content.as_bytes())?;
+    Ok(())
+}
+pub fn query_candidates(absp: &std::path::PathBuf, refactoring: &str) -> std::io::Result<String> {
 
     let output = 
         Command::cargo_bin("cargo-my-refactor")
             .unwrap()
-            .arg("--query-candidates=box-named-field")
+            .arg(format!("--query-candidates={}", refactoring))
             .arg("--")
             .arg(format!(
                 "--target-dir={}",

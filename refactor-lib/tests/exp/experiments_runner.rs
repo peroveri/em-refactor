@@ -1,33 +1,39 @@
 use serde::{Serialize, Deserialize};
-use super::{debug, repo_name, clone_project, get_absp, query_candidates,run_refactoring, init, run_unit_tests, read_settings, Project, map_candidates};
+use super::{debug, repo_name, clone_project, get_absp, query_candidates,run_refactoring, init, run_unit_tests, read_settings, Project, map_candidates, write_result};
 
 struct ExperimentsRunner {
     project: Project,
     repo_name: String,
-    absolute_path: std::path::PathBuf
+    absolute_path: std::path::PathBuf,
+    refactoring: String
 }
 
 impl ExperimentsRunner {
-    pub fn new(project: Project) -> std::io::Result<Self> {
+    pub fn new(project: Project, refactoring: &str) -> std::io::Result<Self> {
         let repo_name = repo_name(&project.git_repo).unwrap();
         let absolute_path = get_absp(&repo_name, &project.subdir)?;
         Ok(Self {
             project,
             repo_name,
-            absolute_path
+            absolute_path,
+            refactoring: refactoring.to_string()
         })
     }
 
     fn query_candidates(&self) -> std::io::Result<Vec<CandidateOutput>> {
-        let candidates = query_candidates(&self.absolute_path)?;
+        let candidates = query_candidates(&self.absolute_path, &self.refactoring)?;
         Ok(map_candidates(&candidates))
     }
-
+    fn output_result(&self, candidates: &Vec<CandidateOutput>) -> std::io::Result<()> {
+        let r = map_candidate_out_to_summary(candidates);
+        write_result(&serde_json::to_string_pretty(&r).unwrap(), &format!("{}-candidates", self.repo_name))
+    }
     fn run_exp_on_project(&self) -> std::io::Result<()> {
         clone_project(&self.repo_name, &self.project.git_repo)?;
         run_unit_tests(&self.absolute_path, &self.repo_name)?;
-        eprintln!("Querying candidates for: {}", self.repo_name);
-        for candidate_output in self.query_candidates()? {
+        let candidates = self.query_candidates()?;
+        self.output_result(&candidates)?;
+        for candidate_output in candidates {
             debug(&format!("{:?}\n", candidate_output))?;
             
             for candidate in candidate_output.candidates {
@@ -40,7 +46,7 @@ impl ExperimentsRunner {
 }
 
 
-pub fn run_all_exp() -> std::io::Result<()> {
+pub fn run_all_exp(refactoring: &str) -> std::io::Result<()> {
     init()?;
     debug("settings:\n")?;
     let settings = read_settings()?;
@@ -51,12 +57,31 @@ pub fn run_all_exp() -> std::io::Result<()> {
             debug(&format!("skipping: {}\n", project.git_repo))?;
             continue;
         }
-        let experiments_runner = ExperimentsRunner::new(project)?;
+        let experiments_runner = ExperimentsRunner::new(project, refactoring)?;
         experiments_runner.run_exp_on_project()?;
     }
     Ok(())
 }
+fn map_candidate_out_to_summary(candidates: &Vec<CandidateOutput>) -> CandidateSummary {
+    CandidateSummary {
+        items: candidates.iter().map(|c| CandidateSummaryItem {
+            count: c.candidates.len(),
+            crate_name: c.crate_name.to_string(),
+            refactoring: c.refactoring.to_string()
+        }).collect::<Vec<_>>()
+    }
+}
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CandidateSummary {
+    pub items: Vec<CandidateSummaryItem>
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CandidateSummaryItem {
+    pub crate_name: String,
+    pub refactoring: String,
+    pub count: usize
+}
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CandidateOutput {
     pub candidates: Vec<CandidatePosition>,
