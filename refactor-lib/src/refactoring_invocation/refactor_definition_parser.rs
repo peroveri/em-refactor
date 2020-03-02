@@ -21,6 +21,7 @@ impl RefactorArgsParser<'_> {
     pub fn from_args(&self) -> Result<RefactorDefinition, String> {
         match self.get_param("--refactoring")? {
             "box-field" => Ok(RefactorDefinition::BoxField(self.parse_range()?)),
+            "close-over-variables" => Ok(RefactorDefinition::CloseOverVariables(self.parse_range()?)),
             "extract-block" => Ok(RefactorDefinition::ExtractBlock(self.parse_range()?)),
             "introduce-closure" => Ok(RefactorDefinition::IntroduceClosure(self.parse_range()?)),
             "inline-macro" => Ok(RefactorDefinition::InlineMacro(self.parse_range()?)),

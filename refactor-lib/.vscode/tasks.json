@@ -49,6 +49,15 @@
             "group": "test"
         },
         {
+            "label": "test close-over-variables",
+            "type": "shell",
+            "command": "cargo test1 close_over_variables",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "test"
+        },
+        {
             "label": "test extract-block",
             "type": "shell",
             "command": "cargo test1 extract_block",

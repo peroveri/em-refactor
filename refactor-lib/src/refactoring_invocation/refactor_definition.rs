@@ -5,6 +5,7 @@
 pub enum RefactorDefinition {
     ExtractBlock(SourceCodeRange),
     BoxField(SourceCodeRange),
+    CloseOverVariables(SourceCodeRange),
     IntroduceClosure(SourceCodeRange),
     InlineMacro(SourceCodeRange),
     PullUpItemDeclaration(SourceCodeRange),

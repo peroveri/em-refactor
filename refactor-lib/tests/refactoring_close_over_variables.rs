@@ -7,17 +7,14 @@ fn run_test(name: &str) {
 }
 
 #[test]
-#[ignore]
 fn close_over_variables_pass_by_mut_ref() {
     run_test("pass_by_mut_ref");
 }
 #[test]
-#[ignore]
-fn close_over_variables_pass_ref() {
+fn close_over_variables_pass_by_ref() {
     run_test("pass_by_ref");
 }
 #[test]
-#[ignore]
 fn close_over_variables_pass_by_val() {
     run_test("pass_by_val");
 }

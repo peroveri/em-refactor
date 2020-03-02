@@ -4,6 +4,7 @@ use rustc::ty;
 mod box_field;
 mod box_named_field;
 mod box_tuple_field;
+mod close_over_variables;
 mod extract_block;
 mod inline_macro;
 mod introduce_closure;
@@ -14,6 +15,7 @@ pub mod visitors;
 pub fn do_ty_refactoring(ty: ty::TyCtxt, args: &RefactorDefinition) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
     match args {
         RefactorDefinition::BoxField(range) => box_field::do_refactoring(ty, utils::map_range_to_span(&ty.sess.source_map(), range)?),
+        RefactorDefinition::CloseOverVariables(range) => close_over_variables::do_refactoring(ty, utils::map_range_to_span(&ty.sess.source_map(), range)?),
         RefactorDefinition::ExtractBlock(range) => extract_block::do_refactoring(ty, utils::map_range_to_span(&ty.sess.source_map(), range)?),
         RefactorDefinition::IntroduceClosure(range) => introduce_closure::do_refactoring(ty, utils::map_range_to_span(&ty.sess.source_map(), range)?),
         RefactorDefinition::PullUpItemDeclaration(range) => pull_up_item_declaration::do_refactoring(ty, utils::map_range_to_span(&ty.sess.source_map(), range)?),

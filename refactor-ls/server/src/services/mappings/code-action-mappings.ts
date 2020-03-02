@@ -5,6 +5,7 @@ import config from "./config";
 
 const refactorings = [
     "box-field",
+    "close-over-variables",
     "extract-block",
     "inline-macro",
     "introduce-closure",
