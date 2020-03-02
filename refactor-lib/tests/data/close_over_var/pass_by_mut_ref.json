@@ -1,0 +1,11 @@
+{
+	"file": "pass_by_mut_ref.rs",
+	"args": {
+		"refactoring": "close-over-variables",
+		"selection": "35:64"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "pass_by_mut_ref_after.rs"
+	}
+}
