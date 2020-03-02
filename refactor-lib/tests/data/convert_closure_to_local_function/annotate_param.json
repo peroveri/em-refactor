@@ -1,0 +1,11 @@
+{
+	"file": "annotate_param.rs",
+	"args": {
+		"refactoring": "convert_closure_to_local_function",
+		"selection": "55:83"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "annotate_param_after.rs"
+	}
+}
