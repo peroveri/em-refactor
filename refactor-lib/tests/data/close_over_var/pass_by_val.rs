@@ -1,7 +1,7 @@
 fn main() {
-    let j = S;
+    let i = S;
     (|| {
-        let i = j;
+        let _: S = i;
     })();
 }
 struct S;

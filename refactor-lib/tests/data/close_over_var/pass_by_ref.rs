@@ -1,9 +1,8 @@
 fn main() {
     let i = S;
     (|| {
-        consume(i);
+        let _: &S = &i;
     })();
-    &i;
+    i;
 }
-fn consume(_: S) {}
 struct S;
