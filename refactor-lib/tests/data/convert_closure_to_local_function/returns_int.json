@@ -1,0 +1,11 @@
+{
+	"file": "returns_int.rs",
+	"args": {
+		"refactoring": "convert-closure-to-local-function",
+		"selection": "16:25"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "returns_int_after.rs"
+	}
+}
