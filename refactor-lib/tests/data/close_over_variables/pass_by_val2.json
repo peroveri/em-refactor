@@ -2,7 +2,7 @@
 	"file": "pass_by_val2.rs",
 	"args": {
 		"refactoring": "close-over-variables",
-		"selection": "31:67"
+		"selection": "31:69"
 	},
 	"expected": {
 		"code": 0,
