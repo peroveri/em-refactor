@@ -5,3 +5,4 @@ fn main() {
     })(i);
 }
 struct S;
+// i is borrowed and consumed in the closure, but not used later
