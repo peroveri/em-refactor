@@ -1,5 +1,32 @@
 use std::collections::HashMap;
 use rustc_span::Span;
+
+// // Should keep track of the use of a variable that is declared outside the closure, but used inside.
+// pub struct SingleVariableUse {
+//     ident: String,
+//     uses: Vec<Uses>
+// }
+
+// impl SingleVariableUse {
+//     pub fn add_use(&mut self, span: Span, is_borrow: bool, is_mutated: bool) {
+//         self.uses.push(Uses {
+//             span,
+//             is_borrow,
+//             is_mutated
+//         });
+//     }
+
+//     pub fn is_used_later(&self) -> bool {
+//         false
+//     }
+// }
+// pub struct Uses {
+//     span: Span,
+//     is_borrow: bool,
+//     is_mutated: bool
+// }
+
+// change to keep a dictionary?
 // find a name
 pub struct VariableUseCollection {
     /**
@@ -9,10 +36,32 @@ pub struct VariableUseCollection {
 }
 impl VariableUseCollection {
     pub fn new() -> Self {
-        VariableUseCollection {
+        Self {
             return_values: vec![],
         }
     }
+
+    // pub fn get_use_by_ident(&self) -> Vec<SingleVariableUse> {
+    //     let mut ret: Vec<SingleVariableUse> = vec![];
+    //     for v in &self.return_values {
+
+    //         let mut found = false;
+    //         for usage in ret.iter_mut() {
+    //             if usage.ident == v.ident {
+    //                 usage.add_use(v.span, v.is_borrow, v.is_mutated);
+    //                 found = true;
+    //             }
+    //         }
+    //         if !found {
+    //             let mut use1 = SingleVariableUse {
+    //                 ident: v.ident.to_string(),
+    //                 uses: vec![]
+    //             };
+    //             use1.add_use(v.span, v.is_borrow, v.is_mutated);
+    //         }
+    //     }
+    //     ret
+    // }
     pub fn add_return_value(&mut self, ident: String, is_borrow: bool, is_mutated: bool, span: Span) {
         self.return_values.push(VariableUse {
             ident,

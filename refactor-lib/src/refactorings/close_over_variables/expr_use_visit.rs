@@ -64,11 +64,6 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
                 }
              }
         };
-        // panic!("{}", super::get_source(self.tcx, expr.span));
-        
-        // panic!("{}", super::get_source(self.tcx, parent_expr.span));
-        // panic!("{:?}", place.projections);
-        // panic!("{}", super::get_source(self.tcx, place.span));
         self.var_used(borrow_expr.span, &place, is_mutated, true);
     }
 
@@ -175,4 +170,60 @@ mod test {
             
         });
     }
+    // #[test]
+    // fn closure_expr_use_visit_should_collect_c() {
+    //     run_after_analysis(quote! {
+    //         fn foo ( ) { let i = 0 ; ( | | { & i ; } ) ( ) ; i ; } 
+    //     }, |tcx| {
+    //         let closure_span = create_test_span(25, 46);
+    //         let closure = collect_anonymous_closure(tcx, closure_span).unwrap();
+    //         let vars = collect_vars(tcx, closure.body_id, closure.body_span);
+
+    //         panic!("{}", get_source(tcx, tcx.hir().body(closure.body_id).value.span));
+
+    //         let borrows = vars.get_borrows();
+    //         assert_eq!(1, borrows.len());
+    //         assert_eq!(borrows[0], create_test_span(33, 36));
+
+    //         let params = vars.get_params();
+    //         assert_eq!(1, params.len());
+    //         assert_eq!("i", params[0].ident);
+    //         assert!(!params[0].is_mutated);
+    //         assert!(!params[0].is_borrow);
+
+    //         let args = vars.get_args();
+    //         assert_eq!(1, args.len());
+    //         assert_eq!("i", args[0].ident);
+    //         assert!(!args[0].is_mutated);
+    //         assert!(args[0].is_borrow);
+            
+    //     });
+    // }
+    // #[test]
+    // fn closure_expr_use_visit_should_collect_d() {
+    //     run_after_analysis(quote! {
+    //         fn foo ( ) { let i = 0 ; ( | | { } ) ( ) ; i ; } 
+    //     }, |tcx| {
+    //         let closure_span = create_test_span(25, 46);
+    //         let closure = collect_anonymous_closure(tcx, closure_span).unwrap();
+    //         let vars = collect_vars(tcx, closure.body_id, closure.body_span);
+
+    //         let borrows = vars.get_borrows();
+    //         assert_eq!(1, borrows.len());
+    //         assert_eq!(borrows[0], create_test_span(33, 36));
+
+    //         let params = vars.get_params();
+    //         assert_eq!(1, params.len());
+    //         assert_eq!("i", params[0].ident);
+    //         assert!(!params[0].is_mutated);
+    //         assert!(!params[0].is_borrow);
+
+    //         let args = vars.get_args();
+    //         assert_eq!(1, args.len());
+    //         assert_eq!("i", args[0].ident);
+    //         assert!(!args[0].is_mutated);
+    //         assert!(args[0].is_borrow);
+            
+    //     });
+    // }
 }
