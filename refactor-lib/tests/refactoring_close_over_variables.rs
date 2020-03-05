@@ -17,6 +17,11 @@ fn close_over_variables_pass_by_ref() {
 }
 #[test]
 #[ignore]
-fn close_over_variables_pass_by_val() {
-    run_test("pass_by_val");
+fn close_over_variables_pass_by_val1() {
+    run_test("pass_by_val1");
+}
+#[test]
+#[ignore]
+fn close_over_variables_pass_by_val2() {
+    run_test("pass_by_val2");
 }
