@@ -1,7 +1,7 @@
 fn main() {
     match (S {f: 0, g: 1}) {
-        S {f, g: 1} => {f;g;},
-        S {f: 1, g: f} => {f;g;},
+        S {f, g: 1} => {let _: i32 = f;},
+        S {f: 1, g: f} => {let _: i32 = f;},
         _ => {}
     }
 }

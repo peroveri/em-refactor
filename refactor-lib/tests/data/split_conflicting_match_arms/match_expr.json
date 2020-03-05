@@ -1,0 +1,11 @@
+{
+	"file": "match_expr.rs",
+	"args": {
+		"refactoring": "split-conflicting-match-arms",
+		"selection": "134:135"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "match_expr_after.rs"
+	}
+}
