@@ -1,5 +1,5 @@
-use syntax::ast::{Crate, Expr, Stmt};
-use syntax::visit::{Visitor, walk_crate };
+use rustc_ast::ast::{Crate, Expr, Stmt};
+use rustc_ast::visit::{Visitor, walk_crate, walk_expr, walk_stmt};
 use rustc_span::Span;
 use rustc_ast_pretty::pprust::{expr_to_string, stmt_to_string};
 
@@ -32,7 +32,7 @@ impl<'ast> Visitor<'ast> for MacroCollector {
             self.res.push(expr_to_string(ex));
             self.res_span = ex.span.parent();
         } else {
-            syntax::visit::walk_expr(self, ex);
+            walk_expr(self, ex);
         }
     }
     fn visit_stmt(&mut self, stmt: &'ast Stmt) {
@@ -40,7 +40,7 @@ impl<'ast> Visitor<'ast> for MacroCollector {
             self.res.push(stmt_to_string(stmt));
             self.res_span = stmt.span.parent();
         } else {
-            syntax::visit::walk_stmt(self, stmt);
+            walk_stmt(self, stmt);
         }
     }
 }

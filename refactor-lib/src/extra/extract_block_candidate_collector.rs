@@ -1,5 +1,5 @@
-use syntax::visit::{Visitor, walk_block, walk_crate};
-use syntax::ast::{Block, Mac};
+use rustc_ast::ast::{Block, Mac};
+use rustc_ast::visit::{Visitor, walk_block, walk_crate};
 use rustc_span::Span;
 
 pub fn collect_extract_block_candidates<'tcx>(queries: &'tcx rustc_interface::Queries<'_>) -> Vec<Span> {

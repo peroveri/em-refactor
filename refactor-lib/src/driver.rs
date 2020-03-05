@@ -2,6 +2,7 @@
 
 // Need to add compiler dependencies, as they are not listed in Cargo.toml
 extern crate rustc;
+extern crate rustc_ast;
 extern crate rustc_ast_pretty;
 extern crate rustc_driver;
 extern crate rustc_hir;
@@ -9,7 +10,6 @@ extern crate rustc_infer;
 extern crate rustc_interface;
 extern crate rustc_span;
 extern crate rustc_typeck;
-extern crate syntax;
 
 use std::process::exit;
 use refactoring_invocation::{arg_value, get_compiler_args, get_refactor_args, pass_to_rustc, run_refactoring_and_output_result, should_pass_to_rustc};

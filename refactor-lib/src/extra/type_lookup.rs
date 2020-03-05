@@ -1,4 +1,5 @@
 use rustc::ty::TyCtxt;
+use rustc_ast::ast::{Crate};
 use rustc_interface::interface;
 use rustc_span::Span;
 use rustc_hir::print;
@@ -6,7 +7,6 @@ use rustc_hir::intravisit::{walk_crate, NestedVisitorMap, Visitor};
 use rustc_hir::{Expr, FnRetTy, Item, ItemKind, Stmt};
 use rustc_hir::intravisit::{walk_expr, walk_item, walk_stmt};
 use rustc::hir::map::Map;
-use syntax::ast::{Crate};
 use crate::refactorings::utils::map_range_to_span;
 use crate::refactorings::visitors::collect_inline_macro;
 use crate::refactoring_invocation::SourceCodeRange;

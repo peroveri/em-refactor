@@ -1,5 +1,5 @@
-use syntax::visit::{Visitor, walk_crate};
-use syntax::ast::{StructField, Mac};
+use rustc_ast::ast::{StructField, Mac};
+use rustc_ast::visit::{Visitor, walk_crate};
 use rustc_span::Span;
 
 #[derive(PartialEq)]
