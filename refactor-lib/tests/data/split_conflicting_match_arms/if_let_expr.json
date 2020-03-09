@@ -1,0 +1,11 @@
+{
+	"file": "if_let_expr.rs",
+	"args": {
+		"refactoring": "split-conflicting-match-arms",
+		"selection": "119:120"
+	},
+	"expected": {
+		"code": 2,
+		"stderr": "todo"
+	}
+}
