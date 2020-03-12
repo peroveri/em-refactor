@@ -85,6 +85,15 @@
             "group": "test"
         },
         {
+            "label": "test split-conflicting-match-arms",
+            "type": "shell",
+            "command": "cargo test1 split_conflicting_match_arms",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "test"
+        },
+        {
             "label": "build binary",
             "type": "shell",
             "command": "cargo build --bins --release",

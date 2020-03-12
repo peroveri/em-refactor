@@ -9,6 +9,7 @@ pub enum RefactorDefinition {
     IntroduceClosure(SourceCodeRange),
     InlineMacro(SourceCodeRange),
     PullUpItemDeclaration(SourceCodeRange),
+    SplitConflictingMatchArms(SourceCodeRange),
     // CloseOverVariables(SourceCodeRange),
     // LiftClosure(SourceCodeRange),
 }
