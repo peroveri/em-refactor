@@ -1,6 +1,6 @@
 use super::utils::{map_change_from_span, get_source_from_compiler};
 use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
-use crate::refactorings::visitors::collect_ast_block;
+use crate::refactorings::visitors::ast::collect_innermost_block;
 use rustc_span::{BytePos, Span};
 use rustc_interface::interface::Compiler;
 use rustc_interface::Queries;
@@ -41,7 +41,7 @@ fn collect_item_declarations<'v>(queries: &'_ Queries<'_>, compiler: &Compiler, 
         .unwrap()
         .peek_mut();
 
-    let block = collect_ast_block(crate_, span).ok_or_else(|| RefactoringErrorInternal::invalid_selection_with_code(
+    let block = collect_innermost_block(crate_, span).ok_or_else(|| RefactoringErrorInternal::invalid_selection_with_code(
         span.lo().0,
         span.hi().0,
         &get_source_from_compiler(compiler, span)

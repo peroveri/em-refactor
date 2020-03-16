@@ -11,7 +11,7 @@ struct BlockCollector<'v> {
  * Given a selection (byte start, byte end) and file name, this visitor finds
  * the innermost block containing `pos`
  */
-pub fn collect_ast_block<'v>(crate_: &Crate, span: Span) -> Option<&Block> {
+pub fn collect_innermost_block<'v>(crate_: &Crate, span: Span) -> Option<&Block> {
     let mut v = BlockCollector {
         span,
         result: None
@@ -74,7 +74,7 @@ mod test_util {
                 .unwrap()
                 .peek_mut();
         
-            let block = collect_ast_block(crate_, create_test_span(span.0, span.1)).unwrap();
+            let block = collect_innermost_block(crate_, create_test_span(span.0, span.1)).unwrap();
             
             assert_eq!(get_source_from_compiler(c, block.span), expected);
         });
