@@ -1,53 +1,66 @@
 use super::utils::{map_change_from_span, get_source_from_compiler};
-use item_declaration_collector::collect_item_declarations;
 use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
+use crate::refactorings::visitors::collect_ast_block;
 use rustc_span::{BytePos, Span};
 use rustc_interface::interface::Compiler;
 use rustc_interface::Queries;
-
-mod item_declaration_collector;
 
 /// Given a selection within a block, contiguous statements (0..n) and an expression (0|1)
 /// It should pull up item declarations occuring at this block level
 /// These item declarations can only be found in the selection of statements (if they are item decls.)
 pub fn do_refactoring(compiler: &Compiler, queries: &'_ Queries<'_>, span: Span) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
+    // TODO: the steps should be clear from the body here
+    // Find innermost block B
+    // For each statement in B (not nested), that is item decl
+    //   if it comes from macro exp, error
+    // Delete and insert those statements at top
+    let item_declarations = collect_item_declarations(queries, compiler, span)?
+        .into_iter().filter(|s| span.contains(*s)).collect::<Vec<_>>();
+    
+    let source_map = compiler.source_map();
+    let mut res = vec![];
+    res.push(map_change_from_span(
+        source_map,
+        span.with_lo(span.lo() - BytePos(0)).shrink_to_lo(),
+        item_declarations.iter().map(|s| get_source_from_compiler(compiler, *s)).collect::<Vec<_>>().join("")
+    ));
+    for delete in item_declarations {
+        res.push(map_change_from_span(
+            source_map,
+            delete,
+            "".to_owned(),
+        ));
+    }
+    Ok(res)
+}
+
+fn collect_item_declarations<'v>(queries: &'_ Queries<'_>, compiler: &Compiler, span: Span) -> Result<Vec<Span>, RefactoringErrorInternal> {
     let (crate_, ..) = 
     &*queries
         .expansion()
         .unwrap()
         .peek_mut();
 
-    if let Some(item_declarations) = collect_item_declarations(crate_, span) {
-        if item_declarations.iter().any(|s| s.from_expansion()) {
-            return Err(RefactoringErrorInternal::invalid_selection_with_code(
-                span.lo().0,
-                span.hi().0,
-                "contains macro returning item"
-            ));
-        }
-        let item_declarations = item_declarations.iter().filter(|s| span.contains(**s)).collect::<Vec<_>>();
-        let source_map = compiler.source_map();
-        let mut res = vec![];
-        res.push(map_change_from_span(
-            source_map,
-            span.with_lo(span.lo() - BytePos(0)).shrink_to_lo(),
-            item_declarations.iter().map(|s| get_source_from_compiler(compiler, **s)).collect::<Vec<_>>().join("")
-        ));
-        for delete in item_declarations {
-            res.push(map_change_from_span(
-                source_map,
-                *delete,
-                "".to_owned(),
-            ));
-        }
-        Ok(res)
-    } else {
-        Err(RefactoringErrorInternal::invalid_selection_with_code(
+    let block = collect_ast_block(crate_, span).ok_or_else(|| RefactoringErrorInternal::invalid_selection_with_code(
+        span.lo().0,
+        span.hi().0,
+        &get_source_from_compiler(compiler, span)
+    ))?;
+
+    let items = block.stmts.iter()
+        .filter(|s| s.is_item())
+        .map(|s| s.span)
+        .collect::<Vec<_>>();
+
+    if items.iter().any(|s| s.from_expansion()) {
+        return Err(RefactoringErrorInternal::invalid_selection_with_code(
             span.lo().0,
             span.hi().0,
-            &get_source_from_compiler(compiler, span)
-        ))
+            "contains macro returning item"
+        ));
     }
+
+    Ok(items.into_iter().filter(|s| span.contains(*s)).collect::<Vec<_>>())
 }
 
 #[cfg(test)]
