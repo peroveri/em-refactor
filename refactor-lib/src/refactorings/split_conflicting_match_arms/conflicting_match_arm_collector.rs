@@ -9,7 +9,26 @@ use if_chain::if_chain;
 /// Collect all places where a given struct field occurs in a match pattern 
 /// and where it introduces a conditional binding to the field and another local
 /// 
+/// Walk patterns
+/// If or-pattern: collect conflicting bindings in those, resolving to the field
+/// for each conflicting
+///     if parent is match:
+///        append (parent, patterns, body, if-guard) to result
+///     else:
+///        append (parent, patterns) to errors
+/// 
+/// Walk match expr
+/// if sugar: find conflicting pat with reject
+/// else: find conflicting with replace
+/// Walk fn: find conflicting with reject
+/// 
+/// 
 /// # Example TODO
+/// ``` 
+/// match EXPR {
+/// S {f, g: _} | S{f: _, g: f}
+/// }
+/// ```
 pub fn collect_conflicting_match_arms(
     tcx: TyCtxt,
     struct_hir_id: HirId,
@@ -27,6 +46,16 @@ pub fn collect_conflicting_match_arms(
 
     v.field
 }
+
+// pub struct ArmResults {
+//     arms: Vec<ArmResult>
+// }
+// pub struct ArmResult {
+//     parent: MatchExpr,
+//     if_guard: Option<Expr>,
+//     body: Expr,
+//     patterns: Vec<Pattern>
+// }
 
 struct ConflictingMatchArmCollector<'v> {
     tcx: TyCtxt<'v>,
@@ -118,4 +147,33 @@ mod test {
             assert_eq!(get_source(tcx, fields[0]), "123");
         });
     }
+    // #[test]
+    // fn struct_expression_collector_x() {
+    //     run_after_analysis(quote!{
+    //         struct S { f : i32 , g : i32 }
+    //         fn f(s1: S) {
+    //             match s1 {
+    //                 S {f: f, g: _} | S {f: _, g: f} => {}
+    //             }
+    //         }
+    //     }, |tcx| {
+    //         let hir_id = get_struct_tuple_hir_id(tcx);
+    //         let fields = collect_conflicting_match_arms(tcx, hir_id, 0);
+
+    //         assert_eq!(fields.len(), 1);
+    //         assert_eq!(get_source(tcx, fields[0]), "123");
+    //     });
+    // }
+    // #[test]
+    // fn struct_expression_collector_y() {
+    //     run_after_analysis(quote!{
+    //         struct S { f : i32 , g : i32 }
+    //         fn f(s1: S) {
+    //             match s1 {
+    //                 S {f: f, g: _} | S {f: _, g: g} => {}
+    //             }
+    //         }
+    //     }, |tcx| {
+    //     });
+    // }
 }
