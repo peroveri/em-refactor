@@ -1,53 +1,11 @@
-use crate::refactorings::visitors::collect_block;
-use rustc::ty::TyCtxt;
-use rustc_span::{Span};
-use rustc_hir::{StmtKind};
+use crate::refactorings::visitors::collect_ast_block;
+use rustc_ast::ast::Crate;
+use rustc_span::Span;
 
-pub struct ItemDeclarations {
-    pub items: Vec<Span>,
-    pub selection_start: Span
-}
-
-pub fn collect_item_declarations<'v>(tcx: TyCtxt<'v>, span: Span) -> Option<ItemDeclarations> {
-    if let Some(selection) = collect_block(tcx, span) {
-        let mut items = vec![];
-
-        for stmt in selection.get_stmts().iter() {
-            match stmt.kind {
-                StmtKind::Item(item_id) => {
-                    let item = tcx.hir().item(item_id.id);
-                    items.push(item.span);
-                },
-                _ => {}
-            };
-        }
-        Some(ItemDeclarations {
-            items,
-            selection_start: selection.get_stmts().first().unwrap().span
-        })
-    } else {
-        None
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-    use quote::quote;
-    use crate::{create_test_span, run_after_analysis};
-    use crate::refactorings::utils::get_source;
-
-    #[test]
-    fn item_declaration_collector() {
-        run_after_analysis(quote! {
-            fn f ( ) { 0 ; fn foo ( ) { } foo ( ) ; }
-        }, |tcx| {
-            assert_eq!(get_source(tcx, create_test_span(10, 40)), " 0 ; fn foo ( ) { } foo ( ) ; ");
-
-            let selection = collect_item_declarations(tcx, create_test_span(10, 40)).unwrap();
-
-            assert_eq!(1, selection.items.len());
-            assert_eq!(get_source(tcx, selection.items[0]), "fn foo ( ) { }");
-        });
-    }
+pub fn collect_item_declarations<'v>(crate_: &Crate, span: Span) -> Option<Vec<Span>> {
+    let block = collect_ast_block(crate_, span)?;
+    Some(block.stmts.iter()
+        .filter(|s| s.is_item())
+        .map(|s| s.span)
+        .collect::<Vec<_>>())
 }
