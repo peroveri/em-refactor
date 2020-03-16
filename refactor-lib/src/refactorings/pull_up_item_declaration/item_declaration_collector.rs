@@ -38,13 +38,13 @@ mod test {
     use crate::refactorings::utils::get_source;
 
     #[test]
-    fn item_delcaration_collector() {
+    fn item_declaration_collector() {
         run_after_analysis(quote! {
             fn f ( ) { 0 ; fn foo ( ) { } foo ( ) ; }
         }, |tcx| {
-            assert_eq!(get_source(tcx, create_test_span(11, 29)), "0 ; fn foo ( ) { }");
+            assert_eq!(get_source(tcx, create_test_span(10, 40)), " 0 ; fn foo ( ) { } foo ( ) ; ");
 
-            let selection = collect_item_declarations(tcx, create_test_span(10, 32)).unwrap();
+            let selection = collect_item_declarations(tcx, create_test_span(10, 40)).unwrap();
 
             assert_eq!(1, selection.items.len());
             assert_eq!(get_source(tcx, selection.items[0]), "fn foo ( ) { }");

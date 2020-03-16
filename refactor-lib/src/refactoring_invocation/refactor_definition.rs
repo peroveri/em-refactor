@@ -31,7 +31,7 @@ pub struct SourceCodeRange {
     pub to: u32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct RefactoringErrorInternal {
     pub code: InternalErrorCodes,
     pub message: String
