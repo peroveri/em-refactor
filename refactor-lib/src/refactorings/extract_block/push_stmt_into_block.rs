@@ -4,7 +4,7 @@ use rustc_hir::BodyId;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
 
-pub fn push_stmts_into_block(
+pub fn collect_variables_overlapping_span(
     tcx: TyCtxt,
     body_id: BodyId,
     span: Span,

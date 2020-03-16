@@ -15,7 +15,7 @@ fn extract_block(
     span: Span,
     source: String,
 ) -> Result<String, RefactoringErrorInternal> {
-    let (decls, ids) = push_stmt_into_block::push_stmts_into_block(tcx, body_id, span);
+    let (decls, ids) = push_stmt_into_block::collect_variables_overlapping_span(tcx, body_id, span);
     let decls_fmt = decls.join(", ");
     let ids_fmt = ids.join(", ");
 
