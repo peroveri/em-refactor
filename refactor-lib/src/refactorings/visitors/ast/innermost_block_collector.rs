@@ -1,10 +1,11 @@
-use rustc_ast::ast::{Block, Crate};
-use rustc_ast::visit::{Visitor, walk_block, walk_crate};
+use rustc_ast::ast::{Block, Crate, NodeId};
+use rustc_ast::visit::{FnKind, Visitor, walk_block, walk_crate, walk_fn};
 use rustc_span::Span;
 
 struct BlockCollector<'v> {
     span: Span,
-    result: Option<&'v Block>
+    result: Option<&'v Block>,
+    in_fn: i32
 }
 
 /**
@@ -14,7 +15,8 @@ struct BlockCollector<'v> {
 pub fn collect_innermost_block<'v>(crate_: &Crate, span: Span) -> Option<&Block> {
     let mut v = BlockCollector {
         span,
-        result: None
+        result: None,
+        in_fn: 0
     };
 
     walk_crate(&mut v, crate_);
@@ -23,7 +25,17 @@ pub fn collect_innermost_block<'v>(crate_: &Crate, span: Span) -> Option<&Block>
 }
 
 impl<'v> Visitor<'v> for BlockCollector<'v> {
+    fn visit_fn(&mut self, fk: FnKind<'v>, s: Span, _: NodeId) {
+        if s.contains(self.span) {
+            self.in_fn += 1;
+            walk_fn(self, fk, s);
+            self.in_fn -= 1;
+        }
+    }
     fn visit_block(&mut self, block: &'v Block) {
+        if self.in_fn <= 0 {
+            return;
+        }
         walk_block(self, block);
         if self.result.is_some() {
             return;
@@ -36,7 +48,7 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
 
 #[cfg(test)]
 mod test {
-    use super::test_util::assert_success;
+    use super::test_util::{assert_fail, assert_success};
     use quote::quote;
 
     #[test]
@@ -56,6 +68,18 @@ mod test {
         assert_success(quote! {
             fn foo ( ) { { 1 ; 2 ; } }
         }, (14, 23), "{ 1 ; 2 ; }");
+    }
+    #[test]
+    fn block_collector_shouldnt_collect_const() {
+        assert_fail(quote! {
+            const _ : i32 = { 1 } ;
+        }, (17, 20));
+    }
+    #[test]
+    fn block_collector_shouldnt_collect() {
+        assert_fail(quote! {
+            fn f ( ) { }
+        }, (0, 12));
     }
 }
 
@@ -77,6 +101,17 @@ mod test_util {
             let block = collect_innermost_block(crate_, create_test_span(span.0, span.1)).unwrap();
             
             assert_eq!(get_source_from_compiler(c, block.span), expected);
+        });
+    }
+    pub fn assert_fail(prog: TokenStream, span: (u32, u32)) {
+        run_after_expansion(prog, |queries, _| {
+            let (crate_, ..) = 
+            &*queries
+                .expansion()
+                .unwrap()
+                .peek_mut();
+        
+            assert!(collect_innermost_block(crate_, create_test_span(span.0, span.1)).is_none());
         });
     }
 }
