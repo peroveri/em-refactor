@@ -1,9 +1,10 @@
-use rustc_hir::{Arm, Block, BodyId, ExprKind, FnDecl, HirId, MatchSource };
-use rustc_hir::intravisit::{NestedVisitorMap, FnKind, walk_fn, walk_crate, Visitor, walk_expr, walk_block};
+use rustc_hir::{Block, BodyId, FnDecl, HirId };
+use rustc_hir::intravisit::{NestedVisitorMap, FnKind, walk_block, walk_fn, walk_crate, Visitor};
 use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::{BytePos, Span};
 use crate::refactorings::utils::get_source;
+use super::walk_desugars;
 
 struct BlockCollector<'v> {
     tcx: TyCtxt<'v>,
@@ -68,13 +69,7 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
 
     fn visit_block(&mut self, block: &'v Block) {
         if let Some(expr) = &block.expr {
-            if let ExprKind::Match(_, ref arms, MatchSource::WhileDesugar) = (*expr).kind
-            {
-                if let Some(arm) = arms.first() {
-                    let Arm { body, .. } = arm;
-                    walk_expr(self, &**body);
-                }
-            }
+            walk_desugars(self, &expr.kind);
         }
         if self.selection_contains_span(block.span) {
             self.selected_block = Some((block, *self.body_ids.last().unwrap()));
