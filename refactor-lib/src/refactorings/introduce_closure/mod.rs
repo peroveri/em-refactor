@@ -1,12 +1,12 @@
 use super::utils::{map_change_from_span, get_source};
 use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
-use block_collector::collect_block;
+use innermost_contained_block_collector::collect_innermost_contained_block;
 use cf_expr_collector::{collect_cfs};
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
 use cf_collection::*;
 
-mod block_collector;
+mod innermost_contained_block_collector;
 mod cf_collection;
 mod cf_expr_collector;
 
@@ -27,7 +27,7 @@ fn get_call(tcx: TyCtxt, span: Span) -> FileStringReplacement {
 /// - Break, continue, return, `?` are not currently handled, so they must be preventet
 /// 
 pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
-    if let Some(result) = collect_block(tcx, span) {
+    if let Some(result) = collect_innermost_contained_block(tcx, span) {
         // option 1: the selection is just a block
         // option 2: the selection is an assignment where the rhs is a block
 

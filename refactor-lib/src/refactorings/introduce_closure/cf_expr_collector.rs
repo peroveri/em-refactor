@@ -139,10 +139,10 @@ mod test {
         }
     }
     fn get_block<'v>(tcx: TyCtxt<'v>) -> HirId {
-        collect_block(tcx, create_test_span(43, 80)).unwrap().0.hir_id
+        collect_innermost_contained_block(tcx, create_test_span(43, 80)).unwrap().0.hir_id
     }
     fn get_block_2<'v>(tcx: TyCtxt<'v>) -> HirId {
-        collect_block(tcx, create_test_span(26, 40)).unwrap().0.hir_id
+        collect_innermost_contained_block(tcx, create_test_span(26, 40)).unwrap().0.hir_id
     }
 
     #[test]
@@ -238,7 +238,7 @@ mod test {
         });
     }
     fn get_block_3<'v>(tcx: TyCtxt<'v>, lo: u32, hi: u32) -> HirId {
-        collect_block(tcx, create_test_span(lo, hi)).unwrap().0.hir_id
+        collect_innermost_contained_block(tcx, create_test_span(lo, hi)).unwrap().0.hir_id
     }
     #[test]
     fn cf_expr_collector_should_collect_expr_2() {

@@ -29,7 +29,7 @@ fn trim_span(tcx: TyCtxt, mut span: Span) -> Span {
  * or a single block expression.
  * The block expression should not be the body of a function, loop, etc.
  */
-pub fn collect_block<'v>(tcx: TyCtxt<'v>, pos: Span) -> Option<(&'v Block<'v>, BodyId)> {
+pub fn collect_innermost_contained_block<'v>(tcx: TyCtxt<'v>, pos: Span) -> Option<(&'v Block<'v>, BodyId)> {
     let mut v = BlockCollector {
         tcx,
         pos: trim_span(tcx, pos),
@@ -131,7 +131,7 @@ mod test {
 
     fn assert1(tcx: TyCtxt, left: u32, right: u32, s: &str) {
         let span = create_test_span(left, right);
-        let block = collect_block(tcx, span);
+        let block = collect_innermost_contained_block(tcx, span);
         assert!(block.is_some(), format!("position: ({}, {}) should result in a block. source: `{}`", left, right, get_source(tcx, span)));
         let block = block.unwrap();
         assert_eq!(get_source(tcx, block.0.span), s);
@@ -185,7 +185,7 @@ mod test {
     fn block_collector_should_not_collect_invalid_selections() {
         run_after_analysis(create_program_match_1(), |tcx| {
             for i in invalid() {
-                let block = collect_block(tcx, create_test_span(i, i));
+                let block = collect_innermost_contained_block(tcx, create_test_span(i, i));
                 assert!(block.is_none(), format!("position: ({}, {}) shouldn't result in a block", i, i));
             }
         });
@@ -231,7 +231,7 @@ mod test {
         });
     }
     fn assert_block_collects(tcx: TyCtxt, from: u32, to: u32, s: &str) {
-        let block = collect_block(tcx, create_test_span(from, to));
+        let block = collect_innermost_contained_block(tcx, create_test_span(from, to));
         assert!(block.is_some(), format!("position: ({}, {}) shouldn't result in a block", from, to));
         assert_eq!(s, get_source(tcx, block.unwrap().0.span));
     }
@@ -240,7 +240,7 @@ mod test {
         run_after_analysis(quote! {
             fn foo ( ) { loop { let _ = { if true { } 1 } ; } }
         }, |tcx| {
-            let block = collect_block(tcx, create_test_span(28, 45));
+            let block = collect_innermost_contained_block(tcx, create_test_span(28, 45));
             assert!(block.is_some(), format!("position: ({}, {}) should result in a block", 28, 45));
         });
     }
@@ -255,14 +255,14 @@ mod test_utils {
 
     pub fn assert_success(prog: TokenStream, span: (u32, u32), expected: &str) {
         run_after_analysis(prog, |tcx| {
-            let (block, _) = collect_block(tcx, create_test_span(span.0, span.1)).unwrap();
+            let (block, _) = collect_innermost_contained_block(tcx, create_test_span(span.0, span.1)).unwrap();
             
             assert_eq!(get_source(tcx, block.span), expected);
         });
     }
     pub fn assert_fail(prog: TokenStream, span: (u32, u32)) {
         run_after_analysis(prog, |tcx| {
-            assert!(collect_block(tcx, create_test_span(span.0, span.1)).is_none());
+            assert!(collect_innermost_contained_block(tcx, create_test_span(span.0, span.1)).is_none());
         });
     }
 }
