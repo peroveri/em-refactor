@@ -8,15 +8,10 @@ use crate::refactorings::utils::get_source;
 struct BlockCollector<'v> {
     tcx: TyCtxt<'v>,
     pos: Span,
-    body_id: Option<BodyId>,
-    selected_block: Option<&'v Block<'v>>
+    body_ids: Vec<BodyId>,
+    selected_block: Option<(&'v Block<'v>, BodyId)>
 }
 
-pub struct BlockInsideBlock<'v> {
-    pub topmost_block: BodyId,
-    // pub selected_block_id: HirId,
-    pub selected_block: &'v Block<'v>
-}
 fn trim_span(tcx: TyCtxt, mut span: Span) -> Span {
     let source = get_source(tcx, span);
     if let Some(d) = source.find(|c| !char::is_whitespace(c)) {
@@ -34,24 +29,17 @@ fn trim_span(tcx: TyCtxt, mut span: Span) -> Span {
  * or a single block expression.
  * The block expression should not be the body of a function, loop, etc.
  */
-pub fn collect_block(tcx: TyCtxt, pos: Span) -> Option<BlockInsideBlock> {
+pub fn collect_block<'v>(tcx: TyCtxt<'v>, pos: Span) -> Option<(&'v Block<'v>, BodyId)> {
     let mut v = BlockCollector {
         tcx,
         pos: trim_span(tcx, pos),
-        body_id: None,
+        body_ids: vec![],
         selected_block: None
     };
 
     walk_crate(&mut v, tcx.hir().krate());
 
-    if let (Some(a), Some(b)) = (v.body_id, v.selected_block) {
-        Some(BlockInsideBlock {
-            topmost_block: a,
-            selected_block: b
-        })
-    } else {
-        None
-    }
+    v.selected_block
 }
 
 impl BlockCollector<'_> {
@@ -73,8 +61,9 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
         s: Span,
         id: HirId,
     ) {
-        self.body_id = Some(b);
+        self.body_ids.push(b);
         walk_fn(self, fk, fd, b, s, id);
+        self.body_ids.pop();
     }
 
     fn visit_block(&mut self, block: &'v Block) {
@@ -88,7 +77,7 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
             }
         }
         if self.selection_contains_span(block.span) {
-            self.selected_block = Some(block);
+            self.selected_block = Some((block, *self.body_ids.last().unwrap()));
             return;
         }
         if !block.span.contains(self.pos) {
@@ -145,7 +134,7 @@ mod test {
         let block = collect_block(tcx, span);
         assert!(block.is_some(), format!("position: ({}, {}) should result in a block. source: `{}`", left, right, get_source(tcx, span)));
         let block = block.unwrap();
-        assert_eq!(get_source(tcx, block.selected_block.span), s);
+        assert_eq!(get_source(tcx, block.0.span), s);
     }
 
     #[test]
@@ -244,7 +233,7 @@ mod test {
     fn assert_block_collects(tcx: TyCtxt, from: u32, to: u32, s: &str) {
         let block = collect_block(tcx, create_test_span(from, to));
         assert!(block.is_some(), format!("position: ({}, {}) shouldn't result in a block", from, to));
-        assert_eq!(s, get_source(tcx, block.unwrap().selected_block.span));
+        assert_eq!(s, get_source(tcx, block.unwrap().0.span));
     }
     #[test]
     fn block_collector_should_collect_6() {
@@ -253,6 +242,27 @@ mod test {
         }, |tcx| {
             let block = collect_block(tcx, create_test_span(28, 45));
             assert!(block.is_some(), format!("position: ({}, {}) should result in a block", 28, 45));
+        });
+    }
+}
+
+#[cfg(test)]
+mod test_utils {
+    use super::*;
+    use quote::__rt::TokenStream;
+    use crate::{create_test_span, run_after_analysis};
+    use crate::refactorings::utils::get_source;
+
+    pub fn assert_success(prog: TokenStream, span: (u32, u32), expected: &str) {
+        run_after_analysis(prog, |tcx| {
+            let (block, _) = collect_block(tcx, create_test_span(span.0, span.1)).unwrap();
+            
+            assert_eq!(get_source(tcx, block.span), expected);
+        });
+    }
+    pub fn assert_fail(prog: TokenStream, span: (u32, u32)) {
+        run_after_analysis(prog, |tcx| {
+            assert!(collect_block(tcx, create_test_span(span.0, span.1)).is_none());
         });
     }
 }

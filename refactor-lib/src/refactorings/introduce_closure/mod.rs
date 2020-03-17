@@ -33,7 +33,7 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileStringReplaceme
 
         // point of closure decl: immediately before this statement
 
-        let cf_expr = collect_cfs(tcx, result.selected_block.hir_id);
+        let cf_expr = collect_cfs(tcx, result.0.hir_id);
 
         let replacements = 
         if cf_expr.has_cfs() {
@@ -43,7 +43,7 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileStringReplaceme
 
             map_change_from_span(tcx.sess.source_map(), span, anon_inv)
         } else {
-            get_call(tcx, result.selected_block.span)
+            get_call(tcx, result.0.span)
         };
 
 
