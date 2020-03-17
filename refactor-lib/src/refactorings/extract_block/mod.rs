@@ -79,9 +79,9 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileStringReplaceme
 
 #[cfg(test)]
 mod test {
-    use super::test_util::{assert_success, assert_err};
+    use super::test_util::{assert_success/*, assert_err*/};
     use quote::quote;
-    use super::RefactoringErrorInternal;
+    // use super::RefactoringErrorInternal;
 
     #[test]
     fn extract_block_single_expr() {
@@ -111,11 +111,11 @@ mod test_util {
             assert_eq!(res, expected);
         })
     }
-    pub fn assert_err(prog: quote::__rt::TokenStream, span: (u32, u32), expected: RefactoringErrorInternal) {
-        run_after_analysis(prog, | tcx | {
-            let actual = do_refactoring(tcx, create_test_span(span.0, span.1)).unwrap_err();
+    // pub fn assert_err(prog: quote::__rt::TokenStream, span: (u32, u32), expected: RefactoringErrorInternal) {
+    //     run_after_analysis(prog, | tcx | {
+    //         let actual = do_refactoring(tcx, create_test_span(span.0, span.1)).unwrap_err();
 
-            assert_eq!(actual, expected);
-        })
-    }
+    //         assert_eq!(actual, expected);
+    //     })
+    // }
 }
