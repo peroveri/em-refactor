@@ -83,161 +83,30 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
 }
 
 #[cfg(test)]
-#[allow(non_upper_case_globals)]
 mod test {
-    // either 
-    // 1. the selection should have range of 0 and be positioned
-    // to the left of a block, there should only be whitespace between 
-    // the position and the block
-    // 2. the selection contains a block (optionally padded by whitespace)
-    use super::*;
-    use crate::{create_test_span, run_after_analysis};
-    use crate::refactorings::utils::get_source;
+    use super::test_utils::{/*assert_fail,*/ assert_success};
     use quote::quote;
-    use quote::__rt::TokenStream;
-    const block_0_lpos: fn() -> Vec<u32> = || {vec![10, 11]};
-    // const block_0_rpos: fn() -> Vec<u32> = || {vec![30]};
-    const block_1_lpos: fn() -> Vec<u32> = || {vec![12, 13]};
-    const block_1_rpos: fn() -> Vec<u32> = || {vec![18, 19]};
-    const block_2_lpos: fn() -> Vec<u32> = || {vec![20, 21]};
-    const block_2_rpos: fn() -> Vec<u32> = || {vec![26, 27]};
-    const program_length: u32 = 30;
-    const block_0: &str = "{ { 1 } ; { 2 } ; }";
-    const block_1: &str = "{ 1 }";
-    const block_2: &str = "{ 2 }";
-    fn invalid() -> Vec<u32> {
-        let mut ret = vec![];
-        let mut valid = block_0_lpos();
-        valid.extend(block_1_lpos());
-        valid.extend(block_2_lpos());
-        for i in 0..program_length {
-            if !valid.contains(&i) {
-                ret.push(i);
-            }
-        }
-        ret
-    }
-
-    fn create_program_match_1() -> TokenStream {
-        quote! {
-            fn foo ( ) { { 1 } ; { 2 } ; }
-        }
-    }
-
-    fn assert1(tcx: TyCtxt, left: u32, right: u32, s: &str) {
-        let span = create_test_span(left, right);
-        let block = collect_innermost_contained_block(tcx, span);
-        assert!(block.is_some(), format!("position: ({}, {}) should result in a block. source: `{}`", left, right, get_source(tcx, span)));
-        let block = block.unwrap();
-        assert_eq!(get_source(tcx, block.0.span), s);
-    }
-
+    
     #[test]
-    fn block_collector_test_positions() {
-        run_after_analysis(create_program_match_1(), |tcx| {
-            assert_eq!(get_source(tcx, create_test_span(11, 30)), block_0);
-            assert_eq!(get_source(tcx, create_test_span(13, 18)), block_1);
-            assert_eq!(get_source(tcx, create_test_span(21, 26)), block_2);
-        });
+    fn collect_innermost_contained_block_1() {
+        let p = quote! {
+            fn f ( ) { { } }
+        };
+        assert_success(p.clone(), (11, 11), "{ }");
+        assert_success(p.clone(), (10, 15), "{ }");
+        // TODO: check parent in AST instead of HIR?
+        // assert_fail(p.clone(), (9, 16));
+        // assert_fail(p.clone(), (9, 9));
     }
     #[test]
-    fn block_collector_should_collect_valid_position_1() {
-        run_after_analysis(create_program_match_1(), |tcx| {
-            for i in block_1_lpos().iter().skip(1) {
-                assert1(tcx, *i, *i, block_1);
-            }
-        });
-    }
-    #[test]
-    fn block_collector_should_collect_valid_position_2() {
-        run_after_analysis(create_program_match_1(), |tcx| {
-            for i in block_2_lpos().iter().skip(1) {
-                assert1(tcx, *i, *i, block_2);
-            }
-        });
-    }
-    #[test]
-    fn block_collector_should_collect_valid_selections_1() {
-        run_after_analysis(create_program_match_1(), |tcx| {
-            for i in block_1_lpos() {
-                for j in block_1_rpos() {
-                    assert1(tcx, i, j, block_1);
-                }
-            }
-        });
-    }
-    #[test]
-    fn block_collector_should_collect_valid_selections_2() {
-        run_after_analysis(create_program_match_1(), |tcx| {
-            for i in block_2_lpos() {
-                for j in block_2_rpos() {
-                    assert1(tcx, i, j, block_2);
-                }
-            }
-        });
-    }
-    #[test]
-    fn block_collector_should_not_collect_invalid_selections() {
-        run_after_analysis(create_program_match_1(), |tcx| {
-            for i in invalid() {
-                let block = collect_innermost_contained_block(tcx, create_test_span(i, i));
-                assert!(block.is_none(), format!("position: ({}, {}) shouldn't result in a block", i, i));
-            }
-        });
-    }
-    #[test]
-    fn block_collector_should_collect_1() {
-        run_after_analysis(quote! {
-            fn foo ( ) { { } }
-        }, |tcx| {
-            assert_block_collects(tcx, 13, 16, "{ }");
-        });
-    }
-    #[test]
-    fn block_collector_should_collect_2() {
-        run_after_analysis(quote! {
-            fn foo ( ) { if true { { } } }
-        }, |tcx| {
-            assert_block_collects(tcx, 23, 26, "{ }");
-        });
-    }
-    #[test]
-    fn block_collector_should_collect_3() {
-        run_after_analysis(quote! {
-            fn foo ( ) { while true { { } } }
-        }, |tcx| {
-            assert_block_collects(tcx, 23, 29, "{ }");
-        });
-    }
-    #[test]
-    fn block_collector_should_collect_4() {
-        run_after_analysis(quote! {
-            fn foo ( ) { for i in 0 .. 1 { { if i == 0 { } } } }
-        }, |tcx| {
-            assert_block_collects(tcx, 31, 48, "{ if i == 0 { } }");
-        });
-    }
-    #[test]
-    fn block_collector_should_collect_5() {
-        run_after_analysis(quote! {
-            fn foo ( ) { while true { { if true { } } } }
-        }, |tcx| {
-            assert_block_collects(tcx, 26, 41, "{ if true { } }");
-        });
-    }
-    fn assert_block_collects(tcx: TyCtxt, from: u32, to: u32, s: &str) {
-        let block = collect_innermost_contained_block(tcx, create_test_span(from, to));
-        assert!(block.is_some(), format!("position: ({}, {}) shouldn't result in a block", from, to));
-        assert_eq!(s, get_source(tcx, block.unwrap().0.span));
-    }
-    #[test]
-    fn block_collector_should_collect_6() {
-        run_after_analysis(quote! {
-            fn foo ( ) { loop { let _ = { if true { } 1 } ; } }
-        }, |tcx| {
-            let block = collect_innermost_contained_block(tcx, create_test_span(28, 45));
-            assert!(block.is_some(), format!("position: ({}, {}) should result in a block", 28, 45));
-        });
+    fn collect_innermost_contained_block_should_collect_while() {
+        let p = quote! {
+            fn f ( ) { while { true } { { 1 ; } } }
+        };
+        // assert_fail(p.clone(), (9, 39));
+        // assert_fail(p.clone(), (26, 37));
+        assert_success(p.clone(), (17, 25), "{ true }");
+        assert_success(p.clone(), (28, 35), "{ 1 ; }");
     }
 }
 
@@ -255,9 +124,9 @@ mod test_utils {
             assert_eq!(get_source(tcx, block.span), expected);
         });
     }
-    pub fn assert_fail(prog: TokenStream, span: (u32, u32)) {
-        run_after_analysis(prog, |tcx| {
-            assert!(collect_innermost_contained_block(tcx, create_test_span(span.0, span.1)).is_none());
-        });
-    }
+    // pub fn assert_fail(prog: TokenStream, span: (u32, u32)) {
+    //     run_after_analysis(prog, |tcx| {
+    //         assert!(collect_innermost_contained_block(tcx, create_test_span(span.0, span.1)).is_none());
+    //     });
+    // }
 }
