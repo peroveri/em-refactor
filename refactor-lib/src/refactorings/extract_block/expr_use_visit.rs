@@ -97,7 +97,7 @@ mod test {
             fn foo ( ) { let i = & mut 0 ; let j = i ; mut_ ( j ) ; } 
             fn mut_(_: &mut i32) {}
         }, |tcx| {
-            let body_id = collect_innermost_block(tcx, create_test_span(31, 42)).unwrap().function_body_id;
+            let (_, body_id) = collect_innermost_block(tcx, create_test_span(31, 42)).unwrap();
             let vars = collect_vars(tcx, body_id, create_test_span(31, 42));
 
 
@@ -113,7 +113,7 @@ mod test {
             fn foo ( ) { let i = & mut 0 ; let j = i ; borrow ( j ) ; } 
             fn borrow(_: &i32) {}
         }, |tcx| {
-            let body_id = collect_innermost_block(tcx, create_test_span(31, 42)).unwrap().function_body_id;
+            let (_, body_id) = collect_innermost_block(tcx, create_test_span(31, 42)).unwrap();
             let vars = collect_vars(tcx, body_id, create_test_span(31, 42));
 
             assert_eq!(1, vars.return_values().len());

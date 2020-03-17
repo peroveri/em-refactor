@@ -98,7 +98,7 @@ fn cli_output_json() {
         file_name: "src/main.rs".to_owned(),
         line_end: 1,
         line_start: 1,
-        replacement: "let s = \n{\nlet s = \"Hello, world!\";\ns};".to_owned(),
+        replacement: "let s = \n{let s = \"Hello, world!\";s};".to_owned(),
     };
     let expected = vec![
         create_output("hello_world", false, &replacement),

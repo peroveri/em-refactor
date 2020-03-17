@@ -1,5 +1,5 @@
 use rustc::ty::{self, TyCtxt};
-use rustc_hir::{BodyId, Node, PatKind, ExprKind};
+use rustc_hir::{BodyId, Node, PatKind};
 use rustc_infer::infer::{TyCtxtInferExt};
 use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Place, PlaceBase};
 use rustc_span::Span;
@@ -93,7 +93,7 @@ mod test {
         run_after_analysis( quote! {
             fn foo ( s1 : S ) { if let S { f , g : 1 } | S { f : 1, g : f } = s1 { let _ : i32 = f ; } } struct S { f : i32 , g : i32 }
         }, |tcx| {
-            let body_id = collect_innermost_block(tcx, create_test_span(20, 91)).unwrap().function_body_id;
+            let (_, body_id) = collect_innermost_block(tcx, create_test_span(20, 91)).unwrap();
             collect_vars(tcx, body_id);
         });
     }

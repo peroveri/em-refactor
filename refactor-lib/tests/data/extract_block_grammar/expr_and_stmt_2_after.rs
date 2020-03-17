@@ -1,8 +1,6 @@
 fn baz() -> i32 {
     foo();
-    {
-bar();
-}
+    {bar();}
     1
 }
 fn foo() {}
