@@ -5,10 +5,6 @@ use rustc::ty::TyCtxt;
 use rustc_span::{BytePos, Span};
 use crate::refactorings::utils::get_source;
 
-/**
- * Given a selection (byte start, byte end) and file name, this visitor finds
- * the innermost block containing `pos`
- */
 struct BlockCollector<'v> {
     tcx: TyCtxt<'v>,
     pos: Span,
@@ -33,7 +29,11 @@ fn trim_span(tcx: TyCtxt, mut span: Span) -> Span {
     span
 }
 
-
+/**
+ * Span should either contain an assignment expression where the right hand side is a block expression
+ * or a single block expression.
+ * The block expression should not be the body of a function, loop, etc.
+ */
 pub fn collect_block(tcx: TyCtxt, pos: Span) -> Option<BlockInsideBlock> {
     let mut v = BlockCollector {
         tcx,
