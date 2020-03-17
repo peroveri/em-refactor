@@ -1,6 +1,6 @@
-use rustc_span::Span;
-use super::get_source;
 use rustc::ty::TyCtxt;
+use rustc_span::Span;
+use crate::refactorings::utils::get_source;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CfType {

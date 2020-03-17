@@ -1,13 +1,8 @@
 use super::utils::{map_change_from_span, get_source};
 use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
-use crate::refactorings::visitors::hir::collect_innermost_contained_block;
-use cf_expr_collector::collect_cfs;
+use crate::refactorings::visitors::hir::{collect_cfs, collect_innermost_contained_block};
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
-use cf_collection::*;
-
-mod cf_collection;
-mod cf_expr_collector;
 
 fn get_call(tcx: TyCtxt, span: Span) -> FileStringReplacement {
     map_change_from_span(tcx.sess.source_map(), span, format!("(|| {})()", get_source(tcx, span)))
