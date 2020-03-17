@@ -40,8 +40,6 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileStringReplaceme
             get_call(tcx, result.0.span)
         };
 
-
-
         Ok(vec![
             replacements,
         ])
@@ -49,4 +47,40 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileStringReplaceme
     } else {
         Err(RefactoringErrorInternal::invalid_selection(span.lo().0, span.hi().0))
     }
+}
+
+#[cfg(test)]
+mod test {
+    use super::test_util::{assert_success/*, assert_err*/};
+    use quote::quote;
+    // use super::RefactoringErrorInternal;
+
+    #[test]
+    fn extract_block_single_expr1() {
+        assert_success(quote! {
+            fn f ( ) { { 1 ; } }
+        }, (11, 18),
+        "fn f ( ) { (|| { 1 ; })() }");
+    }
+}
+#[cfg(test)]
+mod test_util {
+    use super::*;
+    use crate::{create_test_span, run_after_analysis};
+    use crate::refactoring_invocation::MyRefactorCallbacks;
+    pub fn assert_success(prog: quote::__rt::TokenStream, span: (u32, u32), expected: &str) {
+        run_after_analysis(prog, | tcx | {
+            let actual = do_refactoring(tcx, create_test_span(span.0, span.1)).unwrap();
+            let res = MyRefactorCallbacks::get_file_content(&actual, tcx.sess.source_map()).unwrap();
+
+            assert_eq!(res, expected);
+        })
+    }
+    // pub fn assert_err(prog: quote::__rt::TokenStream, span: (u32, u32), expected: RefactoringErrorInternal) {
+    //     run_after_analysis(prog, | tcx | {
+    //         let actual = do_refactoring(tcx, create_test_span(span.0, span.1)).unwrap_err();
+
+    //         assert_eq!(actual, expected);
+    //     })
+    // }
 }
