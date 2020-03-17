@@ -1,12 +1,11 @@
 use super::utils::{map_change_from_span, get_source};
 use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
-use innermost_contained_block_collector::collect_innermost_contained_block;
-use cf_expr_collector::{collect_cfs};
+use crate::refactorings::visitors::hir::collect_innermost_contained_block;
+use cf_expr_collector::collect_cfs;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
 use cf_collection::*;
 
-mod innermost_contained_block_collector;
 mod cf_collection;
 mod cf_expr_collector;
 
