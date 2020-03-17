@@ -15,7 +15,7 @@ struct BlockCollector<'v> {
     result: Option<BlockSelection<'v>>
 }
 
-pub fn collect_block<'v>(tcx: TyCtxt<'v>, pos: Span) -> Option<BlockSelection<'v>> {
+pub fn collect_innermost_block<'v>(tcx: TyCtxt<'v>, pos: Span) -> Option<BlockSelection<'v>> {
     let mut v = BlockCollector {
         tcx,
         pos,
@@ -145,7 +145,7 @@ mod test {
     #[test]
     fn block_collector_expr1() {
         run_after_analysis(create_program_1(), |tcx| {
-            let block = collect_block(tcx, create_test_span(EXPR_SPAN.0, EXPR_SPAN.1));
+            let block = collect_innermost_block(tcx, create_test_span(EXPR_SPAN.0, EXPR_SPAN.1));
 
             if !block.is_some() {
                 panic!(get_source(tcx, create_test_span(EXPR_SPAN.0, EXPR_SPAN.1)));
@@ -160,7 +160,7 @@ mod test {
     #[test]
     fn block_collector_bar() {
         run_after_analysis(create_program_1(), |tcx| {
-            let block = collect_block(tcx, create_test_span(BAR_SPAN.0, BAR_SPAN.1));
+            let block = collect_innermost_block(tcx, create_test_span(BAR_SPAN.0, BAR_SPAN.1));
 
             if !block.is_some() {
                 panic!(get_source(tcx, create_test_span(BAR_SPAN.0, BAR_SPAN.1)));
@@ -178,7 +178,7 @@ mod test {
     #[test]
     fn block_collector_baz() {
         run_after_analysis(create_program_1(), |tcx| {
-            let block = collect_block(tcx, create_test_span(BAZ_SPAN.0, BAZ_SPAN.1));
+            let block = collect_innermost_block(tcx, create_test_span(BAZ_SPAN.0, BAZ_SPAN.1));
 
             if !block.is_some() {
                 panic!(get_source(tcx, create_test_span(BAZ_SPAN.0, BAZ_SPAN.1)));
@@ -196,7 +196,7 @@ mod test {
     #[test]
     fn block_collector_baz_expr() {
         run_after_analysis(create_program_1(), |tcx| {
-            let block = collect_block(tcx, create_test_span(BAZ_SPAN.0, EXPR_SPAN.1));
+            let block = collect_innermost_block(tcx, create_test_span(BAZ_SPAN.0, EXPR_SPAN.1));
 
             if !block.is_some() {
                 panic!(get_source(tcx, create_test_span(BAZ_SPAN.0, EXPR_SPAN.1)));
@@ -226,7 +226,7 @@ mod test {
             let block11 = 86;
             let span11 = (cfg10, block11);
             let span = span11;
-            let block = collect_block(tcx, create_test_span(span.0, span.1));
+            let block = collect_innermost_block(tcx, create_test_span(span.0, span.1));
 
             if !block.is_some() {
                 panic!(get_source(tcx, create_test_span(span.0, span.1)));

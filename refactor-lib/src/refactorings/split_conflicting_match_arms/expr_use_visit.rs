@@ -86,14 +86,14 @@ mod test {
     use super::*;
     use quote::quote;
     use crate::{create_test_span, run_after_analysis};
-    use super::super::super::visitors::collect_block;
+    use super::super::super::visitors::hir::collect_innermost_block;
 
     #[test]
     fn expr_use_visit_should_collect_mut1() {
         run_after_analysis( quote! {
             fn foo ( s1 : S ) { if let S { f , g : 1 } | S { f : 1, g : f } = s1 { let _ : i32 = f ; } } struct S { f : i32 , g : i32 }
         }, |tcx| {
-            let body_id = collect_block(tcx, create_test_span(20, 91)).unwrap().function_body_id;
+            let body_id = collect_innermost_block(tcx, create_test_span(20, 91)).unwrap().function_body_id;
             collect_vars(tcx, body_id);
         });
     }
