@@ -10,7 +10,7 @@ use super::{ControlFlowExpr, ControlFlowExprCollection};
  * Searches for break, continue,
  * special break-loop!
  */
-struct BlockCollector<'v> {
+struct CfExprCollector<'v> {
     tcx: TyCtxt<'v>,
     block_span: Span,
     res: Vec<ControlFlowExpr>
@@ -24,7 +24,7 @@ pub fn collect_cfs(tcx: TyCtxt<'_>, block_hir_id: HirId) -> ControlFlowExprColle
         panic!("");
     };
 
-    let mut v = BlockCollector {
+    let mut v = CfExprCollector {
         tcx,
         block_span: block.span,
         res: vec![]
@@ -41,7 +41,7 @@ pub fn collect_cfs(tcx: TyCtxt<'_>, block_hir_id: HirId) -> ControlFlowExprColle
     ControlFlowExprCollection { items: v.res }
 }
 
-impl BlockCollector<'_> {
+impl CfExprCollector<'_> {
     fn points_outside(&self, dest: &Destination) -> bool {
         // TODO: span here is the whole while/for/.. expression
         let hir_id = dest.target_id.unwrap();
@@ -56,7 +56,7 @@ impl BlockCollector<'_> {
     }
 }
 
-impl<'v> Visitor<'v> for BlockCollector<'v> {
+impl<'v> Visitor<'v> for CfExprCollector<'v> {
     type Map = Map<'v>;
     fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, Self::Map> {
         NestedVisitorMap::All(&self.tcx.hir())
