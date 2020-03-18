@@ -1,4 +1,4 @@
-use rustc_ast::ast::{Block, Mac};
+use rustc_ast::ast::{Block, MacCall};
 use rustc_ast::visit::{Visitor, walk_block, walk_crate};
 use rustc_span::Span;
 
@@ -29,7 +29,7 @@ impl<'ast> Visitor<'ast> for ExtractBlockCandidateVisitor {
         walk_block(self, b);
     }
 
-    fn visit_mac(&mut self, _mac: &'ast Mac) {
+    fn visit_mac(&mut self, _mac: &'ast MacCall) {
         // Override to prevent `visit_mac disabled by default`
     }
 }

@@ -58,8 +58,8 @@ impl CfExprCollector<'_> {
 
 impl<'v> Visitor<'v> for CfExprCollector<'v> {
     type Map = Map<'v>;
-    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<'this, Self::Map> {
-        NestedVisitorMap::All(&self.tcx.hir())
+    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<Self::Map> {
+        NestedVisitorMap::All(self.tcx.hir())
     }
     fn visit_fn(
         &mut self,
