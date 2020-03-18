@@ -56,10 +56,17 @@ mod test {
     // use super::RefactoringErrorInternal;
 
     #[test]
-    fn extract_block_single_expr1() {
+    fn introduce_closure_single_expr1() {
+        assert_success(quote! {
+            fn f ( ) { let _ : i32 = { 1 } ; }
+        }, (11, 32),
+        "fn f ( ) { let _ : i32 = (|| { 1 })() ; }");
+    }
+    #[test]
+    fn introduce_closure_single_stmt() {
         assert_success(quote! {
             fn f ( ) { { 1 ; } }
-        }, (11, 18),
+        }, (11, 11),
         "fn f ( ) { (|| { 1 ; })() }");
     }
 }
