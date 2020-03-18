@@ -1,32 +1,26 @@
-use super::utils::{map_change_from_span, get_source_from_compiler};
-use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
+use crate::refactoring_invocation::{AstContext, FileStringReplacement, RefactoringErrorInternal};
 use crate::refactorings::visitors::ast::collect_innermost_block;
 use rustc_span::{BytePos, Span};
-use rustc_interface::interface::Compiler;
-use rustc_interface::Queries;
 
 /// Given a selection within a block, contiguous statements (0..n) and an expression (0|1)
 /// It should pull up item declarations occuring at this block level
 /// These item declarations can only be found in the selection of statements (if they are item decls.)
-pub fn do_refactoring(compiler: &Compiler, queries: &'_ Queries<'_>, span: Span) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
+pub fn do_refactoring(context: &AstContext, span: Span) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
     // TODO: the steps should be clear from the body here
     // Find innermost block B
     // For each statement in B (not nested), that is item decl
     //   if it comes from macro exp, error
     // Delete and insert those statements at top
-    let item_declarations = collect_item_declarations(queries, compiler, span)?
+    let item_declarations = collect_item_declarations(context, span)?
         .into_iter().filter(|s| span.contains(*s)).collect::<Vec<_>>();
     
-    let source_map = compiler.source_map();
     let mut res = vec![];
-    res.push(map_change_from_span(
-        source_map,
+    res.push(context.map_change(
         span.with_lo(span.lo() - BytePos(0)).shrink_to_lo(),
-        item_declarations.iter().map(|s| get_source_from_compiler(compiler, *s)).collect::<Vec<_>>().join("")
+        item_declarations.iter().map(|s| context.get_source(*s)).collect::<Vec<_>>().join("")
     ));
     for delete in item_declarations {
-        res.push(map_change_from_span(
-            source_map,
+        res.push(context.map_change(
             delete,
             "".to_owned(),
         ));
@@ -34,9 +28,9 @@ pub fn do_refactoring(compiler: &Compiler, queries: &'_ Queries<'_>, span: Span)
     Ok(res)
 }
 
-fn collect_item_declarations<'v>(queries: &'_ Queries<'_>, compiler: &Compiler, span: Span) -> Result<Vec<Span>, RefactoringErrorInternal> {
+fn collect_item_declarations(context: &AstContext, span: Span) -> Result<Vec<Span>, RefactoringErrorInternal> {
     let (crate_, ..) = 
-    &*queries
+    &*context.queries
         .expansion()
         .unwrap()
         .peek_mut();
@@ -44,7 +38,7 @@ fn collect_item_declarations<'v>(queries: &'_ Queries<'_>, compiler: &Compiler, 
     let block = collect_innermost_block(crate_, span).ok_or_else(|| RefactoringErrorInternal::invalid_selection_with_code(
         span.lo().0,
         span.hi().0,
-        &get_source_from_compiler(compiler, span)
+        &context.get_source(span)
     ))?;
 
     let items = block.stmts.iter()
@@ -65,36 +59,36 @@ fn collect_item_declarations<'v>(queries: &'_ Queries<'_>, compiler: &Compiler, 
 
 #[cfg(test)]
 mod test {
-    use super::test_util::{assert_success, assert_err};
+    use crate::test_utils::{assert_success, assert_err};
     use quote::quote;
-    use super::RefactoringErrorInternal;
+    use crate::refactoring_invocation::{RefactorDefinition, RefactoringErrorInternal, SourceCodeRange};
 
     #[test]
     fn pull_up_item_declaration_fn_decl() {
         assert_success(quote! {
             fn f ( ) { 0 ; fn g ( ) { } g ( ) ; }
-        }, (10, 36),  
+        }, map((10, 36)),  
         "fn f ( ) {fn g ( ) { } 0 ;  g ( ) ; }");
     }
     #[test]
     fn pull_up_item_declaration_2_fn_decl() {
         assert_success(quote! {
             fn f ( ) { 0 ; fn g ( ) { } fn h ( ) { } g ( ) ; }
-        }, (10, 49),  
+        }, map((10, 49)),  
         "fn f ( ) {fn g ( ) { }fn h ( ) { } 0 ;   g ( ) ; }");
     }
     #[test]
     fn pull_up_item_declaration_no_items() {
         assert_success(quote! {
             fn f ( ) { 0 ; 1 ; }
-        }, (10, 19),  
+        }, map((10, 19)),  
         "fn f ( ) { 0 ; 1 ; }");
     }
     #[test]
     fn pull_up_item_declaration_macro_inv() {
         assert_success(quote! {
             fn f ( ) { print ! ( "{}" , 1 ) ; fn g ( ) { } print ! ( "{}" , 2 ) ; }
-        }, (10, 70),  
+        }, map((10, 70)),  
         r#"fn f ( ) {fn g ( ) { } print ! ( "{}" , 1 ) ;  print ! ( "{}" , 2 ) ; }"#);
     }
     #[test]
@@ -111,25 +105,14 @@ mod test {
         }, (0, 4),  
         RefactoringErrorInternal::invalid_selection_with_code(0, 4, "fn f"));
     }
-}
-#[cfg(test)]
-mod test_util {
-    use super::*;
-    use crate::{create_test_span, run_after_expansion};
-    use crate::refactoring_invocation::MyRefactorCallbacks;
-    pub fn assert_success(prog: quote::__rt::TokenStream, span: (u32, u32), expected: &str) {
-        run_after_expansion(prog, | q, c | {
-            let actual = do_refactoring(c, q, create_test_span(span.0, span.1)).unwrap();
-            let res = MyRefactorCallbacks::get_file_content(&actual, c.source_map()).unwrap();
-
-            assert_eq!(res, expected);
-        })
-    }
-    pub fn assert_err(prog: quote::__rt::TokenStream, span: (u32, u32), expected: RefactoringErrorInternal) {
-        run_after_expansion(prog, | q, c | {
-            let actual = do_refactoring(c, q, create_test_span(span.0, span.1)).unwrap_err();
-
-            assert_eq!(actual, expected);
+    fn map(span: (u32, u32)) -> Box<dyn Fn(String) -> RefactorDefinition> {
+        Box::new(
+            move |file_name| {
+                RefactorDefinition::PullUpItemDeclaration(SourceCodeRange {
+                file_name,
+                from: span.0,
+                to: span.1
+            })
         })
     }
 }

@@ -1,7 +1,8 @@
-use crate::refactoring_invocation::{InternalErrorCodes, FileStringReplacement,  RefactorDefinition, RefactoringErrorInternal, RefactorFail};
+use crate::refactoring_invocation::{AstContext, InternalErrorCodes, FileStringReplacement,  RefactorDefinition, RefactoringErrorInternal, RefactorFail};
 use crate::refactorings::{do_after_expansion_refactoring, do_ty_refactoring, is_after_expansion_refactoring};
-use rustc_driver;
-use rustc_interface::interface;
+use rustc_driver::{Callbacks, Compilation};
+use rustc_interface::Queries;
+use rustc_interface::interface::Compiler;
 use rustc_span::FileName;
 use rustc_span::source_map::SourceMap;
 use std::path::PathBuf;
@@ -59,27 +60,43 @@ pub fn serialize<T>(t: &T) ->  Result<String, RefactorFail>
     }
 }
 
-impl rustc_driver::Callbacks for MyRefactorCallbacks {
+fn do_after_exp(context: AstContext, args: &RefactorDefinition) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
+    match args {
+        RefactorDefinition::PullUpItemDeclaration(range) => crate::refactorings::pull_up_item_declaration::do_refactoring(&context, context.map_range_to_span(range)?),
+        _ => panic!()
+    }
+    
+}
+
+impl Callbacks for MyRefactorCallbacks {
     fn after_expansion<'tcx>(
         &mut self, 
-        compiler: &interface::Compiler,
-        queries: &'tcx rustc_interface::Queries<'tcx>
-    ) -> rustc_driver::Compilation {
-        if is_after_expansion_refactoring(&self.args) {
+        compiler: &Compiler,
+        queries: &'tcx Queries<'tcx>
+    ) -> Compilation {
+
+        if let RefactorDefinition::PullUpItemDeclaration(..) = self.args {
+            self.result = do_after_exp(AstContext::new(compiler, queries), &self.args);
+
+            if let Ok(changes) = &self.result {
+                self.content = Self::get_file_content(changes, compiler.session().source_map());
+            }
+            Compilation::Stop
+        } else if is_after_expansion_refactoring(&self.args) {
             self.result = do_after_expansion_refactoring(&queries, compiler, &self.args);
             if let Ok(changes) = self.result.clone() {
                 self.content = Self::get_file_content(&changes, compiler.session().source_map());
             }
-            rustc_driver::Compilation::Stop
+            Compilation::Stop
         } else {
-            rustc_driver::Compilation::Continue
+            Compilation::Continue
         }
     }
     fn after_analysis<'tcx>(
         &mut self, 
-        compiler: &interface::Compiler,
-        queries: &'tcx rustc_interface::Queries<'tcx>
-    ) -> rustc_driver::Compilation {
+        compiler: &Compiler,
+        queries: &'tcx Queries<'tcx>
+    ) -> Compilation {
         compiler.session().abort_if_errors();
         queries.global_ctxt().unwrap().peek_mut().enter(|tcx| {
             self.result = do_ty_refactoring(tcx, &self.args);
@@ -87,6 +104,6 @@ impl rustc_driver::Callbacks for MyRefactorCallbacks {
                 self.content = MyRefactorCallbacks::get_file_content(&changes, tcx.sess.source_map());
             }
         });
-        rustc_driver::Compilation::Stop
+        Compilation::Stop
     }
 }

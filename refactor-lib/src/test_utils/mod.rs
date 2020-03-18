@@ -5,7 +5,7 @@ use std::io::prelude::*;
 use std::path::Path;
 use rustc_span::{BytePos, Span};
 use tempfile::TempDir;
-use crate::refactoring_invocation::get_sys_root;
+use crate::refactoring_invocation::{get_sys_root, MyRefactorCallbacks, RefactorDefinition, RefactoringErrorInternal, SourceCodeRange};
 
 /**
  * Function that can be used to run unit tests.
@@ -111,7 +111,7 @@ where
     }
 }
 
-fn init_main_rs_and_get_args(program: &str) -> (Vec<String>, TempDir)
+pub fn init_main_rs_and_get_args(program: &str) -> (Vec<String>, TempDir)
 {
     let tmp_dir = TempDir::new().unwrap_or_else(|_| panic!("failed to create tmp dir"));
     let tmp_dir_path = tmp_dir.path();
@@ -143,4 +143,32 @@ fn set_main_rs(path: &Path, content: &str) -> std::io::Result<()> {
     let mut file = File::create(path)?;
     file.write_all(content.as_bytes())?;
     Ok(())
+}
+
+pub fn assert_success(prog: quote::__rt::TokenStream, def: Box<dyn Fn(String) -> RefactorDefinition>, expected: &str) {
+
+    let program = &format!("{}", prog);
+    
+    let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
+
+    let mut c = MyRefactorCallbacks::from_arg(def(d.path().join("./main.rs").to_str().unwrap().to_owned()));
+    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
+    err.unwrap();
+
+    assert_eq!(c.content.unwrap(), expected);
+}
+pub fn assert_err(prog: quote::__rt::TokenStream, span: (u32, u32), expected: RefactoringErrorInternal) {
+    let program = &format!("{}", prog);
+    
+    let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
+
+    let mut c = MyRefactorCallbacks::from_arg(RefactorDefinition::PullUpItemDeclaration(SourceCodeRange {
+        file_name: d.path().join("./main.rs").to_str().unwrap().to_owned(),
+        from: span.0,
+        to: span.1
+    }));
+    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
+    err.unwrap();
+
+    assert_eq!(c.result.unwrap_err(), expected);
 }

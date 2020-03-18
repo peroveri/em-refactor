@@ -1,4 +1,5 @@
 mod arg_mappings;
+mod ast_context;
 mod change;
 mod my_refactor_callbacks;
 mod run_refactoring;
@@ -10,10 +11,11 @@ mod rustc_rerun;
 mod rustc_utils;
 
 pub use arg_mappings::{arg_value, get_compiler_args, get_refactor_args};
+pub use ast_context::*;
 pub use change::{FileStringReplacement, RefactoringError, RefactorOutput};
 pub use file_loader::InMemoryFileLoader;
 pub use my_refactor_callbacks::{MyRefactorCallbacks, serialize};
-pub use refactor_definition::{InternalErrorCodes, RefactorDefinition, RefactoringErrorInternal, RefactorFail, SourceCodeRange};
+pub use refactor_definition::*;
 pub use refactor_definition_parser::argument_list_to_refactor_def;
 pub use run_refactoring::{run_refactoring_and_output_result};
 pub use rustc_pass::{pass_to_rustc, should_pass_to_rustc};
