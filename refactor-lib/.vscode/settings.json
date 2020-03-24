@@ -5,6 +5,7 @@
         "**/.hg": true,
         "**/CVS": true,
         "**/.DS_Store": true,
-        "**/target": true
+        "**/target": true,
+        "**/exp/work_dir/": true
     }
 }
