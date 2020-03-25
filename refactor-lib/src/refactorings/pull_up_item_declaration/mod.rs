@@ -1,5 +1,6 @@
-use crate::refactoring_invocation::{AstContext, AstDiff, QueryResult, AfterExpansionRefactoring, RefactoringErrorInternal, SourceCodeRange};
+use crate::refactoring_invocation::{AstContext, AstDiff, QueryResult, AfterExpansionRefactoring, SourceCodeRange};
 use crate::refactorings::visitors::ast::collect_innermost_block;
+use rustc_ast::ast::Stmt;
 use rustc_span::{BytePos, Span};
 
 pub struct PullUpItemDeclRefa(pub SourceCodeRange);
@@ -14,46 +15,38 @@ impl AfterExpansionRefactoring for PullUpItemDeclRefa {
 /// It should pull up item declarations occuring at this block level
 /// These item declarations can only be found in the selection of statements (if they are item decls.)
 fn do_refactoring(context: &AstContext, span: Span) -> QueryResult<AstDiff> {
-    // TODO: the steps should be clear from the body here
-    // Find innermost block B
-    // For each statement in B (not nested), that is item decl
-    //   if it comes from macro exp, error
-    // Delete and insert those statements at top
-    let item_declarations = collect_item_declarations(context, span)?
-        .into_iter().filter(|s| span.contains(*s)).collect::<Vec<_>>();
+    let block = collect_innermost_block(context, span)?;
+
+    let items = filter_items(&block.stmts);
     
+    if contains_stmt_from_macro(&items) {
+        return Err(context.span_err(span));
+    }
+    let items = filter_stmts_in_span(&items, span);
+    let spans = items.iter().map(|s| s.span).collect::<Vec<_>>();
+
     let mut res = vec![];
     res.push(context.map_change(
         span.with_lo(span.lo() - BytePos(0)).shrink_to_lo(),
-        item_declarations.iter().map(|s| context.get_source(*s)).collect::<Vec<_>>().join("")
+        spans.iter().map(|s| context.get_source(*s)).collect::<Vec<_>>().join("")
     ));
-    for delete in item_declarations {
+    for delete_span in spans {
         res.push(context.map_change(
-            delete,
+            delete_span,
             "".to_owned(),
         ));
     }
     Ok(AstDiff(res))
 }
 
-fn collect_item_declarations(context: &AstContext, span: Span) -> Result<Vec<Span>, RefactoringErrorInternal> {
-    
-    let block = collect_innermost_block(context, span)?;
-
-    let items = block.stmts.iter()
-        .filter(|s| s.is_item())
-        .map(|s| s.span)
-        .collect::<Vec<_>>();
-
-    if items.iter().any(|s| s.from_expansion()) {
-        return Err(RefactoringErrorInternal::invalid_selection_with_code(
-            span.lo().0,
-            span.hi().0,
-            "contains macro returning item"
-        ));
-    }
-
-    Ok(items.into_iter().filter(|s| span.contains(*s)).collect::<Vec<_>>())
+fn filter_items(stmts: &[Stmt]) -> Vec<&Stmt> {
+    stmts.iter().filter(|s| s.is_item()).collect::<Vec<_>>() 
+}
+fn contains_stmt_from_macro(stmts: &[&Stmt]) -> bool {
+    stmts.iter().any(|s| s.span.from_expansion())
+}
+fn filter_stmts_in_span<'a>(stmts: &[&'a Stmt], span: Span) -> Vec<&'a Stmt> {
+    stmts.iter().filter(|s| span.contains(s.span)).map(|s| *s).collect::<Vec<_>>()
 }
 
 #[cfg(test)]
@@ -95,7 +88,7 @@ mod test {
         assert_err(quote! {
             macro_rules ! foo { ( ) => { fn bar ( ) { } } } fn f ( ) { foo ! ( ) ; }
         }, REFACTORING_NAME, (58, 71),  
-        RefactoringErrorInternal::invalid_selection_with_code(58, 71, "contains macro returning item"));
+        RefactoringErrorInternal::invalid_selection_with_code(58, 71, " foo ! ( ) ; "));
     }
     #[test]
     fn pull_up_item_declaration_invalid_selection() {

@@ -46,4 +46,7 @@ impl<'a, 'b> AstContext<'a, 'b> {
             crate_: None
         }
     }
+    pub fn span_err(&self, span: Span) -> RefactoringErrorInternal {
+        RefactoringErrorInternal::invalid_selection_with_code(span.lo().0, span.hi().0, &self.get_source(span))
+    }
 }
