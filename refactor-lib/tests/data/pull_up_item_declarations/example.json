@@ -1,0 +1,11 @@
+{
+	"file": "example.rs",
+	"args": {
+		"refactoring": "pull-up-item-declaration",
+		"selection": "16:31"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "example_after.rs"
+	}
+}

@@ -3,9 +3,10 @@ use rustc_interface::{interface, Queries, interface::Compiler};
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
+use quote::__rt::TokenStream;
 use rustc_span::{BytePos, Span};
 use tempfile::TempDir;
-use crate::refactoring_invocation::{get_sys_root, MyRefactorCallbacks, RefactorDefinition, RefactoringErrorInternal, SourceCodeRange};
+use crate::refactoring_invocation::{AfterExpansion, get_sys_root, map_args_to_query, MyRefactorCallbacks, Query, RefactoringErrorInternal};
 
 /**
  * Function that can be used to run unit tests.
@@ -144,29 +145,60 @@ fn set_main_rs(path: &Path, content: &str) -> std::io::Result<()> {
     file.write_all(content.as_bytes())?;
     Ok(())
 }
-
-pub fn assert_success(prog: quote::__rt::TokenStream, def: Box<dyn Fn(String) -> RefactorDefinition>, expected: &str) {
+pub fn assert_success(prog: TokenStream, refactoring: &str, span: (u32, u32), expected: &str)  {
 
     let program = &format!("{}", prog);
     
     let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
 
-    let mut c = MyRefactorCallbacks::from_arg(def(d.path().join("./main.rs").to_str().unwrap().to_owned()));
+    let q = map_args_to_query(&vec![
+        format!("--file={}", d.path().join("./main.rs").to_str().unwrap().to_owned()),
+        format!("--selection={}:{}", span.0, span.1),
+        format!("--refactoring={}", refactoring),
+    ]).unwrap();
+
+    let mut c = MyRefactorCallbacks::from_arg(q);
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
     err.unwrap();
 
-    assert_eq!(c.content.unwrap(), expected);
+    assert_eq!(c.result.unwrap(), expected);
 }
-pub fn assert_err(prog: quote::__rt::TokenStream, span: (u32, u32), expected: RefactoringErrorInternal) {
+pub fn assert_err(prog: quote::__rt::TokenStream, refactoring: &str, span: (u32, u32), expected: RefactoringErrorInternal)  {
     let program = &format!("{}", prog);
     
     let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
+    let q = map_args_to_query(&vec![
+        format!("--file={}", d.path().join("./main.rs").to_str().unwrap().to_owned()),
+        format!("--selection={}:{}", span.0, span.1),
+        format!("--refactoring={}", refactoring),
+    ]).unwrap();
 
-    let mut c = MyRefactorCallbacks::from_arg(RefactorDefinition::PullUpItemDeclaration(SourceCodeRange {
-        file_name: d.path().join("./main.rs").to_str().unwrap().to_owned(),
-        from: span.0,
-        to: span.1
-    }));
+    let mut c = MyRefactorCallbacks::from_arg(q);
+    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
+    err.unwrap();
+    assert_eq!(c.result.unwrap_err(), expected);
+}
+pub fn assert_success2(prog: TokenStream, init: Box<dyn Fn(String) -> Box<dyn AfterExpansion + Send>>, expected: &str)  {
+
+    let program = &format!("{}", prog);
+    
+    let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
+    let q = init(d.path().join("./main.rs").to_str().unwrap().to_owned());
+
+    let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q));
+    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
+    err.unwrap();
+
+    assert_eq!(c.result.unwrap(), expected);
+}
+pub fn assert_err2(prog: TokenStream, init: Box<dyn Fn(String) -> Box<dyn AfterExpansion + Send>>, expected: RefactoringErrorInternal)  {
+
+    let program = &format!("{}", prog);
+    
+    let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
+    let q = init(d.path().join("./main.rs").to_str().unwrap().to_owned());
+
+    let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q));
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
     err.unwrap();
 

@@ -1,4 +1,14 @@
-use crate::refactoring_invocation::{RefactorDefinition, SourceCodeRange, RefactorFail};
+use crate::refactoring_invocation::{AfterExpansionRefactoring, RefactorDefinition, SourceCodeRange, RefactorFail};
+use super::{Query, ToJson, OutputMain};
+
+pub fn map_args_to_query(args: &[String]) -> Result<Query, RefactorFail> {
+    let def = argument_list_to_refactor_def2(args)?;
+    if args.contains(&"--output-replacements-as-json".to_owned()) {
+        Ok(Query::AfterExpansion(Box::new(ToJson::new(def))))
+    } else {
+        Ok(Query::AfterExpansion(Box::new(OutputMain::new(def))))
+    }
+}
 
 ///
 /// converts an argument list to a refactoring definition
@@ -12,12 +22,33 @@ pub fn argument_list_to_refactor_def(args: &[String]) -> Result<RefactorDefiniti
         Ok(v) => Ok(v)
     }
 }
+pub fn argument_list_to_refactor_def2(args: &[String]) -> Result<Box<dyn AfterExpansionRefactoring + Send>, RefactorFail> {
+    let parser = RefactorArgsParser { args };
+    let res = parser.from_args2();
+
+    match res {
+        Err(err) => Err(RefactorFail::arg_def(&err)),
+        Ok(v) => Ok(v)
+    }
+}
 
 struct RefactorArgsParser<'a> {
     args: &'a [String],
 }
 
 impl RefactorArgsParser<'_> {
+    pub fn from_args2(&self) -> Result<Box<dyn AfterExpansionRefactoring + Send>, String> {
+        match self.get_param("--refactoring")? {
+            // "box-field" => Ok(RefactorDefinition::BoxField(self.parse_range()?)),
+            // "close-over-variables" => Ok(RefactorDefinition::CloseOverVariables(self.parse_range()?)),
+            // "extract-block" => Ok(RefactorDefinition::ExtractBlock(self.parse_range()?)),
+            // "introduce-closure" => Ok(RefactorDefinition::IntroduceClosure(self.parse_range()?)),
+            // "inline-macro" => Ok(RefactorDefinition::InlineMacro(self.parse_range()?)),
+            "pull-up-item-declaration" => Ok(Box::new(crate::refactorings::pull_up_item_declaration::PullUpItemDeclRefa(self.parse_range()?))),
+            // "split-conflicting-match-amrs" => Ok(RefactorDefinition::SplitConflictingMatchArms(self.parse_range()?)),
+            s => Err(format!("Unknown refactoring: {}", s)),
+        }
+    }
     pub fn from_args(&self) -> Result<RefactorDefinition, String> {
         match self.get_param("--refactoring")? {
             "box-field" => Ok(RefactorDefinition::BoxField(self.parse_range()?)),
@@ -33,7 +64,7 @@ impl RefactorArgsParser<'_> {
     pub fn parse_range(&self) -> Result<SourceCodeRange, String> {
         let selection = self.get_param("--selection")?;
         let file = self.get_param("--file")?;
-        let ints = RefactorArgsParser::get_int(selection)?;
+        let ints = Self::get_int(selection)?;
 
         Ok(SourceCodeRange {
             file_name: file.to_string(),

@@ -102,11 +102,11 @@ mod test {
 mod test_util {
     use super::*;
     use crate::{create_test_span, run_after_analysis};
-    use crate::refactoring_invocation::MyRefactorCallbacks;
+    use crate::refactoring_invocation::get_file_content;
     pub fn assert_success(prog: quote::__rt::TokenStream, span: (u32, u32), expected: &str) {
         run_after_analysis(prog, | tcx | {
             let actual = do_refactoring(tcx, create_test_span(span.0, span.1)).unwrap();
-            let res = MyRefactorCallbacks::get_file_content(&actual, tcx.sess.source_map()).unwrap();
+            let res = get_file_content(&actual, tcx.sess.source_map()).unwrap();
 
             assert_eq!(res, expected);
         })
