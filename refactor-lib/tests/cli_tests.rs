@@ -2,6 +2,7 @@ use assert_cmd::prelude::*;
 use predicates::prelude::*;
 use serde_json::json;
 use cli_tests_utils::*;
+use my_refactor_lib::*;
 
 mod cli_tests_utils;
 
@@ -21,7 +22,7 @@ fn cli_missing_args_should_output_nicely() {
 
 #[test]
 fn cli_multiroot_project_lib() {
-    let replacement = FileReplaceContent {
+    let replacement = FileStringReplacement {
         byte_end: 21,
         byte_start: 18,
         char_end: 21,
@@ -56,7 +57,7 @@ fn cli_multiroot_project_lib() {
 
 #[test]
 fn cli_multiroot_project_main() {
-    let replacement = FileReplaceContent {
+    let replacement = FileStringReplacement {
         byte_end: 21,
         byte_start: 18,
         char_end: 21,
@@ -90,7 +91,7 @@ fn cli_multiroot_project_main() {
 
 #[test]
 fn cli_output_json() {
-    let replacement = FileReplaceContent {
+    let replacement = FileStringReplacement {
         byte_end: 40,
         byte_start: 16,
         char_end: 28,

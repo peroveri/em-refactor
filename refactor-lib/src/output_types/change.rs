@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct FileStringReplacement {
     pub byte_end: u32,
     pub byte_start: u32,
@@ -12,7 +12,7 @@ pub struct FileStringReplacement {
     pub replacement: String
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RefactoringError {
     // pub byte_end: u32,
     // pub byte_start: u32,
@@ -25,10 +25,15 @@ pub struct RefactoringError {
     pub message: String
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RefactorOutput {
     pub crate_name: String,
     pub is_test: bool,
     pub replacements: Vec<FileStringReplacement>,
     pub errors: Vec<RefactoringError>
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct RefactorOutputs {
+    pub crates: Vec<RefactorOutput>
 }
