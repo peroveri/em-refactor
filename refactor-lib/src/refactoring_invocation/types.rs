@@ -1,3 +1,4 @@
+use crate::output_types::FileStringReplacement;
 use super::*;
 pub trait AfterExpansionRefactoring {
     fn refactor(&self, ast: &AstContext) -> QueryResult<AstDiff>;

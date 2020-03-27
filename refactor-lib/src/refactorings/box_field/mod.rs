@@ -2,7 +2,8 @@ use rustc::ty::TyCtxt;
 use rustc_hir::HirId;
 use rustc_span::Span;
 
-use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
+use crate::output_types::FileStringReplacement;
+use crate::refactoring_invocation::RefactoringErrorInternal;
 use super::utils::{get_source, get_struct_hir_id};
 use super::{box_named_field, box_tuple_field};
 use super::visitors::collect_field;

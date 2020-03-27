@@ -2,8 +2,9 @@ use rustc::ty::TyCtxt;
 use rustc_hir::HirId;
 use rustc_span::Span;
 
+use crate::output_types::FileStringReplacement;
 use crate::refactorings::utils::{get_source, map_change_from_span};
-use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
+use crate::refactoring_invocation::RefactoringErrorInternal;
 use super::visitors::{collect_local_variable_use, collect_struct_field_access_expressions};
 use struct_expression_collector::collect_struct_expressions;
 use struct_named_pattern_collector::collect_struct_named_patterns;

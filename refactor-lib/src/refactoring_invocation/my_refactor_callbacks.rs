@@ -1,4 +1,5 @@
-use crate::refactoring_invocation::{AstContext, InternalErrorCodes, FileStringReplacement, Query, QueryResult, RefactorDefinition, RefactoringErrorInternal, RefactorFail};
+use crate::output_types::FileStringReplacement;
+use crate::refactoring_invocation::{AstContext, InternalErrorCodes, Query, QueryResult, RefactorDefinition, RefactoringErrorInternal, RefactorFail};
 use crate::refactorings::{do_after_expansion_refactoring, do_ty_refactoring, is_after_expansion_refactoring};
 use rustc_driver::{Callbacks, Compilation};
 use rustc_interface::Queries;

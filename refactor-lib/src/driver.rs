@@ -15,6 +15,7 @@ use std::process::exit;
 use refactoring_invocation::{arg_value, get_compiler_args, get_refactor_args, pass_to_rustc, run_refactoring_and_output_result, should_pass_to_rustc};
 
 mod extra;
+mod output_types;
 mod refactorings;
 mod refactoring_invocation;
 

@@ -1,4 +1,5 @@
-use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal, RefactorDefinition};
+use crate::output_types::FileStringReplacement;
+use crate::refactoring_invocation::{RefactoringErrorInternal, RefactorDefinition};
 use rustc::ty::TyCtxt;
 use rustc_interface::Queries;
 use rustc_interface::interface::Compiler;

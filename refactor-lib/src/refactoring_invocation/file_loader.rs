@@ -1,7 +1,7 @@
 use std::io;
 use std::path::{Path, PathBuf};
 use rustc_span::source_map::{FileLoader};
-use crate::refactoring_invocation::FileStringReplacement;
+use crate::output_types::FileStringReplacement;
 
 ///
 /// Used for running the compiler with modified files without having to write the modifications to the filesystem.

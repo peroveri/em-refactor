@@ -1,4 +1,5 @@
-use crate::refactoring_invocation::{FileStringReplacement, RefactorFail, InMemoryFileLoader};
+use crate::output_types::FileStringReplacement;
+use crate::refactoring_invocation::{RefactorFail, InMemoryFileLoader};
 
 struct DefaultCallbacks;
 impl rustc_driver::Callbacks for DefaultCallbacks {}

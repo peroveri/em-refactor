@@ -1,4 +1,5 @@
-use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal, SourceCodeRange};
+use crate::output_types::FileStringReplacement;
+use crate::refactoring_invocation::{RefactoringErrorInternal, SourceCodeRange};
 use rustc::ty::TyCtxt;
 use rustc_hir::{HirId, StructField};
 use rustc_span::{BytePos, FileName, Span};

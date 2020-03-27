@@ -16,6 +16,11 @@ name = "my-refactor-driver"
 test = true
 path = "src/driver.rs"
 
+[lib]
+name = "my_refactor_lib"
+path = "src/lib.rs"
+test = true
+
 [dependencies]
 if_chain = "1.0.0"
 serde = { version = "1.0", features = ["derive"] }

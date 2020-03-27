@@ -1,5 +1,6 @@
 use rustc_span::Span;
-use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
+use crate::output_types::FileStringReplacement;
+use crate::refactoring_invocation::RefactoringErrorInternal;
 use super::utils::map_change_from_span;
 use super::visitors::collect_inline_macro;
 

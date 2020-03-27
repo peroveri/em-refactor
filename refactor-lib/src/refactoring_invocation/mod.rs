@@ -1,6 +1,6 @@
 mod arg_mappings;
 mod ast_context;
-mod change;
+mod change_mappings;
 mod my_refactor_callbacks;
 mod run_refactoring;
 mod file_loader;
@@ -13,7 +13,7 @@ mod types;
 
 pub use arg_mappings::*;
 pub use ast_context::*;
-pub use change::{FileStringReplacement, RefactoringError, RefactorOutput};
+pub use change_mappings::*;
 pub use file_loader::InMemoryFileLoader;
 pub use my_refactor_callbacks::*;
 pub use refactor_definition::*;

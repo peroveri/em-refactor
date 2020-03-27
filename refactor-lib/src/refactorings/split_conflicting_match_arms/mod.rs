@@ -1,6 +1,7 @@
 use super::utils::{get_source, get_struct_hir_id};
 use super::visitors::collect_field;
-use crate::refactoring_invocation::{FileStringReplacement, RefactoringErrorInternal};
+use crate::output_types::FileStringReplacement;
+use crate::refactoring_invocation::RefactoringErrorInternal;
 use rustc::ty::TyCtxt;
 use rustc_span::{Span};
 
