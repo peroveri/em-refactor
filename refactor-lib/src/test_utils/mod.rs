@@ -34,7 +34,7 @@ where
     F: Send,
 {
     let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
-    let mut c = RustcAfterParsingCallbacks(func);
+    let mut c = RustcAfterExpansionCallbacks(func);
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
     err.unwrap();
 }
@@ -99,7 +99,7 @@ where
 struct RustcAfterExpansionCallbacks<F>(F);
 impl<F> rustc_driver::Callbacks for RustcAfterExpansionCallbacks<F>
 where
-    F: Fn(&Queries<'_>) -> ()
+    F: Fn(&Queries<'_>, &Compiler) -> ()
 {
     fn after_expansion<'tcx>(
         &mut self, 
@@ -107,7 +107,7 @@ where
         queries: &'tcx rustc_interface::Queries<'tcx>
     ) -> rustc_driver::Compilation {
         compiler.session().abort_if_errors();
-        self.0(queries);
+        self.0(queries, compiler);
         rustc_driver::Compilation::Stop
     }
 }

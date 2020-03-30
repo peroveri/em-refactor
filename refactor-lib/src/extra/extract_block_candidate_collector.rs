@@ -1,11 +1,14 @@
-use rustc_ast::ast::{Block, MacCall};
+use rustc_ast::ast::Block;
 use rustc_ast::visit::{Visitor, walk_block, walk_crate};
 use rustc_span::Span;
-
+/// 
+/// Modules that are not inlined (from files) are not visited in the pre macro exp. AST,
+/// so we should use the post macro exp. AST
+/// 
 pub fn collect_extract_block_candidates<'tcx>(queries: &'tcx rustc_interface::Queries<'_>) -> Vec<Span> {
     let mut v = ExtractBlockCandidateVisitor{candidates: vec![]};
 
-    let crate_ = &*queries.parse().unwrap().peek_mut();
+    let (crate_, ..) = &*queries.expansion().unwrap().peek_mut();
 
     walk_crate(&mut v, crate_);
 
@@ -18,19 +21,23 @@ struct ExtractBlockCandidateVisitor {
 
 impl<'ast> Visitor<'ast> for ExtractBlockCandidateVisitor {
     fn visit_block(&mut self, b: &'ast Block) {
-        let l = b.stmts.len();
+        if b.span.from_expansion() {
+            return;
+        }
+        
+        let spans = b.stmts.iter().map(|s| s.span.source_callsite()).collect::<Vec<_>>();
+        let l = spans.len();
+
         for i in 0..l {
+            let si = spans[i];
             for j in i..l {
-                let si = b.stmts[i].span;
-                let sj = b.stmts[j].span;
-                self.candidates.push(si.with_hi(sj.hi()));
+                let sj = spans[j];
+                if i == j || si != sj {
+                    self.candidates.push(si.with_hi(sj.hi()));
+                }
             }
         }
         walk_block(self, b);
-    }
-
-    fn visit_mac(&mut self, _mac: &'ast MacCall) {
-        // Override to prevent `visit_mac disabled by default`
     }
 }
 

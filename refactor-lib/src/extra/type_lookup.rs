@@ -2,7 +2,6 @@ use rustc::ty::TyCtxt;
 use rustc_ast::ast::{Crate};
 use rustc_interface::interface;
 use rustc_span::Span;
-use rustc_hir::print;
 use rustc_hir::intravisit::{walk_crate, NestedVisitorMap, Visitor};
 use rustc_hir::{Expr, FnRetTy, Item, ItemKind, Stmt};
 use rustc_hir::intravisit::{walk_expr, walk_item, walk_stmt};
@@ -73,7 +72,7 @@ struct IdentCollector<'v> {
 
 impl<'v> Visitor<'v> for IdentCollector<'v> {
     type Map = Map<'v>;
-    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<Self::Map> {
+    fn nested_visit_map(&mut self) -> NestedVisitorMap<Self::Map> {
         NestedVisitorMap::All(self.tcx.hir())
     }
     fn visit_item(&mut self, i: &'v Item) {
@@ -84,10 +83,10 @@ impl<'v> Visitor<'v> for IdentCollector<'v> {
         if let ItemKind::Fn(sig, _, _) = &i.kind {
             let decl = &sig.decl;
             let a = decl.inputs.iter().map(|t| 
-                print::to_string(print::NO_ANN, |s| s.print_type(t))).collect::<Vec<_>>();
+                rustc_hir_pretty::to_string(rustc_hir_pretty::NO_ANN, |s| s.print_type(t))).collect::<Vec<_>>();
             let inputs = a.join(",");
             let output = if let FnRetTy::Return(t) = &decl.output {
-                print::to_string(print::NO_ANN, |s| s.print_type(t))
+                rustc_hir_pretty::to_string(rustc_hir_pretty::NO_ANN, |s| s.print_type(t))
             } else {
                 "".to_owned()
             };
@@ -104,7 +103,7 @@ impl<'v> Visitor<'v> for IdentCollector<'v> {
             return;
         }
 
-        self.res_type = Some(print::to_string(print::NO_ANN, |s| s.print_expr(expr)));
+        self.res_type = Some(rustc_hir_pretty::to_string(rustc_hir_pretty::NO_ANN, |s| s.print_expr(expr)));
 
         walk_expr(self, expr);
     }
@@ -113,7 +112,7 @@ impl<'v> Visitor<'v> for IdentCollector<'v> {
             return;
         }
 
-        self.res_type = Some(print::to_string(print::NO_ANN, |s| s.print_stmt(stmt)));
+        self.res_type = Some(rustc_hir_pretty::to_string(rustc_hir_pretty::NO_ANN, |s| s.print_stmt(stmt)));
 
         walk_stmt(self, stmt);
     }

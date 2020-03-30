@@ -102,6 +102,7 @@ where
     if output.status.success() {
         let s = std::str::from_utf8(output.stdout.as_slice()).unwrap();
         print!("{}", combine_output(s));
+        eprint!("{}", std::str::from_utf8(output.stderr.as_slice()).unwrap());
         Ok(())
     } else {
         let s = std::str::from_utf8(output.stderr.as_slice()).unwrap();

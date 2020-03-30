@@ -65,7 +65,7 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
 }
 
 pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, body_id: BodyId) {
-    let def_id = body_id.hir_id.owner_def_id();
+    let def_id = body_id.hir_id.owner.to_def_id();
     tcx.infer_ctxt().enter(|inf| {
         let mut v = VariableCollectorDelegate {
             tcx,

@@ -4,3 +4,6 @@ fn main() {
 }
 
 fn foo(a: i32, b: u32) -> (i32) {1}
+
+#[test]
+fn test1() {2;}

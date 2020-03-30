@@ -31,7 +31,7 @@ pub fn collect_innermost_block<'v>(tcx: TyCtxt<'v>, pos: Span) -> Option<(&'v Bl
 
 impl<'v> Visitor<'v> for BlockCollector<'v> {
     type Map = Map<'v>;
-    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<Self::Map> {
+    fn nested_visit_map(&mut self) -> NestedVisitorMap<Self::Map> {
         NestedVisitorMap::All(self.tcx.hir())
     }
     fn visit_fn(

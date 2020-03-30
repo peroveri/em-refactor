@@ -67,17 +67,17 @@ struct ConflictingMatchArmCollector<'v> {
 
 impl ConflictingMatchArmCollector<'_> {
     fn expr_resolves_to_struct(&self, expr: &Expr) -> bool {
-        let typecheck_table = self.tcx.typeck_tables_of(expr.hir_id.owner_def_id());
+        let typecheck_table = self.tcx.typeck_tables_of(expr.hir_id.owner.to_def_id());
         if let Some(expr_type) = typecheck_table.expr_ty_adjusted_opt(expr) {
             if let Some(adt_def) = expr_type.ty_adt_def() {
-                return adt_def.did == self.struct_hir_id.owner_def_id();
+                return adt_def.did == self.struct_hir_id.owner.to_def_id();
             }
         } 
         false
     }
     fn handle_call(&mut self, expr: &Expr, function: &Expr, args: &[Expr]) {
         if let ExprKind::Path(qpath) = &function.kind {
-            let typecheck_table = self.tcx.typeck_tables_of(expr.hir_id.owner_def_id());
+            let typecheck_table = self.tcx.typeck_tables_of(expr.hir_id.owner.to_def_id());
 
             if_chain! {
                 if let Some(defid) = typecheck_table.qpath_res(qpath, function.hir_id).opt_def_id();
@@ -94,7 +94,7 @@ impl ConflictingMatchArmCollector<'_> {
 
 impl<'v> Visitor<'v> for ConflictingMatchArmCollector<'v> {
     type Map = Map<'v>;
-    fn nested_visit_map<'this>(&'this mut self) -> NestedVisitorMap<Self::Map> {
+    fn nested_visit_map(&mut self) -> NestedVisitorMap<Self::Map> {
         NestedVisitorMap::All(self.tcx.hir())
     }
     fn visit_fn(
@@ -132,7 +132,7 @@ mod test {
 
     fn get_struct_tuple_hir_id(tcx: TyCtxt<'_>) -> HirId {
         let (field, _) = collect_field(tcx, create_test_span(103, 104)).unwrap();
-        let struct_def_id = field.hir_id.owner_def_id();
+        let struct_def_id = field.hir_id.owner.to_def_id();
         tcx.hir().as_local_hir_id(struct_def_id).unwrap()
     }
 

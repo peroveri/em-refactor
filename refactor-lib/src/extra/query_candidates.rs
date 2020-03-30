@@ -29,7 +29,7 @@ struct RustcAfterParsing(String, String, bool); // TODO: after parsing or expans
 
 impl rustc_driver::Callbacks for RustcAfterParsing
 {
-    fn after_parsing<'tcx>(
+    fn after_expansion<'tcx>(
         &mut self,
         compiler: &interface::Compiler,
         queries: &'tcx rustc_interface::Queries<'tcx>

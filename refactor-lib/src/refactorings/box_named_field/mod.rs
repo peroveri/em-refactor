@@ -8,7 +8,7 @@ use crate::refactoring_invocation::RefactoringErrorInternal;
 use super::visitors::{collect_local_variable_use, collect_struct_field_access_expressions};
 use struct_expression_collector::collect_struct_expressions;
 use struct_named_pattern_collector::collect_struct_named_patterns;
-use rustc_hir::{Item, ItemKind, print};
+use rustc_hir::{Item, ItemKind};
 
 mod struct_expression_collector;
 pub mod struct_named_pattern_collector;
@@ -73,7 +73,7 @@ pub fn is_impl_from_std_derive_expansion(i: &Item<'_>) -> bool {
         of_trait: Some(ref t),
         ..
     } = i.kind {
-        let repr: String = print::to_string(print::NO_ANN, |s| s.print_path(t.path, false));
+        let repr: String = rustc_hir_pretty::to_string(rustc_hir_pretty::NO_ANN, |s| s.print_path(t.path, false));
 
         i.span.in_derive_expansion() &&
          skip_derive_types.contains(&repr)

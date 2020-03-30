@@ -59,7 +59,7 @@ pub fn get_source_from_compiler(compiler: &rustc_interface::interface::Compiler,
     compiler.source_map().span_to_snippet(span).unwrap()
 }
 pub fn get_struct_hir_id(tcx: TyCtxt<'_>, field: &StructField) -> HirId {
-    let struct_def_id = field.hir_id.owner_def_id();
+    let struct_def_id = field.hir_id.owner.to_def_id();
     tcx.hir().as_local_hir_id(struct_def_id).unwrap()
 }
 

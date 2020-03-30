@@ -164,10 +164,13 @@ fn cli_query_candidates_1() {
         map_position(45, 63),
         map_position(100, 101),
     ];
+    let candidates_test = candidates.clone().into_iter().chain(vec![
+        map_position(124, 126),
+    ].into_iter()).collect::<Vec<_>>();
     let expected_json = RefactorOutputs {
         candidates: vec![
-            CandidateOutput {candidates: candidates.clone(), is_test: false, crate_name: "hello_world".to_string(), refactoring: "extract-block".to_string()},
-            CandidateOutput {candidates, is_test: true, crate_name: "hello_world".to_string(), refactoring: "extract-block".to_string()}
+            CandidateOutput {candidates, is_test: false, crate_name: "hello_world".to_string(), refactoring: "extract-block".to_string()},
+            CandidateOutput {candidates: candidates_test, is_test: true, crate_name: "hello_world".to_string(), refactoring: "extract-block".to_string()}
         ],
         refactorings: vec![]
     };
@@ -192,20 +195,20 @@ fn cli_query_candidates_multi_root_overlap() {
     let map_position = |file: &str, from, to| CandidatePosition { file: file.to_owned(), from, to};
     let map_lib = |candidates, is_test| CandidateOutput {candidates, is_test, crate_name: "lib".to_string(), refactoring: "extract-block".to_string()};
     let map_main = |candidates, is_test| CandidateOutput {candidates, is_test, crate_name: "main".to_string(), refactoring: "extract-block".to_string()};
-    let candidates_lib = vec![
-        map_position("src/submod.rs", 47, 52),
-        map_position("src/lib.rs", 28, 41)
-    ];
-    let candidates_main = vec![
-        map_position("src/submod.rs", 47, 52),
-        map_position("src/main.rs", 29, 42)
-    ];
     let expected_json = RefactorOutputs {
         candidates: vec![
-            map_lib(candidates_lib.clone(), false), 
-            map_lib(candidates_lib, true),
-            map_main(candidates_main.clone(), false),
-            map_main(candidates_main, true)
+            map_lib(vec![
+                map_position("src/lib.rs", 28, 41)], false), 
+            map_lib(vec![
+                map_position("src/submod.rs", 47, 52),
+                map_position("src/lib.rs", 28, 41)
+            ], true),
+            map_main(vec![
+                map_position("src/main.rs", 29, 42)], false),
+            map_main(vec![
+                map_position("src/submod.rs", 47, 52),
+                map_position("src/main.rs", 29, 42)
+            ], true)
         ],
         refactorings: vec![]
     };
