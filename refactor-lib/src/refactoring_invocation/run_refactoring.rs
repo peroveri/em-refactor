@@ -11,7 +11,7 @@ pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args:
         }, 
         Ok(RefactorResult::Success((content, replacements))) => {
             if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
-                print!("Crate:{}", serialize(&from_success(&rustc_args, replacements)).unwrap());
+                print!("{}", serialize(&from_success(&rustc_args, replacements)).unwrap());
             } else {
                 print!("{}", content);
             }
@@ -19,7 +19,7 @@ pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args:
         }, 
         Ok(RefactorResult::Err(err)) => {
             if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
-                println!("Crate:{}", serialize(&from_error(&rustc_args, err)).unwrap());
+                println!("{}", serialize(&from_error(&rustc_args, err)).unwrap());
                 Ok(())
             } else {
                 eprintln!("{}", err.message);

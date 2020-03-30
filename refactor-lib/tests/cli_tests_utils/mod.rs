@@ -43,23 +43,13 @@ pub fn create_output_err(crate_name: &str, is_test: bool, is_error: bool, messag
     }
 }
 
-pub fn assert_json_eq(expected: Vec<RefactorOutput>, actual: std::process::Output) {
+pub fn assert_json_eq(expected: RefactorOutputs, actual: std::process::Output) {
 
     let out_str = String::from_utf8(actual.stdout.clone()).unwrap();
 
     actual.assert().success();
-
-
-    let mut list = vec![];
-    for line in out_str.split("\n") {
-        if line.trim().len() == 0 {
-            continue;
-        }
-        assert!(line.starts_with("Crate:"), format!("{}", line));
-        let json_str = &line["Crate:".len()..];
-        let out_json = serde_json::from_str::<RefactorOutput>(json_str);
-        list.push(out_json.unwrap());
-    }
     
-    assert_eq!(expected, list);
+    let actual_json = serde_json::from_str::<RefactorOutputs>(&out_str).unwrap();
+
+    assert_eq!(expected, actual_json);
 }

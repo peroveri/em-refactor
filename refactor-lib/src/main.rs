@@ -1,3 +1,4 @@
+mod output_types;
 static DRIVER_NAME: &str = "my-refactor-driver";
 
 const MY_REFACTOR_HELP: &str = r#"Refactorings for the Rust programming language.
@@ -91,19 +92,21 @@ where
     //
     clean_local_targets(get_option(&args, "--target-dir=")).unwrap();
 
-    let exit_status = std::process::Command::new("cargo")
+    let output = std::process::Command::new("cargo")
         .args(&args)
         .env("RUSTC_WRAPPER", path)
         .env("MY_REFACTOR_ARGS", my_refactor_args.join(";"))
-        .spawn()
-        .expect("could not run cargo")
-        .wait()
-        .expect("failed to wait for cargo?");
-        
-    if exit_status.success() {
+        .stdout(std::process::Stdio::piped())
+        .output().unwrap();
+    
+    if output.status.success() {
+        let s = std::str::from_utf8(output.stdout.as_slice()).unwrap();
+        print!("{}", combine_output(s));
         Ok(())
     } else {
-        Err(exit_status.code().unwrap_or(-1))
+        let s = std::str::from_utf8(output.stderr.as_slice()).unwrap();
+        eprint!("{}", s);
+        Err(output.status.code().unwrap_or(-1))
     }
 }
 
@@ -145,6 +148,21 @@ fn clean_local_targets(target_dir: Option<String>) -> Result<(), std::io::Error>
         }
     }
     Ok(())
+}
+
+fn combine_output(s: &str) -> String {
+    if s.starts_with(r#"{"candidates":"#) {
+        let mut outputs = output_types::RefactorOutputs{candidates: vec![], refactorings: vec![]};
+        for line in s.split("\n") {
+            if line.trim().len() > 0 {
+                outputs.extend(serde_json::from_str::<output_types::RefactorOutputs>(&line).unwrap());
+            }
+        }
+        outputs.sort();
+        format!("{}", serde_json::to_string(&outputs).unwrap())
+    } else {
+        s.to_string()
+    }
 }
 
 #[test]

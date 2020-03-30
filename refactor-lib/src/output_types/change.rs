@@ -32,8 +32,36 @@ pub struct RefactorOutput {
     pub replacements: Vec<FileStringReplacement>,
     pub errors: Vec<RefactoringError>
 }
-
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RefactorOutputs {
-    pub crates: Vec<RefactorOutput>
+    pub candidates: Vec<CandidateOutput>,
+    pub refactorings: Vec<RefactorOutput>
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CandidateOutput {
+    pub candidates: Vec<CandidatePosition>,
+    pub crate_name: String,
+    pub is_test: bool,
+    pub refactoring: String
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CandidatePosition {
+    pub file: String,
+    pub from: u32,
+    pub to: u32
+}
+
+impl RefactorOutputs {
+    #[allow(unused)]
+    pub fn sort(&mut self) {
+        self.candidates.sort_by_key(|a| a.crate_name.clone());
+        self.refactorings.sort_by_key(|a| (a.crate_name.clone(), a.is_test))
+    }
+    #[allow(unused)]
+    pub fn extend(&mut self, other: RefactorOutputs) {
+        self.candidates.extend(other.candidates);
+        self.refactorings.extend(other.refactorings);
+    }
 }
