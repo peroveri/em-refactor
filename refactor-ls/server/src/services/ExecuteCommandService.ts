@@ -56,7 +56,7 @@ export class ExecuteCommandService {
         if (result.code === 0) {
             let outputs;
             try {
-                outputs = mapOutputToCrateList(result.stdout);
+                outputs = mapOutputToCrateList(result.stdout).refactorings;
             } catch(e) {
                 console.log(e);
                 throw e;

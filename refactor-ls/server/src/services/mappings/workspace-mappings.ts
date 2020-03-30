@@ -1,7 +1,10 @@
 import { Range, ApplyWorkspaceEditParams, TextDocumentEdit, TextEdit, WorkspaceFolder } from "vscode-languageserver";
 import { RefactorArgs } from "./code-action-refactoring-mappings";
 import * as path from "path";
-
+interface CrateOutputs {
+    candidates: any[],
+    refactorings: CrateOutput[]
+}
 interface CrateOutput {
     crate_name: string;
     // root_path: string;
@@ -37,9 +40,7 @@ const mapRange = (change: Change): Range =>
     Range.create(change.line_start, change.char_start, change.line_end, change.char_end);
 
 export const mapOutputToCrateList = (stdout: string) =>
-    stdout.split("\n")
-        .filter(e => e.trim().length > 0)
-        .map(e => JSON.parse(e.substr(e.indexOf("{"))) as CrateOutput);
+    JSON.parse(stdout) as CrateOutputs;
 
 export const mapToUnionOfChanges = (output: CrateOutput[]) => {
     const allChanges = output.map(e => e.replacements).reduce((acc, x) => acc.concat(x), []);
