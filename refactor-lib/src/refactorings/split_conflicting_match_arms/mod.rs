@@ -1,8 +1,6 @@
 use super::utils::{get_source, get_struct_hir_id};
 use super::visitors::collect_field;
-use crate::output_types::FileStringReplacement;
-use crate::refactoring_invocation::RefactoringErrorInternal;
-use rustc::ty::TyCtxt;
+use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal, TyContext};
 use rustc_span::{Span};
 
 mod conflicting_match_arm_collector;
@@ -14,19 +12,19 @@ mod split_conflicting_match_arms_named;
 /// These item declarations can only be found in the selection of statements (if they are item decls.)
 /// 
 /// (Maybe?) Only if the item declarations are used outside the selection (before or after)
-pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
-    if let Some((field, _index)) = collect_field(tcx, span) {
-        let struct_hir_id = get_struct_hir_id(tcx, &field);
+pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
+    if let Some((field, _index)) = collect_field(tcx.0, span) {
+        let struct_hir_id = get_struct_hir_id(tcx.0, &field);
         if field.is_positional() {
             unimplemented!("split-conflicting-match-arms tuple");
         } else {
-            split_conflicting_match_arms_named::do_refactoring(tcx, struct_hir_id, &field.ident.to_string(), field.ty.span)
+            split_conflicting_match_arms_named::do_refactoring(tcx.0, struct_hir_id, &field.ident.to_string(), field.ty.span)
         }
     } else {
         Err(RefactoringErrorInternal::invalid_selection_with_code(
             span.lo().0,
             span.hi().0,
-            &get_source(tcx, span)
+            &get_source(tcx.0, span)
         ))
     }
 }

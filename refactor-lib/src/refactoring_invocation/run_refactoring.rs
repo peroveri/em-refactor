@@ -1,5 +1,5 @@
 use crate::output_types::{FileStringReplacement};
-use crate::refactoring_invocation::{argument_list_to_refactor_def, from_error, from_success, map_args_to_query, MyRefactorCallbacks, RefactorFail, RefactoringErrorInternal, rustc_rerun, serialize, should_run_rustc_again};
+use crate::refactoring_invocation::{argument_list_to_refactor_def, from_error, from_success, MyRefactorCallbacks, RefactorFail, RefactoringErrorInternal, rustc_rerun, serialize, should_run_rustc_again};
 use if_chain::if_chain;
 
 pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args: Vec<String>) -> Result<(), i32> {
@@ -9,11 +9,11 @@ pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args:
             eprintln!("{}", e.message);
             Err(-1)
         }, 
-        Ok(RefactorResult::Success((content, replacements))) => {
+        Ok(RefactorResult::Success(replacements)) => {
             if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
                 print!("{}", serialize(&from_success(&rustc_args, replacements)).unwrap());
             } else {
-                print!("{}", content);
+                print!("{}", get_file_content(&replacements).unwrap());
             }
             Ok(())
         }, 
@@ -39,7 +39,7 @@ fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) -> Res
     // 2. Rerun the compiler to check if any errors were introduced
     // Runs with default callbacks
     if_chain! {
-        if let RefactorResult::Success((_, replacements)) = &refactor_res;
+        if let RefactorResult::Success(replacements) = &refactor_res;
         if should_run_rustc_again(refactor_args) && !replacements.is_empty();
         then {
             rustc_rerun(&replacements, &rustc_args)?;
@@ -50,19 +50,15 @@ fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) -> Res
 }
 
 pub enum RefactorResult {
-    Success((String, Vec<FileStringReplacement>)),
+    Success(Vec<FileStringReplacement>),
     Err(RefactoringErrorInternal)
 }
 
 fn run_refactoring_internal(rustc_args: &[String], refactor_args: &[String]) -> Result<RefactorResult, RefactorFail> {
     
-    let mut my_refactor = if let Ok(r) = map_args_to_query(refactor_args) {
-        MyRefactorCallbacks::from_arg(r)
-    } else { // should be removed
-        let refactor_def = argument_list_to_refactor_def(refactor_args)?;
+    let refactor_def = argument_list_to_refactor_def(refactor_args)?;
 
-        MyRefactorCallbacks::from_def(refactor_def)
-    };
+    let mut my_refactor = MyRefactorCallbacks::from_arg(refactor_def);
 
     let callbacks: &mut (dyn rustc_driver::Callbacks + Send) = &mut my_refactor;
 
@@ -79,20 +75,33 @@ fn run_refactoring_internal(rustc_args: &[String], refactor_args: &[String]) -> 
         return Err(RefactorFail::compile_err());
     }
 
-    if my_refactor.scr.is_some() {
 
-        return match my_refactor.result {
-            Err(err) => { Ok(RefactorResult::Err(err)) },
-            Ok(astdiff) => {
-                Ok(RefactorResult::Success((astdiff, vec![])))
-            }
-        };
-    }
-
-    match my_refactor.old_result {
+    match my_refactor.result {
         Err(err) => { Ok(RefactorResult::Err(err)) },
-        Ok(replacements) => {
-            Ok(RefactorResult::Success((my_refactor.content.unwrap_or("".to_owned()), replacements)))
+        Ok(astdiff) => {
+            Ok(RefactorResult::Success(astdiff.0))
         }
     }
+
+}
+
+
+pub fn get_file_content(changes: &[FileStringReplacement]) -> Option<String> {
+    use std::fs::File;
+    use std::io::prelude::*;
+    let mut changes = changes.to_vec();
+    changes.sort_by_key(|c| c.byte_start);
+    changes.reverse();
+
+    let mut file = File::open(&changes[0].file_name).unwrap();
+    let mut content = String::new();
+    file.read_to_string(&mut content).unwrap();
+    
+    for change in &changes {
+        let s1 = &content[..(change.byte_start) as usize];
+        let s2 = &content[(change.byte_end) as usize..];
+        content = format!("{}{}{}", s1, change.replacement, s2);
+    }
+
+    return Some(content);
 }

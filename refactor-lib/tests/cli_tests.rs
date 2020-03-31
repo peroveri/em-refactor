@@ -10,6 +10,8 @@ mod cli_tests_utils;
 fn cli_missing_args_should_output_nicely() {
     cargo_my_refactor()
         .arg(WORKSPACE_ARG)
+        .arg("--selection=0:0")
+        .arg("--file=main.rs")
         .arg("--")
         .arg(format!(
             "--target-dir={}",
@@ -252,6 +254,8 @@ fn cli_unknown_refactoring() {
     cargo_my_refactor()
         .arg(WORKSPACE_ARG)
         .arg("--refactoring=invalid_refactoring_name")
+        .arg("--selection=0:0")
+        .arg("--file=src/lib.rs")
         .arg("--")
         .arg(format!(
             "--target-dir={}",

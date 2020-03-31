@@ -1,10 +1,9 @@
 use rustc::ty::TyCtxt;
 use rustc_hir::HirId;
 use rustc_span::Span;
-use crate::output_types::FileStringReplacement;
-use crate::refactoring_invocation::RefactoringErrorInternal;
+use crate::refactoring_invocation::{AstDiff, QueryResult};
 
-pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_ident: &str, field_ty_span: Span) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
+pub fn do_refactoring(_tcx: TyCtxt, _struct_hir_id: HirId, _field_ident: &str, _field_ty_span: Span) -> QueryResult<AstDiff> {
 
     panic!()
 }

@@ -1,67 +1,55 @@
-use crate::refactoring_invocation::{AfterExpansionRefactoring, RefactorDefinition, SourceCodeRange, RefactorFail};
-use super::{Query, ToJson, OutputMain};
-
-pub fn map_args_to_query(args: &[String]) -> Result<Query, RefactorFail> {
-    let def = argument_list_to_refactor_def2(args)?;
-    if args.contains(&"--output-replacements-as-json".to_owned()) {
-        Ok(Query::AfterExpansion(Box::new(ToJson::new(def))))
-    } else {
-        Ok(Query::AfterExpansion(Box::new(OutputMain::new(def))))
-    }
-}
-
+use crate::refactoring_invocation::{AstContext, Query, QueryResult, RefactorFail, SourceCodeRange};
+use crate::refactorings::{box_field, close_over_variables, extract_block, inline_macro, introduce_closure, pull_up_item_declaration, split_conflicting_match_arms};
+use crate::refactoring_invocation::{AstDiff, TyContext};
+use rustc_span::Span;
 ///
 /// converts an argument list to a refactoring definition
 ///
-pub fn argument_list_to_refactor_def(args: &[String]) -> Result<RefactorDefinition, RefactorFail> {
+pub fn argument_list_to_refactor_def(args: &[String]) -> Result<Query<AstDiff>, RefactorFail> {
     let parser = RefactorArgsParser { args };
-    let res = parser.from_args();
-
-    match res {
-        Err(err) => Err(RefactorFail::arg_def(&err)),
-        Ok(v) => Ok(v)
-    }
-}
-pub fn argument_list_to_refactor_def2(args: &[String]) -> Result<Box<dyn AfterExpansionRefactoring + Send>, RefactorFail> {
-    let parser = RefactorArgsParser { args };
-    let res = parser.from_args2();
-
-    match res {
-        Err(err) => Err(RefactorFail::arg_def(&err)),
-        Ok(v) => Ok(v)
-    }
+    let args = parser.from_args()?;
+    map_args_to_query(args)
 }
 
 struct RefactorArgsParser<'a> {
     args: &'a [String],
 }
+#[derive(Debug, PartialEq)]
+struct RefactoringArgs {
+    refactoring: String,
+    range: SourceCodeRange
+}
+fn to_ast_query(r: SourceCodeRange, f: Box<dyn Fn(&AstContext, Span) -> QueryResult<AstDiff> + Send>) -> Query<AstDiff> {
+    Query::AfterExpansion(Box::new(move |ast| {
+        f(ast, ast.map_range_to_span(&r)?)
+    }))
+}
+fn to_ty_query(r: SourceCodeRange, f: Box<dyn Fn(&TyContext, Span) -> QueryResult<AstDiff> + Send>) -> Query<AstDiff> {
+    Query::AfterParsing(Box::new(move |ast| {
+        f(ast, ast.map_range_to_span(&r)?)
+    }))
+}
 
+fn map_args_to_query(args: RefactoringArgs) -> Result<Query<AstDiff>, RefactorFail> {
+    match args.refactoring.as_ref() {
+        "box-field" => Ok( to_ty_query(args.range, Box::new(box_field::do_refactoring))),
+        "close-over-variables" => Ok(to_ty_query(args.range, Box::new(close_over_variables::do_refactoring))),
+        "extract-block" => Ok(to_ty_query(args.range, Box::new(extract_block::do_refactoring))),
+        "introduce-closure" => Ok(to_ty_query(args.range, Box::new(introduce_closure::do_refactoring))),
+        "inline-macro" => Ok(to_ast_query(args.range, Box::new(inline_macro::do_refactoring))),
+        "pull-up-item-declaration" => Ok(to_ast_query(args.range, Box::new(pull_up_item_declaration::do_refactoring))),
+        "split-conflicting-match-arms" => Ok(to_ty_query(args.range, Box::new(split_conflicting_match_arms::do_refactoring))),
+        s => Err(RefactorFail::arg_def(&format!("Unknown refactoring: {}", s)))
+    }
+}
 impl RefactorArgsParser<'_> {
-    pub fn from_args2(&self) -> Result<Box<dyn AfterExpansionRefactoring + Send>, String> {
-        match self.get_param("--refactoring")? {
-            // "box-field" => Ok(RefactorDefinition::BoxField(self.parse_range()?)),
-            // "close-over-variables" => Ok(RefactorDefinition::CloseOverVariables(self.parse_range()?)),
-            // "extract-block" => Ok(RefactorDefinition::ExtractBlock(self.parse_range()?)),
-            // "introduce-closure" => Ok(RefactorDefinition::IntroduceClosure(self.parse_range()?)),
-            // "inline-macro" => Ok(RefactorDefinition::InlineMacro(self.parse_range()?)),
-            "pull-up-item-declaration" => Ok(Box::new(crate::refactorings::pull_up_item_declaration::PullUpItemDeclRefa(self.parse_range()?))),
-            // "split-conflicting-match-amrs" => Ok(RefactorDefinition::SplitConflictingMatchArms(self.parse_range()?)),
-            s => Err(format!("Unknown refactoring: {}", s)),
-        }
+    pub fn from_args(&self) -> Result<RefactoringArgs, RefactorFail> {
+        Ok(RefactoringArgs {
+            range: self.parse_range()?,
+            refactoring: self.get_param("--refactoring")?.to_string()
+        })
     }
-    pub fn from_args(&self) -> Result<RefactorDefinition, String> {
-        match self.get_param("--refactoring")? {
-            "box-field" => Ok(RefactorDefinition::BoxField(self.parse_range()?)),
-            "close-over-variables" => Ok(RefactorDefinition::CloseOverVariables(self.parse_range()?)),
-            "extract-block" => Ok(RefactorDefinition::ExtractBlock(self.parse_range()?)),
-            "introduce-closure" => Ok(RefactorDefinition::IntroduceClosure(self.parse_range()?)),
-            "inline-macro" => Ok(RefactorDefinition::InlineMacro(self.parse_range()?)),
-            "pull-up-item-declaration" => Ok(RefactorDefinition::PullUpItemDeclaration(self.parse_range()?)),
-            "split-conflicting-match-amrs" => Ok(RefactorDefinition::SplitConflictingMatchArms(self.parse_range()?)),
-            s => Err(format!("Unknown refactoring: {}", s)),
-        }
-    }
-    pub fn parse_range(&self) -> Result<SourceCodeRange, String> {
+    pub fn parse_range(&self) -> Result<SourceCodeRange, RefactorFail> {
         let selection = self.get_param("--selection")?;
         let file = self.get_param("--file")?;
         let ints = Self::get_int(selection)?;
@@ -72,16 +60,16 @@ impl RefactorArgsParser<'_> {
             to: ints.1,
         })
     }
-    pub fn get_int(selection: &str) -> Result<(u32, u32), String> {
+    pub fn get_int(selection: &str) -> Result<(u32, u32), RefactorFail> {
         let mut split = selection.split(':');
         if let (Some(from), Some(to)) = (split.nth(0), split.nth(0)) {
-            // if let Some(to) = split.nth(0) {
-            return Ok((from.parse().unwrap(), to.parse().unwrap()));
-            // }
+            let from = from.parse().map_err(|_| RefactorFail::arg_def(&format!("{} is not a valid int", from)))?;
+            let to = to.parse().map_err(|_| RefactorFail::arg_def(&format!("{} is not a valid int", from)))?;
+            return Ok((from, to));
         }
-        Err("Selection should be formatted as <byte_from>:<byte_to>".to_owned())
+        Err(RefactorFail::arg_def("Selection should be formatted as <byte_from>:<byte_to>"))
     }
-    fn get_param(&self, name: &str) -> Result<&str, String> {
+    fn get_param(&self, name: &str) -> Result<&str, RefactorFail> {
         for t in self.args {
             let mut s = t.split('=');
             if s.nth(0) == Some(name) {
@@ -90,7 +78,7 @@ impl RefactorArgsParser<'_> {
                 }
             }
         }
-        Err(format!("Expected {}", name))
+        Err(RefactorFail::arg_def(&format!("Expected {}", name)))
     }
 }
 
@@ -99,20 +87,23 @@ mod test {
     use super::*;
     #[test]
     fn refactor_def_from_args() {
-        let args = vec![
-            "--refactoring=extract-block".to_owned(),
-            "--file=main.rs".to_owned(),
-            "--selection=1:2".to_owned(),
-        ];
-        let range = SourceCodeRange {
-            from: 1,
-            to: 2,
-            file_name: "main.rs".to_owned(),
+        let parser = RefactorArgsParser {
+            args: &vec![
+                "--refactoring=extract-block".to_owned(),
+                "--file=main.rs".to_owned(),
+                "--selection=1:2".to_owned(),
+            ]
         };
-        let rd = RefactorDefinition::ExtractBlock(range);
-        let expected = Ok(rd);
+        let expected = Ok(RefactoringArgs {
+            range: SourceCodeRange {
+                from: 1,
+                to: 2,
+                file_name: "main.rs".to_owned(),
+            },
+            refactoring: "extract-block".to_string()
+        });
 
-        let actual = argument_list_to_refactor_def(&args);
+        let actual = parser.from_args();
 
         assert_eq!(expected, actual);
     }

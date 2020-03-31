@@ -1,7 +1,5 @@
 use super::utils::{map_change_from_span, get_source};
-use crate::output_types::FileStringReplacement;
-use crate::refactoring_invocation::RefactoringErrorInternal;
-use rustc::ty::TyCtxt;
+use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal, TyContext};
 use rustc_span::Span;
 use anonymous_closure_collector::collect_anonymous_closure;
 use expr_use_visit::collect_vars;
@@ -20,10 +18,10 @@ mod variable_use_collection;
 ///    a. Add V' as parameters of C'
 ///    b. Add V' as arguments of M'
 ///    c. If V' is a borrow, add deref to all occurences of V' in C'
-pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
-    if let Some(closure) = collect_anonymous_closure(tcx, span) {
-        let source_map = tcx.sess.source_map();
-        let vars = collect_vars(tcx, closure.body_id, closure.body_span);
+pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
+    if let Some(closure) = collect_anonymous_closure(tcx.0, span) {
+        let source_map = tcx.0.sess.source_map();
+        let vars = collect_vars(tcx.0, closure.body_id, closure.body_span);
 
         let mut changes = vec![];
 
@@ -50,15 +48,15 @@ pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileStringReplaceme
         }
 
         for v in vars.get_borrows() {
-            changes.push(map_change_from_span(source_map, v, format!("(*{})", get_source(tcx, v))));
+            changes.push(map_change_from_span(source_map, v, format!("(*{})", get_source(tcx.0, v))));
         }
 
-        Ok(changes)
+        Ok(AstDiff(changes))
     } else {
         Err(RefactoringErrorInternal::invalid_selection_with_code(
             span.lo().0,
             span.hi().0,
-            &get_source(tcx, span)
+            &get_source(tcx.0, span)
         ))
     }
 }

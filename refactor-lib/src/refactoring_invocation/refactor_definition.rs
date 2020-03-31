@@ -1,18 +1,3 @@
-///
-/// Different refactoring definitions with arguments
-///
-#[derive(PartialEq, Debug)]
-pub enum RefactorDefinition {
-    ExtractBlock(SourceCodeRange),
-    BoxField(SourceCodeRange),
-    CloseOverVariables(SourceCodeRange),
-    IntroduceClosure(SourceCodeRange),
-    InlineMacro(SourceCodeRange),
-    PullUpItemDeclaration(SourceCodeRange),
-    SplitConflictingMatchArms(SourceCodeRange),
-    // CloseOverVariables(SourceCodeRange),
-    // LiftClosure(SourceCodeRange),
-}
 
 // refactoring result pr crate
 // - crash (bad format on input, didnt compile, unhandled error, ++) => stop execution

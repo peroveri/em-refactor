@@ -9,6 +9,7 @@ mod refactor_definition_parser;
 mod rustc_pass;
 mod rustc_rerun;
 mod rustc_utils;
+mod ty_context;
 mod types;
 
 pub use arg_mappings::*;
@@ -18,8 +19,9 @@ pub use file_loader::InMemoryFileLoader;
 pub use my_refactor_callbacks::*;
 pub use refactor_definition::*;
 pub use refactor_definition_parser::*;
-pub use run_refactoring::{run_refactoring_and_output_result};
+pub use run_refactoring::*;
 pub use rustc_pass::{pass_to_rustc, should_pass_to_rustc};
 pub use rustc_rerun::{rustc_rerun, should_run_rustc_again};
 pub use rustc_utils::get_sys_root;
+pub use ty_context::*;
 pub use types::*;

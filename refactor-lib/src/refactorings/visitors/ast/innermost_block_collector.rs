@@ -57,24 +57,21 @@ impl<'v> Visitor<'v> for BlockVisitorCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::refactoring_invocation::{AfterExpansion, SourceCodeRange};
+    use crate::refactoring_invocation::SourceCodeRange;
     use crate::test_utils::{assert_err2, assert_success2};
     use quote::quote;
 
-    struct InnermostBlockCollector(SourceCodeRange);
+    fn map(from: u32, to: u32) -> Box<dyn Fn(String) -> Box<dyn Fn(&AstContext) -> QueryResult<String> + Send>> { 
+        Box::new(move |file_name| Box::new(move |ast| {
 
-    impl AfterExpansion for InnermostBlockCollector {
-        fn after_expansion(&self, ast: &AstContext) -> QueryResult<String> {
-            collect_innermost_block(ast, ast.map_range_to_span(&self.0)?)
-                .map(|b| ast.get_source(b.span))
-        }
-    }
-    fn map(from: u32, to: u32) -> Box<dyn Fn(String) -> Box<dyn AfterExpansion + Send>> { 
-        Box::new(move |name| Box::new(InnermostBlockCollector(SourceCodeRange {
-            file_name: name,
-            from,
-            to
-        })))
+            let block_span = collect_innermost_block(ast, ast.map_range_to_span(&SourceCodeRange {
+                file_name: file_name.clone(),
+                from,
+                to
+            })?)?.span;
+
+            Ok(ast.get_source(block_span))
+        }))
     }
     #[test]
     fn block_collector_fn_with_single_block() {

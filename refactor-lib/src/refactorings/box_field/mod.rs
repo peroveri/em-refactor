@@ -1,9 +1,7 @@
-use rustc::ty::TyCtxt;
 use rustc_hir::HirId;
 use rustc_span::Span;
 
-use crate::output_types::FileStringReplacement;
-use crate::refactoring_invocation::RefactoringErrorInternal;
+use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal, TyContext};
 use super::utils::{get_source, get_struct_hir_id};
 use super::{box_named_field, box_tuple_field};
 use super::visitors::collect_field;
@@ -33,21 +31,22 @@ pub struct StructPatternCollection {
 ///   - Add Box::new around V
 /// - for F' in Fs
 ///   - Add * around F'
-pub fn do_refactoring(tcx: TyCtxt, span: Span) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
-    if let Some((field, index)) = collect_field(tcx, span) {
-        let struct_hir_id = get_struct_hir_id(tcx, &field);
+
+pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
+    if let Some((field, index)) = collect_field(tcx.0, span) {
+        let struct_hir_id = get_struct_hir_id(tcx.0, &field);
 
         if field.is_positional() {
-            box_tuple_field::do_refactoring(tcx, struct_hir_id, index, field.ty.span)
+            Ok(AstDiff(box_tuple_field::do_refactoring(tcx.0, struct_hir_id, index, field.ty.span)?))
         } else {
-            box_named_field::do_refactoring(tcx, struct_hir_id, &field.ident.to_string(), field.ty.span)
+            Ok(AstDiff(box_named_field::do_refactoring(tcx.0, struct_hir_id, &field.ident.to_string(), field.ty.span)?))
         }
         
     } else {
         Err(RefactoringErrorInternal::invalid_selection_with_code(
             span.lo().0,
             span.hi().0,
-            &get_source(tcx, span)
+            &get_source(tcx.0, span)
         ))
     }
 }
