@@ -6,7 +6,7 @@ use std::path::Path;
 use quote::__rt::TokenStream;
 use rustc_span::{BytePos, Span};
 use tempfile::TempDir;
-use crate::refactoring_invocation::{argument_list_to_refactor_def, AstContext, get_sys_root, MyRefactorCallbacks, Query, QueryResult, RefactoringErrorInternal};
+use crate::refactoring_invocation::{argument_list_to_refactor_def, AstContext, get_sys_root, MyRefactorCallbacks, Query, QueryResult, RefactoringErrorInternal, TyContext};
 
 /**
  * Function that can be used to run unit tests.
@@ -203,4 +203,23 @@ pub fn assert_err2(prog: TokenStream, init: Box<dyn Fn(String) -> Box<dyn Fn(&As
     err.unwrap();
 
     assert_eq!(c.result.unwrap_err(), expected);
+}
+pub fn assert_success3<T, F>(program: &str, init: F, expected: T) 
+    where
+        F: Fn(String, u32, u32) -> Box<dyn Fn(&TyContext) -> QueryResult<T> + Send>,
+        T: std::fmt::Debug + PartialEq + Send {
+    const S0_STR: &str = "/*START*/";
+    const S1_STR: &str = "/*END*/";
+    let s0 = (program.find(S0_STR).unwrap() + S0_STR.len()) as u32;
+    let s1 = program.find(S1_STR).unwrap() as u32;
+    
+    let (rustc_args, d) = init_main_rs_and_get_args(program);
+    let main_path = d.path().join("./main.rs").to_str().unwrap().to_owned();
+    let q = init(main_path, s0, s1);
+
+    let mut c = MyRefactorCallbacks::from_arg(Query::AfterParsing(q));
+    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
+    err.unwrap();
+
+    assert_eq!(c.result.unwrap(), expected);
 }

@@ -5,6 +5,15 @@ use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Plac
 use rustc_span::Span;
 use super::variable_use_collection::VariableUseCollection;
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub enum Bk {
+    Copy,
+    Move,
+    ImmBorrow,
+    UniqueImmBorrow,
+    MutBorrow,
+    Mut
+}
 struct VariableCollectorDelegate<'tcx> {
     tcx: TyCtxt<'tcx>,
     extract_span: Span,
@@ -33,25 +42,37 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
         &mut self,
         used_span: Span,
         place: &Place,
-        is_mutated: bool,
-        is_borrowed: bool
+        bk: Bk
     ) {
         if let Some((ident, decl_span)) = self.get_ident_and_decl_span(place) {
             if self.extract_span.contains(used_span) && !self.extract_span.contains(decl_span) {
                 // should be ret val
-                self.usages.add_return_value(ident, is_borrowed, is_mutated, used_span);
+                self.usages.add_return_value(ident, bk, used_span);
             }
         }
     }
 }
 
+fn cm_to_bk(cm: ConsumeMode) -> Bk{
+    match cm {
+        ConsumeMode::Copy => Bk::Copy,
+        ConsumeMode::Move => Bk::Move
+    }
+}
+fn bk_to_bk(cm: ty::BorrowKind) -> Bk{ // Change name
+    match cm {
+        ty::BorrowKind::ImmBorrow => Bk::ImmBorrow,
+        ty::BorrowKind::UniqueImmBorrow => Bk::UniqueImmBorrow,
+        ty::BorrowKind::MutBorrow => Bk::MutBorrow,
+    }
+}
+
 impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
-    fn consume(&mut self, place: &Place<'tcx>, _cm: ConsumeMode) {
-        self.var_used(place.span, &place, false, false);
+    fn consume(&mut self, place: &Place<'tcx>, cm: ConsumeMode) {
+        self.var_used(place.span, &place, cm_to_bk(cm));
     }
 
     fn borrow(&mut self, place: &Place<'tcx>, bk: ty::BorrowKind) {
-        let is_mutated = ty::BorrowKind::MutBorrow == bk;
         let expr = self.tcx.hir().expect_expr(place.hir_id);
         let borrow_expr = match expr.kind {
             ExprKind::AddrOf(..) => {expr},
@@ -64,14 +85,14 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
                 }
              }
         };
-        self.var_used(borrow_expr.span, &place, is_mutated, true);
+        self.var_used(borrow_expr.span, &place, bk_to_bk(bk));
     }
 
     fn mutate(&mut self, place: &Place<'tcx>) {
         // if mode == MutateMode::Init {
         //     return;
         // }
-        self.var_used(place.span, &place, true, false);
+        self.var_used(place.span, &place, Bk::Mut);
     }
 }
 
@@ -100,130 +121,74 @@ pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, body_id: BodyId, span: Span) -> 
 mod test {
     use super::*;
     use super::super::*;
-    use quote::quote;
-    use crate::{create_test_span, run_after_analysis};
+    use crate::refactoring_invocation::TyContext;
+    use crate::test_utils::assert_success3;
 
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(Bk, String, (u32, u32))>> + Send> {
+        Box::new(move |ty| {
+            let closure = collect_anonymous_closure(ty.0, ty.get_span(&file_name, from, to)?).unwrap();
+            let vars = collect_vars(ty.0, closure.body_id, closure.body_span);
+
+            Ok(vars.to_cmp())
+        })
+    }
 
     #[test]
     fn closure_expr_use_visit_should_collect_zero() {
-        run_after_analysis(quote! {
-            fn foo ( ) { ( | | { } ) ( ) ; } 
-        }, |tcx| {
-            let closure_span = create_test_span(13, 28);
-            let closure = collect_anonymous_closure(tcx, closure_span).unwrap();
-            let vars = collect_vars(tcx, closure.body_id, closure.body_span);
-
-
-            assert_eq!(0, vars.get_params().len());
-        });
+        assert_success3(
+            r#"fn foo () {
+    /*START*/(|| { })()/*END*/;
+}"#, 
+        map, 
+        vec![]);
     }
     #[test]
     fn closure_expr_use_visit_should_collect_a() {
-        run_after_analysis(quote! {
-            fn foo ( ) { let i = 0 ; ( | | { & i ; } ) ( ) ; } 
-        }, |tcx| {
-            let closure_span = create_test_span(25, 46);
-            let closure = collect_anonymous_closure(tcx, closure_span).unwrap();
-            let vars = collect_vars(tcx, closure.body_id, closure.body_span);
-
-            let borrows = vars.get_borrows();
-            assert_eq!(1, borrows.len());
-            assert_eq!(borrows[0], create_test_span(33, 36));
-
-            let params = vars.get_params();
-            assert_eq!(1, params.len());
-            assert_eq!("i", params[0].ident);
-            assert!(!params[0].is_mutated);
-            assert!(!params[0].is_borrow);
-
-            let args = vars.get_args();
-            assert_eq!(1, args.len());
-            assert_eq!("i", args[0].ident);
-            assert!(!args[0].is_mutated);
-            assert!(args[0].is_borrow);
-            
-        });
+        assert_success3(
+            r#"fn foo () {
+    let i = 0;
+    /*START*/(|| { 
+        &i;
+    })()/*END*/;
+}"#,
+        map,
+        vec![
+            (Bk::ImmBorrow, "i".to_string(), (55, 57))
+        ]);
     }
     #[test]
     fn closure_expr_use_visit_should_collect_b() {
-        run_after_analysis(quote! {
-            fn foo ( ) { let i = & 0 ; ( | | { i ; } ) ( ) ; } 
-        }, |tcx| {
-            let closure_span = create_test_span(27, 46);
-            let closure = collect_anonymous_closure(tcx, closure_span).unwrap();
-            let vars = collect_vars(tcx, closure.body_id, closure.body_span);
-
-            let borrows = vars.get_borrows();
-            assert_eq!(0, borrows.len());
-
-            let params = vars.get_params();
-            assert_eq!(1, params.len());
-            assert_eq!("i", params[0].ident);
-            assert!(!params[0].is_mutated);
-            assert!(!params[0].is_borrow);
-
-            let args = vars.get_args();
-            assert_eq!(1, args.len());
-            assert_eq!("i", args[0].ident);
-            assert!(!args[0].is_mutated);
-            assert!(!args[0].is_borrow);
-            
-        });
+        assert_success3(
+            r#"fn foo () {
+    let i = &0;
+    /*START*/(|| { 
+        i; 
+    })()/*END*/;
+}"#, 
+        map,
+        vec![(Bk::Copy, "i".to_string(), (56, 57))]);
     }
-    // #[test]
-    // fn closure_expr_use_visit_should_collect_c() {
-    //     run_after_analysis(quote! {
-    //         fn foo ( ) { let i = 0 ; ( | | { & i ; } ) ( ) ; i ; } 
-    //     }, |tcx| {
-    //         let closure_span = create_test_span(25, 46);
-    //         let closure = collect_anonymous_closure(tcx, closure_span).unwrap();
-    //         let vars = collect_vars(tcx, closure.body_id, closure.body_span);
-
-    //         panic!("{}", get_source(tcx, tcx.hir().body(closure.body_id).value.span));
-
-    //         let borrows = vars.get_borrows();
-    //         assert_eq!(1, borrows.len());
-    //         assert_eq!(borrows[0], create_test_span(33, 36));
-
-    //         let params = vars.get_params();
-    //         assert_eq!(1, params.len());
-    //         assert_eq!("i", params[0].ident);
-    //         assert!(!params[0].is_mutated);
-    //         assert!(!params[0].is_borrow);
-
-    //         let args = vars.get_args();
-    //         assert_eq!(1, args.len());
-    //         assert_eq!("i", args[0].ident);
-    //         assert!(!args[0].is_mutated);
-    //         assert!(args[0].is_borrow);
-            
-    //     });
-    // }
-    // #[test]
-    // fn closure_expr_use_visit_should_collect_d() {
-    //     run_after_analysis(quote! {
-    //         fn foo ( ) { let i = 0 ; ( | | { } ) ( ) ; i ; } 
-    //     }, |tcx| {
-    //         let closure_span = create_test_span(25, 46);
-    //         let closure = collect_anonymous_closure(tcx, closure_span).unwrap();
-    //         let vars = collect_vars(tcx, closure.body_id, closure.body_span);
-
-    //         let borrows = vars.get_borrows();
-    //         assert_eq!(1, borrows.len());
-    //         assert_eq!(borrows[0], create_test_span(33, 36));
-
-    //         let params = vars.get_params();
-    //         assert_eq!(1, params.len());
-    //         assert_eq!("i", params[0].ident);
-    //         assert!(!params[0].is_mutated);
-    //         assert!(!params[0].is_borrow);
-
-    //         let args = vars.get_args();
-    //         assert_eq!(1, args.len());
-    //         assert_eq!("i", args[0].ident);
-    //         assert!(!args[0].is_mutated);
-    //         assert!(args[0].is_borrow);
-            
-    //     });
-    // }
+    #[test]
+    fn closure_expr_use_visit_should_collect_c() {
+        assert_success3(
+            r#"fn foo () {
+    let i = &mut 0;
+    /*START*/(|| {
+        *i = 1;
+    })()/*END*/;
+}"#,
+        map,
+        vec![(Bk::Mut, "i".to_string(), (59, 61))]);
+    }
+    #[test]
+    fn closure_expr_use_visit_should_collect_d() {
+        assert_success3(
+            r#"fn foo() {
+    let i = &mut 0;
+    /*START*/(|| {
+        *i = 1;
+    })()/*END*/;
+}"#, map,
+            vec![(Bk::Mut, "i".to_string(), (58, 60))]);
+    }
 }

@@ -2,7 +2,7 @@ use super::utils::{map_change_from_span, get_source};
 use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal, TyContext};
 use rustc_span::Span;
 use anonymous_closure_collector::collect_anonymous_closure;
-use expr_use_visit::collect_vars;
+use expr_use_visit::{Bk, collect_vars};
 
 mod anonymous_closure_collector;
 mod expr_use_visit;
@@ -19,7 +19,7 @@ mod variable_use_collection;
 ///    b. Add V' as arguments of M'
 ///    c. If V' is a borrow, add deref to all occurences of V' in C'
 pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
-    if let Some(closure) = collect_anonymous_closure(tcx.0, span) {
+    if let Ok(closure) = collect_anonymous_closure(tcx.0, span) {
         let source_map = tcx.0.sess.source_map();
         let vars = collect_vars(tcx.0, closure.body_id, closure.body_span);
 

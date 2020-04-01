@@ -55,6 +55,7 @@ pub fn get_source(tcx: TyCtxt, span: Span) -> String {
     tcx.sess.source_map().span_to_snippet(span).unwrap()
 }
 
+#[cfg(test)]
 pub fn get_source_from_compiler(compiler: &rustc_interface::interface::Compiler, span: Span) -> String {
     compiler.source_map().span_to_snippet(span).unwrap()
 }

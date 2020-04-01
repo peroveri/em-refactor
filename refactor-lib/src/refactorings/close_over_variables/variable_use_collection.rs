@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use rustc_span::Span;
+use super::Bk;
 
 // // Should keep track of the use of a variable that is declared outside the closure, but used inside.
 // pub struct SingleVariableUse {
@@ -26,6 +27,21 @@ use rustc_span::Span;
 //     is_mutated: bool
 // }
 
+#[derive(PartialEq, Debug, Clone)]
+pub struct Param {
+    pub ident: String,
+    pub is_borrow: bool,
+    pub is_mut: bool
+}
+impl Param {
+    pub fn new(ident: &str, is_mut: bool, is_borrow: bool) -> Self {
+        Self {
+            ident: ident.to_string(),
+            is_borrow,
+            is_mut
+        }
+    }
+}
 // change to keep a dictionary?
 // find a name
 pub struct VariableUseCollection {
@@ -40,7 +56,12 @@ impl VariableUseCollection {
             return_values: vec![],
         }
     }
-
+    #[cfg(test)]
+    pub fn to_cmp(&self) -> Vec<(Bk, String, (u32, u32))> {
+        self.return_values.iter()
+            .map(|r| (r.bk, r.ident.to_string(), (r.span.lo().0, r.span.hi().0)))
+            .collect::<Vec<_>>()
+    }
     // pub fn get_use_by_ident(&self) -> Vec<SingleVariableUse> {
     //     let mut ret: Vec<SingleVariableUse> = vec![];
     //     for v in &self.return_values {
@@ -62,17 +83,16 @@ impl VariableUseCollection {
     //     }
     //     ret
     // }
-    pub fn add_return_value(&mut self, ident: String, is_borrow: bool, is_mutated: bool, span: Span) {
+    pub fn add_return_value(&mut self, ident: String, bk: Bk, span: Span) {
         self.return_values.push(VariableUse {
             ident,
-            is_borrow,
-            is_mutated,
+            bk,
             span
         });
     }
 
-    pub fn get_params(&self) -> Vec<VariableUse> {
-        let mut map: HashMap<String, VariableUse> = HashMap::new();
+    pub fn get_params(&self) -> Vec<Param> {
+        let mut map: HashMap<String, Param> = HashMap::new();
 
         let mut ids = vec![]; // HashMap doesnt preserve order
 
@@ -81,10 +101,10 @@ impl VariableUseCollection {
                 ids.push(rv.ident.to_string());
             }
             if let Some(entry) = map.get_mut(&rv.ident) {
-                entry.is_mutated = entry.is_mutated || rv.is_mutated;
-                entry.is_borrow = entry.is_borrow || rv.is_borrow;
+                entry.is_mut = entry.is_mut || rv.is_mutated();
+                entry.is_borrow = entry.is_borrow || rv.is_borrow();
             } else {
-                let e = rv.clone();
+                let e = Param::new(&rv.ident, rv.is_mutated(), rv.is_borrow());
                 map.insert(rv.ident.clone(), e);
             }
         }
@@ -92,15 +112,15 @@ impl VariableUseCollection {
         ids.iter()
             .map(|id| {
                 let mut v = map.get(id).unwrap().clone();
-                if v.is_borrow && !v.is_mutated {
+                if v.is_borrow && !v.is_mut {
                     v.is_borrow = false;
                 }
                 v
             })
             .collect::<Vec<_>>()
     }
-    pub fn get_args(&self) -> Vec<VariableUse> {
-        let mut map: HashMap<String, VariableUse> = HashMap::new();
+    pub fn get_args(&self) -> Vec<Param> {
+        let mut map: HashMap<String, Param> = HashMap::new();
 
         let mut ids = vec![]; // HashMap doesnt preserve order
 
@@ -109,10 +129,10 @@ impl VariableUseCollection {
                 ids.push(rv.ident.to_string());
             }
             if let Some(entry) = map.get_mut(&rv.ident) {
-                entry.is_mutated = entry.is_mutated || rv.is_mutated;
-                entry.is_borrow = entry.is_borrow || rv.is_borrow;
+                entry.is_mut = entry.is_mut || rv.is_mutated();
+                entry.is_borrow = entry.is_borrow || rv.is_borrow();
             } else {
-                let e = rv.clone();
+                let e = Param::new(&rv.ident, rv.is_mutated(), rv.is_borrow());
                 map.insert(rv.ident.clone(), e);
             }
         }
@@ -122,17 +142,33 @@ impl VariableUseCollection {
             .collect::<Vec<_>>()
     }
     pub fn get_borrows(&self) -> Vec<Span> {
-        self.return_values.iter().filter(|rv| rv.is_borrow).map(|rv| rv.span).collect::<Vec<_>>()
+        self.return_values.iter().filter(|rv| rv.is_borrow()).map(|rv| rv.span).collect::<Vec<_>>()
     }
 }
 #[derive(Clone)]
 pub struct VariableUse {
-    pub is_mutated: bool,
-    pub is_borrow: bool,
+    pub bk: Bk,
     pub ident: String,
     pub span: Span
 }
 impl VariableUse {
+    pub fn is_borrow(&self) -> bool {
+        match self.bk {
+            Bk::MutBorrow => true,
+            Bk::ImmBorrow => true,
+            Bk::UniqueImmBorrow => true,
+            _ => false
+        }
+    }
+    pub fn is_mutated(&self) -> bool {
+        match self.bk {
+            Bk::MutBorrow => true,
+            Bk::Mut => true,
+            _ => false
+        }
+    }
+}
+impl Param {
     pub fn as_arg(&self) -> String {
         format!("{}{}", if self.is_borrow {
             "&"

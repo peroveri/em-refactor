@@ -3,8 +3,10 @@ use rustc_span::{BytePos, Span};
 use rustc_hir::{BodyId, Expr, ExprKind};
 use rustc_hir::intravisit::{NestedVisitorMap, Visitor, walk_expr, walk_crate};
 use rustc::hir::map::Map;
+use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal};
+use crate::refactorings::utils::get_source;
 
-pub fn collect_anonymous_closure<'v>(tcx: TyCtxt<'v>, pos: Span) -> Option<Closure> {
+pub fn collect_anonymous_closure<'v>(tcx: TyCtxt<'v>, pos: Span) -> QueryResult<Closure> {
     let mut v = ClosureCollector {
         tcx,
         pos,
@@ -13,7 +15,7 @@ pub fn collect_anonymous_closure<'v>(tcx: TyCtxt<'v>, pos: Span) -> Option<Closu
 
     walk_crate(&mut v, tcx.hir().krate());
 
-    v.result
+    v.result.ok_or_else(|| RefactoringErrorInternal::invalid_selection_with_code(pos.lo().0, pos.hi().0, &get_source(tcx, pos)))
 }
 
 impl<'v> Visitor<'v> for ClosureCollector<'v> {
@@ -80,7 +82,7 @@ mod test {
             let params = create_test_span(18, 18);
             let args = create_test_span(28, 28);
             let closure = collect_anonymous_closure(tcx, closure_span);
-            if !closure.is_some() {
+            if !closure.is_ok() {
                 panic!(get_source(tcx, closure_span));
             }
 
@@ -99,7 +101,7 @@ mod test {
             let params = create_test_span(24, 24);
             let args = create_test_span(36, 36);
             let closure = collect_anonymous_closure(tcx, closure_span);
-            if !closure.is_some() {
+            if !closure.is_ok() {
                 panic!(get_source(tcx, closure_span));
             }
 
