@@ -60,6 +60,8 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
     }
 }
 
+/// Collect variables declared inside 'span', but used outside 'span'
+/// Should also return an error if one of the return values is a borrow, or contains a borrow
 pub fn collect_vars(tcx: &TyContext, body_id: BodyId, span: Span) -> VariableUseCollection {
     let def_id = body_id.hir_id.owner.to_def_id();
     tcx.0.infer_ctxt().enter(|inf| {
