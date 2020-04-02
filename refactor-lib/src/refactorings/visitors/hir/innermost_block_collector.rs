@@ -4,6 +4,7 @@ use rustc::hir::map::Map;
 use rustc::ty::TyCtxt;
 use rustc_span::Span;
 use super::desugaring::walk_desugars;
+use crate::refactoring_invocation::{QueryResult, TyContext};
 
 struct BlockCollector<'v> {
     tcx: TyCtxt<'v>,
@@ -16,17 +17,21 @@ struct BlockCollector<'v> {
  * Given a selection (byte start, byte end) and file name, this visitor finds
  * the innermost block containing `pos`
  */
-pub fn collect_innermost_block<'v>(tcx: TyCtxt<'v>, pos: Span) -> Option<(&'v Block, BodyId)> {
+pub fn collect_innermost_block<'v>(tcx: &'v TyContext, pos: Span) -> QueryResult<(&'v Block<'v>, BodyId)> {
     let mut v = BlockCollector {
-        tcx,
+        tcx: tcx.0,
         pos,
         body_id: vec![],
         result: None
     };
 
-    walk_crate(&mut v, tcx.hir().krate());
+    walk_crate(&mut v, tcx.0.hir().krate());
 
-    v.result
+    if let Some(r) = v.result {
+        Ok(r)
+    } else {
+        Err(tcx.span_err(pos))
+    }
 }
 
 impl<'v> Visitor<'v> for BlockCollector<'v> {
@@ -163,14 +168,16 @@ mod test_util {
 
     pub fn assert_success(prog: TokenStream, span: (u32, u32), expected: &str) {
         run_after_analysis(prog, |tcx| {
-            let (block, _) = collect_innermost_block(tcx, create_test_span(span.0, span.1)).unwrap();
+            let tcx1 = TyContext(tcx);
+            let (block, _) = collect_innermost_block(&tcx1, create_test_span(span.0, span.1)).unwrap();
             
             assert_eq!(get_source(tcx, block.span), expected);
         });
     }
     pub fn assert_fail(prog: TokenStream, span: (u32, u32)) {
         run_after_analysis(prog, |tcx| {
-            assert!(collect_innermost_block(tcx, create_test_span(span.0, span.1)).is_none());
+            let tcx1 = TyContext(tcx);
+            assert!(collect_innermost_block(&tcx1, create_test_span(span.0, span.1)).is_err());
         });
     }
 }

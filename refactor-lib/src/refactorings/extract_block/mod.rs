@@ -1,8 +1,6 @@
-use super::utils::{map_change_from_span, get_source};
 use super::visitors::hir::collect_innermost_block;
-use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal, TyContext};
-use rustc_hir::{BodyId};
-use rustc::ty::TyCtxt;
+use crate::refactoring_invocation::{AstDiff, QueryResult, TyContext};
+use rustc_hir::BodyId;
 use rustc_span::Span;
 
 mod expr_use_visit;
@@ -10,14 +8,14 @@ mod push_stmt_into_block;
 mod variable_use_collection;
 
 fn extract_block(
-    tcx: TyCtxt,
+    tcx: &TyContext,
     body_id: BodyId,
     span: Span,
-    source: String,
-) -> Result<String, RefactoringErrorInternal> {
-    let (decls, ids) = push_stmt_into_block::collect_variables_overlapping_span(tcx, body_id, span);
+) -> String {
+    let (decls, ids) = push_stmt_into_block::collect_variables_overlapping_span(tcx.0, body_id, span);
     let decls_fmt = decls.join(", ");
     let ids_fmt = ids.join(", ");
+    let source = tcx.get_source(span);
 
     // Add declaration with assignment, and expression at end of block
     // for variables declared in the selection and used later
@@ -30,7 +28,7 @@ fn extract_block(
             ";".to_owned(),
         ),
     };
-    Ok(format!("{}{{{}{}}}{}", let_b, source, expr, end))
+    format!("{}{{{}{}}}{}", let_b, source, expr, end)
 }
 
 
@@ -56,25 +54,12 @@ fn extract_block(
 /// a. identical (cut & paste)
 /// b. add declaration and assign at start of block + add var in expression at end of block
 pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
-    if let Some(selection) = collect_innermost_block(tcx.0, span) {
-        let source_map = tcx.0.sess.source_map();
-        let source = source_map.span_to_snippet(span).unwrap();
-        // if selection.contains_expr {
-        //     let span = selection.get_span();
-        //     return Ok(vec![map_change_from_span(source_map, span, format!("{{{}}}", get_source(tcx, span)))]);
-        // }
-        Ok(AstDiff(vec![map_change_from_span(
-            source_map,
-            span,
-            extract_block(tcx.0, selection.1, span, source)?,
-        )]))
-    } else {
-        Err(RefactoringErrorInternal::invalid_selection_with_code(
-            span.lo().0,
-            span.hi().0,
-            &get_source(tcx.0, span)
-        ))
-    }
+    let selection = collect_innermost_block(tcx, span)?;
+
+    Ok(AstDiff(vec![tcx.map_change(
+        span,
+        extract_block(tcx, selection.1, span),
+    )]))
 }
 
 #[cfg(test)]

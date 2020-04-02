@@ -97,8 +97,9 @@ mod test {
             fn foo ( ) { let i = & mut 0 ; let j = i ; mut_ ( j ) ; } 
             fn mut_(_: &mut i32) {}
         }, |tcx| {
-            let (_, body_id) = collect_innermost_block(tcx, create_test_span(31, 42)).unwrap();
-            let vars = collect_vars(tcx, body_id, create_test_span(31, 42));
+            let tcx1 = TyContext(tcx);
+            let (_, body_id) = collect_innermost_block(&tcx1, create_test_span(31, 42)).unwrap();
+            let vars = collect_vars(tcx1.0, body_id, create_test_span(31, 42));
 
 
             assert_eq!(1, vars.return_values().len());
@@ -113,8 +114,9 @@ mod test {
             fn foo ( ) { let i = & mut 0 ; let j = i ; borrow ( j ) ; } 
             fn borrow(_: &i32) {}
         }, |tcx| {
-            let (_, body_id) = collect_innermost_block(tcx, create_test_span(31, 42)).unwrap();
-            let vars = collect_vars(tcx, body_id, create_test_span(31, 42));
+            let tcx1 = TyContext(tcx);
+            let (_, body_id) = collect_innermost_block(&tcx1, create_test_span(31, 42)).unwrap();
+            let vars = collect_vars(tcx1.0, body_id, create_test_span(31, 42));
 
             assert_eq!(1, vars.return_values().len());
             let rv = &vars.return_values()[0];
