@@ -1,9 +1,8 @@
 use rustc::ty::{self, TyCtxt};
-use rustc_hir::{BodyId, Node, PatKind};
-use rustc_infer::infer::{TyCtxtInferExt};
-use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Place, PlaceBase};
+use rustc_hir::{Node, PatKind};
+use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, Place, PlaceBase};
 use rustc_span::Span;
-use super::get_source;
+// use super::get_source;
 
 struct VariableCollectorDelegate<'tcx> {
     tcx: TyCtxt<'tcx>,
@@ -13,12 +12,12 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
     fn get_ident_and_decl_span(&self, place: &Place) {
         match &place.base {
             PlaceBase::Local(lid) => {
-                let decl_span = self.tcx.hir().span(*lid);
+                // let decl_span = self.tcx.hir().span(*lid);
                 let node = self.tcx.hir().get(*lid);
                 // eprintln!("node: {:?}, span: {}, {:?}", node, get_source(self.tcx, decl_span), decl_span);
                 if let Node::Binding(pat) = node {
-                    if let PatKind::Binding(_, hir_id, ..) = pat.kind {
-                        let node = self.tcx.hir().get(hir_id);
+                    if let PatKind::Binding(_, _hir_id, ..) = pat.kind {
+                        // let node = self.tcx.hir().get(hir_id);
                         // eprintln!("-- node: {:?}", node);
                         // let expr = self.tcx.hir().expect_expr(hir_id);
                         // if let ExprKind::Path(qpath) = &expr.kind {
@@ -64,23 +63,6 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
     }
 }
 
-pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, body_id: BodyId) {
-    let def_id = body_id.hir_id.owner.to_def_id();
-    tcx.infer_ctxt().enter(|inf| {
-        let mut v = VariableCollectorDelegate {
-            tcx,
-        };
-        ExprUseVisitor::new(
-            &mut v,
-            &inf,
-            def_id,
-            tcx.param_env(def_id),
-            tcx.body_tables(body_id),
-        )
-        .consume_body(tcx.hir().body(body_id));
-    })
-}
-
 #[cfg(test)]
 mod test {
     use super::*;
@@ -88,7 +70,27 @@ mod test {
     use crate::{create_test_span, run_after_analysis};
     use super::super::super::visitors::hir::collect_innermost_block;
     use crate::refactoring_invocation::TyContext;
+    use rustc_hir::BodyId;
+    use rustc_infer::infer::{TyCtxtInferExt};
+    use rustc_typeck::expr_use_visitor::ExprUseVisitor;
 
+    pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, body_id: BodyId) {
+        let def_id = body_id.hir_id.owner.to_def_id();
+        tcx.infer_ctxt().enter(|inf| {
+            let mut v = VariableCollectorDelegate {
+                tcx,
+            };
+            ExprUseVisitor::new(
+                &mut v,
+                &inf,
+                def_id,
+                tcx.param_env(def_id),
+                tcx.body_tables(body_id),
+            )
+            .consume_body(tcx.hir().body(body_id));
+        })
+    }
+    
     #[test]
     fn expr_use_visit_should_collect_mut1() {
         run_after_analysis( quote! {
