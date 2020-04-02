@@ -136,7 +136,7 @@ mod test {
     #[test]
     fn closure_expr_use_visit_should_collect_zero() {
         assert_success3(
-            r#"fn foo () {
+r#"fn foo () {
     /*START*/(|| { })()/*END*/;
 }"#, 
         map, 
@@ -145,7 +145,7 @@ mod test {
     #[test]
     fn closure_expr_use_visit_should_collect_a() {
         assert_success3(
-            r#"fn foo () {
+r#"fn foo () {
     let i = 0;
     /*START*/(|| { 
         &i;
@@ -159,7 +159,7 @@ mod test {
     #[test]
     fn closure_expr_use_visit_should_collect_b() {
         assert_success3(
-            r#"fn foo () {
+r#"fn foo () {
     let i = &0;
     /*START*/(|| { 
         i; 
@@ -171,7 +171,7 @@ mod test {
     #[test]
     fn closure_expr_use_visit_should_collect_c() {
         assert_success3(
-            r#"fn foo () {
+r#"fn foo () {
     let i = &mut 0;
     /*START*/(|| {
         *i = 1;
@@ -183,12 +183,25 @@ mod test {
     #[test]
     fn closure_expr_use_visit_should_collect_d() {
         assert_success3(
-            r#"fn foo() {
+r#"fn foo() {
     let i = &mut 0;
     /*START*/(|| {
         *i = 1;
     })()/*END*/;
 }"#, map,
             vec![(Bk::Mut, "i".to_string(), (58, 60))]);
+    }
+    #[test]
+    fn closure_expr_use_visit_should_collect_e() {
+        assert_success3(
+r#"fn foo () {
+    let s1 = "".to_string();
+    let b1 = &s1;
+    /*START*/(|| { 
+        b1;
+    })()/*END*/;
+}"#, 
+        map,
+        vec![(Bk::Copy, "b1".to_string(), (87, 89))]);
     }
 }
