@@ -12,22 +12,12 @@ fn extract_block(
     body_id: BodyId,
     span: Span,
 ) -> String {
-    let (decls, ids) = push_stmt_into_block::collect_variables_overlapping_span(tcx.0, body_id, span);
-    let decls_fmt = decls.join(", ");
-    let ids_fmt = ids.join(", ");
+    let vars = push_stmt_into_block::collect_variables_overlapping_span(tcx.0, body_id, span);
     let source = tcx.get_source(span);
 
     // Add declaration with assignment, and expression at end of block
     // for variables declared in the selection and used later
-    let (let_b, expr, end) = match ids.len() {
-        0 => ("".to_owned(), "".to_owned(), "".to_owned()),
-        1 => (format!("let {} = \n", decls_fmt), ids_fmt, ";".to_owned()),
-        _ => (
-            format!("let ({}) = \n", decls_fmt),
-            format!("({})", ids_fmt),
-            ";".to_owned(),
-        ),
-    };
+    let (let_b, expr, end) = vars.get_let_expr_end();
     format!("{}{{{}{}}}{}", let_b, source, expr, end)
 }
 
