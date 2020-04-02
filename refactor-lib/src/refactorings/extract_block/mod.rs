@@ -12,7 +12,7 @@ fn extract_block(
     body_id: BodyId,
     span: Span,
 ) -> String {
-    let vars = push_stmt_into_block::collect_variables_overlapping_span(tcx.0, body_id, span);
+    let vars = push_stmt_into_block::collect_variables_overlapping_span(tcx, body_id, span);
     let source = tcx.get_source(span);
 
     // Add declaration with assignment, and expression at end of block

@@ -4,6 +4,8 @@ use rustc_infer::infer::{TyCtxtInferExt};
 use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Place, PlaceBase};
 use rustc_span::Span;
 use super::variable_use_collection::VariableUseCollection;
+use crate::refactorings::visitors::hir::ExpressionUseKind;
+use crate::refactoring_invocation::TyContext;
 
 struct VariableCollectorDelegate<'tcx> {
     tcx: TyCtxt<'tcx>,
@@ -33,40 +35,36 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
         &mut self,
         used_span: Span,
         place: &Place,
-        is_mutated: bool,
+        use_kind: ExpressionUseKind,
     ) {
         if let Some((ident, decl_span)) = self.get_ident_and_decl_span(place) {
             if !self.extract_span.contains(used_span) && self.extract_span.contains(decl_span) {
                 // should be ret val
-                self.usages.add_return_value(ident, is_mutated);
+                self.usages.add_return_value(ident, use_kind);
             }
         }
     }
 }
 
 impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
-    fn consume(&mut self, place: &Place<'tcx>, _cm: ConsumeMode) {
-        self.var_used(place.span, &place, false);
+    fn consume(&mut self, place: &Place<'tcx>, cm: ConsumeMode) {
+        self.var_used(place.span, &place, ExpressionUseKind::from_consume_mode(cm));
     }
 
     fn borrow(&mut self, place: &Place<'tcx>, bk: ty::BorrowKind) {
-        let is_mutated = ty::BorrowKind::MutBorrow == bk;
-        self.var_used(place.span, &place, is_mutated);
+        self.var_used(place.span, &place, ExpressionUseKind::from_borrow_kind(bk));
     }
 
     fn mutate(&mut self, place: &Place<'tcx>) {
-        // if mode == MutateMode::Init {
-        //     return;
-        // }
-        self.var_used(place.span, &place, true);
+        self.var_used(place.span, &place, ExpressionUseKind::Mut);
     }
 }
 
-pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, body_id: BodyId, span: Span) -> VariableUseCollection {
+pub fn collect_vars(tcx: &TyContext, body_id: BodyId, span: Span) -> VariableUseCollection {
     let def_id = body_id.hir_id.owner.to_def_id();
-    tcx.infer_ctxt().enter(|inf| {
+    tcx.0.infer_ctxt().enter(|inf| {
         let mut v = VariableCollectorDelegate {
-            tcx,
+            tcx: tcx.0,
             extract_span: span,
             usages: VariableUseCollection::new(),
         };
@@ -74,10 +72,10 @@ pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, body_id: BodyId, span: Span) -> 
             &mut v,
             &inf,
             def_id,
-            tcx.param_env(def_id),
-            tcx.body_tables(body_id),
+            tcx.0.param_env(def_id),
+            tcx.0.body_tables(body_id),
         )
-        .consume_body(tcx.hir().body(body_id));
+        .consume_body(tcx.0.hir().body(body_id));
 
         v.usages
     })
@@ -90,21 +88,20 @@ mod test {
     use quote::quote;
     use crate::{create_test_span, run_after_analysis};
 
-
     #[test]
     fn expr_use_visit_should_collect_mut1() {
         run_after_analysis(quote! {
             fn foo ( ) { let i = & mut 0 ; let j = i ; mut_ ( j ) ; } 
             fn mut_(_: &mut i32) {}
         }, |tcx| {
-            let tcx1 = TyContext(tcx);
-            let (_, body_id) = collect_innermost_block(&tcx1, create_test_span(31, 42)).unwrap();
-            let vars = collect_vars(tcx1.0, body_id, create_test_span(31, 42));
+            let tcx = TyContext(tcx);
+            let (_, body_id) = collect_innermost_block(&tcx, create_test_span(31, 42)).unwrap();
+            let vars = collect_vars(&tcx, body_id, create_test_span(31, 42));
 
 
             assert_eq!(1, vars.return_values().len());
             let rv = &vars.return_values()[0];
-            assert!(rv.is_mutated);
+            assert!(rv.use_kind.is_mutated());
             assert_eq!("j", rv.ident);
         });
     }
@@ -114,13 +111,13 @@ mod test {
             fn foo ( ) { let i = & mut 0 ; let j = i ; borrow ( j ) ; } 
             fn borrow(_: &i32) {}
         }, |tcx| {
-            let tcx1 = TyContext(tcx);
-            let (_, body_id) = collect_innermost_block(&tcx1, create_test_span(31, 42)).unwrap();
-            let vars = collect_vars(tcx1.0, body_id, create_test_span(31, 42));
+            let tcx = TyContext(tcx);
+            let (_, body_id) = collect_innermost_block(&tcx, create_test_span(31, 42)).unwrap();
+            let vars = collect_vars(&tcx, body_id, create_test_span(31, 42));
 
             assert_eq!(1, vars.return_values().len());
             let rv = &vars.return_values()[0];
-            assert!(!rv.is_mutated);
+            assert!(!rv.use_kind.is_mutated());
             assert_eq!("j", rv.ident);
         });
     }

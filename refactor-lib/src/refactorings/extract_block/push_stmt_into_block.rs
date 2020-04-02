@@ -1,11 +1,11 @@
 // Either "add decl" or "just cut & paste"
-use super::expr_use_visit::{collect_vars};
+use super::expr_use_visit::collect_vars;
 use rustc_hir::BodyId;
-use rustc::ty::TyCtxt;
 use rustc_span::Span;
+use crate::refactoring_invocation::TyContext;
 
 pub fn collect_variables_overlapping_span(
-    tcx: TyCtxt,
+    tcx: &TyContext,
     body_id: BodyId,
     span: Span,
 ) -> VariablesUsedOutsideCollection {

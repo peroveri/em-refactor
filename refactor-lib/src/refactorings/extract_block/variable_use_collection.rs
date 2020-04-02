@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use crate::refactorings::visitors::hir::ExpressionUseKind;
 // find a name
 pub struct VariableUseCollection {
     /**
@@ -12,8 +13,8 @@ impl VariableUseCollection {
             return_values: vec![],
         }
     }
-    pub fn get_return_values(&self) -> Vec<VariableUse> {
-        let mut map: HashMap<String, VariableUse> = HashMap::new();
+    pub fn get_return_values(&self) -> Vec<ReturnValue> {
+        let mut map: HashMap<String, ReturnValue> = HashMap::new();
 
         let mut ids = vec![]; // HashMap doesnt preserve order
 
@@ -22,9 +23,12 @@ impl VariableUseCollection {
                 ids.push(rv.ident.to_string());
             }
             if let Some(entry) = map.get_mut(&rv.ident) {
-                entry.is_mutated = entry.is_mutated || rv.is_mutated;
+                entry.is_mutated = entry.is_mutated || rv.use_kind.is_mutated();
             } else {
-                let e = rv.clone();
+                let e = ReturnValue {
+                    ident: rv.ident.clone(),
+                    is_mutated: rv.use_kind.is_mutated()
+                };
                 map.insert(rv.ident.clone(), e);
             }
         }
@@ -37,15 +41,21 @@ impl VariableUseCollection {
     pub fn return_values(&self) -> &Vec<VariableUse> {
         &self.return_values
     }
-    pub fn add_return_value(&mut self, ident: String, is_mutated: bool) {
+    pub fn add_return_value(&mut self, ident: String, use_kind: ExpressionUseKind) {
         self.return_values.push(VariableUse {
             ident,
-            is_mutated,
+            use_kind,
         });
     }
 }
 #[derive(Clone)]
 pub struct VariableUse {
-    pub is_mutated: bool,
+    pub use_kind: ExpressionUseKind,
     pub ident: String,
+}
+
+#[derive(Clone)]
+pub struct ReturnValue {
+    pub ident: String,
+    pub is_mutated: bool
 }
