@@ -15,24 +15,24 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
             PlaceBase::Local(lid) => {
                 let decl_span = self.tcx.hir().span(*lid);
                 let node = self.tcx.hir().get(*lid);
-                eprintln!("node: {:?}, span: {}, {:?}", node, get_source(self.tcx, decl_span), decl_span);
+                // eprintln!("node: {:?}, span: {}, {:?}", node, get_source(self.tcx, decl_span), decl_span);
                 if let Node::Binding(pat) = node {
                     if let PatKind::Binding(_, hir_id, ..) = pat.kind {
                         let node = self.tcx.hir().get(hir_id);
-                        eprintln!("-- node: {:?}", node);
+                        // eprintln!("-- node: {:?}", node);
                         // let expr = self.tcx.hir().expect_expr(hir_id);
                         // if let ExprKind::Path(qpath) = &expr.kind {
                         // }
                     }
-                    eprintln!("-- binding: {:?}, {:?}, kind: {:?}", pat, pat.is_refutable(), pat.kind);
+                    // eprintln!("-- binding: {:?}, {:?}, kind: {:?}", pat, pat.is_refutable(), pat.kind);
                     
                 } else {
                     panic!("unhandled type"); // TODO: check which types node can be here
                 }
-                eprintln!();
+                // eprintln!();
             },
             _e => {
-                eprintln!("place: {:?}, base: {:?}", &place, &place.base);
+                // eprintln!("place: {:?}, base: {:?}", &place, &place.base);
             },
         }
     }
