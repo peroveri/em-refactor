@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use rustc_span::Span;
-use super::Bk;
+use super::ExpressionUseKind;
 
 // // Should keep track of the use of a variable that is declared outside the closure, but used inside.
 // pub struct SingleVariableUse {
@@ -57,7 +57,7 @@ impl VariableUseCollection {
         }
     }
     #[cfg(test)]
-    pub fn to_cmp(&self) -> Vec<(Bk, String, (u32, u32))> {
+    pub fn to_cmp(&self) -> Vec<(ExpressionUseKind, String, (u32, u32))> {
         self.return_values.iter()
             .map(|r| (r.bk, r.ident.to_string(), (r.span.lo().0, r.span.hi().0)))
             .collect::<Vec<_>>()
@@ -83,7 +83,7 @@ impl VariableUseCollection {
     //     }
     //     ret
     // }
-    pub fn add_return_value(&mut self, ident: String, bk: Bk, span: Span) {
+    pub fn add_return_value(&mut self, ident: String, bk: ExpressionUseKind, span: Span) {
         self.return_values.push(VariableUse {
             ident,
             bk,
@@ -147,25 +147,16 @@ impl VariableUseCollection {
 }
 #[derive(Clone)]
 pub struct VariableUse {
-    pub bk: Bk,
+    pub bk: ExpressionUseKind,
     pub ident: String,
     pub span: Span
 }
 impl VariableUse {
     pub fn is_borrow(&self) -> bool {
-        match self.bk {
-            Bk::MutBorrow => true,
-            Bk::ImmBorrow => true,
-            Bk::UniqueImmBorrow => true,
-            _ => false
-        }
+        self.bk.is_borrow()
     }
     pub fn is_mutated(&self) -> bool {
-        match self.bk {
-            Bk::MutBorrow => true,
-            Bk::Mut => true,
-            _ => false
-        }
+        self.bk.is_mutated()
     }
 }
 impl Param {

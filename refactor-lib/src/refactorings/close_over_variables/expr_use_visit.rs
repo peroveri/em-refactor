@@ -4,16 +4,8 @@ use rustc_infer::infer::{TyCtxtInferExt};
 use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Place, PlaceBase};
 use rustc_span::Span;
 use super::variable_use_collection::VariableUseCollection;
+use crate::refactorings::visitors::hir::ExpressionUseKind;
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub enum Bk {
-    Copy,
-    Move,
-    ImmBorrow,
-    UniqueImmBorrow,
-    MutBorrow,
-    Mut
-}
 struct VariableCollectorDelegate<'tcx> {
     tcx: TyCtxt<'tcx>,
     extract_span: Span,
@@ -42,7 +34,7 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
         &mut self,
         used_span: Span,
         place: &Place,
-        bk: Bk
+        bk: ExpressionUseKind
     ) {
         if let Some((ident, decl_span)) = self.get_ident_and_decl_span(place) {
             if self.extract_span.contains(used_span) && !self.extract_span.contains(decl_span) {
@@ -53,23 +45,9 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
     }
 }
 
-fn cm_to_bk(cm: ConsumeMode) -> Bk{
-    match cm {
-        ConsumeMode::Copy => Bk::Copy,
-        ConsumeMode::Move => Bk::Move
-    }
-}
-fn bk_to_bk(cm: ty::BorrowKind) -> Bk{ // Change name
-    match cm {
-        ty::BorrowKind::ImmBorrow => Bk::ImmBorrow,
-        ty::BorrowKind::UniqueImmBorrow => Bk::UniqueImmBorrow,
-        ty::BorrowKind::MutBorrow => Bk::MutBorrow,
-    }
-}
-
 impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
     fn consume(&mut self, place: &Place<'tcx>, cm: ConsumeMode) {
-        self.var_used(place.span, &place, cm_to_bk(cm));
+        self.var_used(place.span, &place,  ExpressionUseKind::from_consume_mode(cm));
     }
 
     fn borrow(&mut self, place: &Place<'tcx>, bk: ty::BorrowKind) {
@@ -85,14 +63,14 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
                 }
              }
         };
-        self.var_used(borrow_expr.span, &place, bk_to_bk(bk));
+        self.var_used(borrow_expr.span, &place, ExpressionUseKind::from_borrow_kind(bk));
     }
 
     fn mutate(&mut self, place: &Place<'tcx>) {
         // if mode == MutateMode::Init {
         //     return;
         // }
-        self.var_used(place.span, &place, Bk::Mut);
+        self.var_used(place.span, &place, ExpressionUseKind::Mut);
     }
 }
 
@@ -124,7 +102,7 @@ mod test {
     use crate::refactoring_invocation::TyContext;
     use crate::test_utils::assert_success3;
 
-    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(Bk, String, (u32, u32))>> + Send> {
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(ExpressionUseKind, String, (u32, u32))>> + Send> {
         Box::new(move |ty| {
             let closure = collect_anonymous_closure(ty.0, ty.get_span(&file_name, from, to)?).unwrap();
             let vars = collect_vars(ty.0, closure.body_id, closure.body_span);
@@ -153,7 +131,7 @@ r#"fn foo () {
 }"#,
         map,
         vec![
-            (Bk::ImmBorrow, "i".to_string(), (55, 57))
+            (ExpressionUseKind::ImmBorrow, "i".to_string(), (55, 57))
         ]);
     }
     #[test]
@@ -166,7 +144,7 @@ r#"fn foo () {
     })()/*END*/;
 }"#, 
         map,
-        vec![(Bk::Copy, "i".to_string(), (56, 57))]);
+        vec![(ExpressionUseKind::Copy, "i".to_string(), (56, 57))]);
     }
     #[test]
     fn closure_expr_use_visit_should_collect_c() {
@@ -178,7 +156,7 @@ r#"fn foo () {
     })()/*END*/;
 }"#,
         map,
-        vec![(Bk::Mut, "i".to_string(), (59, 61))]);
+        vec![(ExpressionUseKind::Mut, "i".to_string(), (59, 61))]);
     }
     #[test]
     fn closure_expr_use_visit_should_collect_d() {
@@ -189,7 +167,7 @@ r#"fn foo() {
         *i = 1;
     })()/*END*/;
 }"#, map,
-            vec![(Bk::Mut, "i".to_string(), (58, 60))]);
+            vec![(ExpressionUseKind::Mut, "i".to_string(), (58, 60))]);
     }
     #[test]
     fn closure_expr_use_visit_should_collect_e() {
@@ -202,6 +180,6 @@ r#"fn foo () {
     })()/*END*/;
 }"#, 
         map,
-        vec![(Bk::Copy, "b1".to_string(), (87, 89))]);
+        vec![(ExpressionUseKind::Copy, "b1".to_string(), (87, 89))]);
     }
 }
