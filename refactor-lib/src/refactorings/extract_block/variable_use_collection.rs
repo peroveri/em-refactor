@@ -37,10 +37,6 @@ impl VariableUseCollection {
             .map(|id| map.get(id).unwrap().clone())
             .collect::<Vec<_>>()
     }
-    #[cfg(test)]
-    pub fn return_values(&self) -> &Vec<VariableUse> {
-        &self.return_values
-    }
     pub fn add_return_value(&mut self, ident: String, use_kind: ExpressionUseKind) {
         self.return_values.push(VariableUse {
             ident,

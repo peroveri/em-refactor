@@ -85,40 +85,40 @@ pub fn collect_vars(tcx: &TyContext, body_id: BodyId, span: Span) -> VariableUse
 mod test {
     use super::*;
     use super::super::*;
-    use quote::quote;
-    use crate::{create_test_span, run_after_analysis};
+    use crate::test_utils::assert_success3;
+
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(String, bool)>> + Send> {
+        Box::new(move |ty| {
+            let span = ty.get_span(&file_name, from, to)?;
+            let block = collect_innermost_block(ty, span).unwrap();
+            let vars = collect_vars(ty, block.1, span);
+
+            Ok(vars.get_return_values().into_iter().map(|e| (e.ident, e.is_mutated)).collect::<Vec<_>>())
+        })
+    }
 
     #[test]
     fn expr_use_visit_should_collect_mut1() {
-        run_after_analysis(quote! {
-            fn foo ( ) { let i = & mut 0 ; let j = i ; mut_ ( j ) ; } 
-            fn mut_(_: &mut i32) {}
-        }, |tcx| {
-            let tcx = TyContext(tcx);
-            let (_, body_id) = collect_innermost_block(&tcx, create_test_span(31, 42)).unwrap();
-            let vars = collect_vars(&tcx, body_id, create_test_span(31, 42));
-
-
-            assert_eq!(1, vars.return_values().len());
-            let rv = &vars.return_values()[0];
-            assert!(rv.use_kind.is_mutated());
-            assert_eq!("j", rv.ident);
-        });
+        assert_success3(
+        r#"fn foo () { 
+            let i = &mut 0;
+            /*START*/let j = i;/*END*/
+            mut_(j);
+        } 
+        fn mut_(_: &mut i32) {}"#,
+            map,
+            vec![("j".to_owned(), true)]);
     }
     #[test]
     fn expr_use_visit_should_collect_borrow() {
-        run_after_analysis(quote! {
-            fn foo ( ) { let i = & mut 0 ; let j = i ; borrow ( j ) ; } 
-            fn borrow(_: &i32) {}
-        }, |tcx| {
-            let tcx = TyContext(tcx);
-            let (_, body_id) = collect_innermost_block(&tcx, create_test_span(31, 42)).unwrap();
-            let vars = collect_vars(&tcx, body_id, create_test_span(31, 42));
-
-            assert_eq!(1, vars.return_values().len());
-            let rv = &vars.return_values()[0];
-            assert!(!rv.use_kind.is_mutated());
-            assert_eq!("j", rv.ident);
-        });
+        assert_success3(
+        r#"fn foo() {
+            let i = &mut 0;
+            /*START*/let j = i;/*END*/
+            borrow(j);
+        } 
+        fn borrow(_: &i32) {}"#,
+            map,
+            vec![("j".to_owned(), false)]);
     }
 }
