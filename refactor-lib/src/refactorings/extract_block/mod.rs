@@ -1,26 +1,10 @@
 use super::visitors::hir::collect_innermost_block;
 use crate::refactoring_invocation::{AstDiff, QueryResult, TyContext};
-use rustc_hir::BodyId;
 use rustc_span::Span;
 
 mod expr_use_visit;
 mod push_stmt_into_block;
 mod variable_use_collection;
-
-fn extract_block(
-    tcx: &TyContext,
-    body_id: BodyId,
-    span: Span,
-) -> String {
-    let vars = push_stmt_into_block::collect_variables_overlapping_span(tcx, body_id, span);
-    let source = tcx.get_source(span);
-
-    // Add declaration with assignment, and expression at end of block
-    // for variables declared in the selection and used later
-    let (let_b, expr, end) = vars.get_let_expr_end();
-    format!("{}{{{}{}}}{}", let_b, source, expr, end)
-}
-
 
 /// Extract block
 /// 
@@ -46,9 +30,17 @@ fn extract_block(
 pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
     let selection = collect_innermost_block(tcx, span)?;
 
+    let vars = push_stmt_into_block::collect_variables_overlapping_span(tcx, selection.1, span);
+    let statements_source = tcx.get_source(span);
+
+    // Add declaration with assignment, and expression at end of block
+    // for variables declared in the selection and used later
+    let (let_b, expr, end) = vars.get_let_expr_end();
+    let new_block_source = format!("{}{{{}{}}}{}", let_b, statements_source, expr, end);
+
     Ok(AstDiff(vec![tcx.map_change(
         span,
-        extract_block(tcx, selection.1, span),
+        new_block_source,
     )]))
 }
 
