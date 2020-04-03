@@ -10,14 +10,14 @@ use rustc_interface::interface::Compiler;
 /// after_analysis: HIR (desugared AST) after typechecking
 ///
 pub struct MyRefactorCallbacks<T> {
-    pub scr: Query<T>,
+    pub query: Query<T>,
     pub result: QueryResult<T>,
 }
 
 impl<T> MyRefactorCallbacks<T> {
     pub fn from_arg(q: Query<T>) -> Self {
         Self {
-            scr: q,
+            query: q,
             result: Err(RefactoringErrorInternal::new(InternalErrorCodes::Error, "".to_owned())), // shouldnt be Err by default, but something like None
         }
     }
@@ -39,7 +39,7 @@ impl<T> Callbacks for MyRefactorCallbacks<T> {
         queries: &'tcx Queries<'tcx>
     ) -> Compilation {
 
-        if let Query::AfterExpansion(f) = &self.scr {
+        if let Query::AfterExpansion(f) = &self.query {
             let mut ctx = AstContext::new(compiler, queries);
             ctx.load_crate();
             self.result = f(&ctx);
@@ -56,7 +56,7 @@ impl<T> Callbacks for MyRefactorCallbacks<T> {
         compiler.session().abort_if_errors();
         queries.global_ctxt().unwrap().peek_mut().enter(|tcx| {
 
-            if let Query::AfterParsing(f) = &self.scr {
+            if let Query::AfterParsing(f) = &self.query {
                 let ctx = TyContext::new(tcx);
                 self.result = f(&ctx);
             }
