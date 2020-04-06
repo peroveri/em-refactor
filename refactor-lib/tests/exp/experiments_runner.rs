@@ -1,5 +1,6 @@
 use serde::{Serialize, Deserialize};
 use super::{debug, repo_name, clone_project, get_absp, query_candidates,run_refactoring, init, run_unit_tests, read_settings, Project, map_candidates, write_result};
+use my_refactor_lib::RefactorOutputs;
 
 struct ExperimentsRunner {
     project: Project,
@@ -20,12 +21,13 @@ impl ExperimentsRunner {
         })
     }
 
-    fn query_candidates(&self) -> std::io::Result<Vec<CandidateOutput>> {
+    fn query_candidates(&self) -> std::io::Result<RefactorOutputs> {
         let candidates = query_candidates(&self.absolute_path, &self.refactoring)?;
         Ok(map_candidates(&candidates))
     }
-    fn output_result(&self, candidates: &Vec<CandidateOutput>) -> std::io::Result<()> {
+    fn output_result(&self, candidates: &RefactorOutputs) -> std::io::Result<()> {
         let r = map_candidate_out_to_summary(candidates);
+        // write_result(&serde_json::to_string_pretty(candidates).unwrap(), &format!("{}-full", self.repo_name))?;
         write_result(&serde_json::to_string_pretty(&r).unwrap(), &format!("{}-candidates", self.repo_name))
     }
     fn run_exp_on_project(&self) -> std::io::Result<()> {
@@ -33,7 +35,7 @@ impl ExperimentsRunner {
         run_unit_tests(&self.absolute_path, &self.repo_name)?;
         let candidates = self.query_candidates()?;
         self.output_result(&candidates)?;
-        for candidate_output in candidates {
+        for candidate_output in candidates.candidates {
             debug(&format!("{:?}\n", candidate_output))?;
             
             for candidate in candidate_output.candidates {
@@ -62,9 +64,9 @@ pub fn run_all_exp(refactoring: &str) -> std::io::Result<()> {
     }
     Ok(())
 }
-fn map_candidate_out_to_summary(candidates: &Vec<CandidateOutput>) -> CandidateSummary {
+fn map_candidate_out_to_summary(candidates: &RefactorOutputs) -> CandidateSummary {
     CandidateSummary {
-        items: candidates.iter().map(|c| CandidateSummaryItem {
+        items: candidates.candidates.iter().map(|c| CandidateSummaryItem {
             count: c.candidates.len(),
             crate_name: c.crate_name.to_string(),
             refactoring: c.refactoring.to_string()
@@ -81,17 +83,4 @@ pub struct CandidateSummaryItem {
     pub crate_name: String,
     pub refactoring: String,
     pub count: usize
-}
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CandidateOutput {
-    pub candidates: Vec<CandidatePosition>,
-    pub crate_name: String,
-    pub refactoring: String
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct CandidatePosition {
-    pub file: String,
-    pub from: u32,
-    pub to: u32
 }

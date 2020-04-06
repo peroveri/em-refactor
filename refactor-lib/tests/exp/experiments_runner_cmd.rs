@@ -2,7 +2,8 @@ use assert_cmd::prelude::*;
 use std::io::prelude::*;
 use std::process::Command;
 use tempfile::TempDir;
-use super::{CandidateOutput, TestResults};
+use my_refactor_lib::RefactorOutputs;
+use super::TestResults;
 
 const WORK_DIR: &str = "./tests/exp/work_dir";
 
@@ -92,8 +93,8 @@ pub fn query_candidates(absp: &std::path::PathBuf, refactoring: &str) -> std::io
     debug(s)?;
     Ok(s.to_string())
 }
-pub fn map_candidates(s: &str) -> Vec<CandidateOutput> {
-    s.split("\n").filter(|s| !s.is_empty()).map(|s| serde_json::from_str(s).unwrap()).collect::<Vec<_>>()
+pub fn map_candidates(s: &str) -> RefactorOutputs {
+    serde_json::from_str(s).unwrap()
 }
 pub fn clone_project(repo_name: &str, git_repo: &str) -> std::io::Result<()> {
     let w: std::path::PathBuf = [WORK_DIR].iter().collect();
