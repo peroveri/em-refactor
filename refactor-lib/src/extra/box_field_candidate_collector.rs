@@ -12,7 +12,7 @@ pub enum CollectFieldMode {
 pub fn collect_box_field_candidates<'tcx>(queries: &'tcx rustc_interface::Queries<'_>, mode: CollectFieldMode) -> Vec<Span> {
     let mut v = ExtractBlockCandidateVisitor{candidates: vec![], mode};
 
-    let crate_ = &*queries.parse().unwrap().peek_mut();
+    let (crate_, ..) = &*queries.expansion().unwrap().peek_mut();
 
     walk_crate(&mut v, crate_);
 
@@ -34,6 +34,9 @@ impl ExtractBlockCandidateVisitor {
 
 impl<'ast> Visitor<'ast> for ExtractBlockCandidateVisitor {
     fn visit_struct_field(&mut self, b: &'ast StructField) {
+        if b.span.from_expansion() {
+            return;
+        }
         if let Some(id) = b.ident {
             if self.collect_named() {
                 self.candidates.push(id.span);
@@ -43,10 +46,6 @@ impl<'ast> Visitor<'ast> for ExtractBlockCandidateVisitor {
                 self.candidates.push(b.span);
             }
         }
-    }
-
-    fn visit_mac(&mut self, _mac: &'ast MacCall) {
-        // Override to prevent `visit_mac disabled by default`
     }
 }
 
