@@ -40,9 +40,6 @@ fn run_rustc() -> Result<(), i32> {
 
     let refactor_args = get_refactor_args(&std_env_args);
 
-    if extra::should_provide_type(&refactor_args) {
-        return extra::provide_type(&refactor_args, &rustc_args);
-    }
     if extra::should_query_candidates(&refactor_args) {
         return extra::list_candidates(&refactor_args, &rustc_args);
     }

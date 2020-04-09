@@ -1,6 +1,5 @@
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
-use serde_json::json;
 use cli_tests_utils::*;
 use my_refactor_lib::*;
 
@@ -131,29 +130,6 @@ fn cli_output_json() {
         .output().unwrap();
     
     assert_json_eq(expected, actual);
-}
-
-#[test]
-fn cli_provide_type() {
-    let expected = format!("{}\n{}\n", json!([{
-        "type": "fn foo(i32,u32) -> (i32)"
-    }]), json!([{
-        "type": "fn foo(i32,u32) -> (i32)"
-    }]));
-
-    cargo_my_refactor()
-        .arg(WORKSPACE_ARG)
-        .arg("--provide-type")
-        .arg("--selection=72:72")
-        .arg("--file=src/main.rs")
-        .arg("--")
-        .arg(format!(
-            "--target-dir={}",
-            create_tmp_dir().path().to_str().unwrap()
-        ))
-        .assert()
-        .success()
-        .stdout(expected);
 }
 
 #[test]

@@ -8,41 +8,58 @@ pub fn should_query_candidates(refactor_args: &[String]) -> bool {
     arg_value(refactor_args, "--query-candidates", |_| true).is_some()
 }
 
-fn map_to_pos_query(f: Box<dyn Fn(&AstContext) -> QueryResult<Vec<Span>> + Send>) -> Query<Vec<CandidatePosition>> {
+fn map_to_pos_query(args: CandidateArgs, f: Box<dyn Fn(&AstContext) -> QueryResult<Vec<Span>> + Send>) -> Query<RefactorOutputs> {
     Query::AfterExpansion(
         Box::new(
             move |ast| {
                 let res = f(ast)?;
-                Ok(res.iter().map(|span| {
+
+                let candidates = res.iter().map(|span| {
                     let (file, range) = map_span_to_index(ast.get_source_map(), *span);
                     CandidatePosition {
-                    file,
-                    from: range.from.byte,
-                    to: range.to.byte
-                }}).collect::<Vec<_>>())
+                        file,
+                        from: range.from.byte,
+                        to: range.to.byte
+                    }}).collect::<Vec<_>>();
+
+                Ok(print_candidates(args.clone(), candidates))
             }
         )
     )
 }
 
-fn map_to_query(name: &str) -> Query<Vec<CandidatePosition>> {
-    match name {
-        "extract-block" => map_to_pos_query(Box::new(collect_extract_block_candidates)),
-        "box-field" => map_to_pos_query(Box::new(collect_box_field_all_candidates)),
-        "box-named-field" => map_to_pos_query(Box::new(collect_box_field_namede_candidates)),
-        "box-tuple-field" => map_to_pos_query(Box::new(collect_box_field_tuple_candidates)),
-        _ => panic!("Unknown argument to query-candidate: `{}`", name)
+fn map_to_query(args: CandidateArgs) -> Query<RefactorOutputs> {
+    match args.refactoring.as_ref() {
+        "extract-block" => map_to_pos_query(args, Box::new(collect_extract_block_candidates)),
+        "box-field" => map_to_pos_query(args, Box::new(collect_box_field_all_candidates)),
+        "box-named-field" => map_to_pos_query(args, Box::new(collect_box_field_namede_candidates)),
+        "box-tuple-field" => map_to_pos_query(args, Box::new(collect_box_field_tuple_candidates)),
+        _ => panic!("Unknown argument to query-candidate: `{}`", args.refactoring)
+    }
+}
+
+#[derive(Clone)]
+struct CandidateArgs {
+    refactoring: String,
+    crate_name: String,
+    is_test: bool
+}
+
+impl CandidateArgs {
+    fn parse(refactor_args: &[String], rustc_args: &[String]) -> Self {
+        Self {
+            refactoring: arg_value(refactor_args, "--query-candidates", |_| true).unwrap().to_string(),
+            crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap().to_string(),
+            is_test: rustc_args.contains(&"--test".to_owned())
+        }
     }
 }
 
 /// TODO: Should use the refa. invocation instead and remove this
 pub fn list_candidates(refactor_args: &[String], rustc_args: &[String]) -> Result<(), i32> {
 
-    let c = arg_value(refactor_args, "--query-candidates", |_| true).unwrap();
-
-    let crate_name = arg_value(rustc_args, "--crate-name", |_| true).unwrap();
-    let is_test = rustc_args.contains(&"--test".to_owned());
-    let query = map_to_query(c);
+    let args = CandidateArgs::parse(refactor_args, rustc_args);
+    let query = map_to_query(args);
 
     let mut callbacks = MyRefactorCallbacks::from_arg(query);
 
@@ -51,27 +68,28 @@ pub fn list_candidates(refactor_args: &[String], rustc_args: &[String]) -> Resul
     let err = rustc_driver::run_compiler(&rustc_args, &mut callbacks, None, Some(emitter));
     err.unwrap();
 
-    let refa = match c {
-        "box-named-field" |
-        "box-tuple-field"  => {
-            "box-field"
-        },
-        r => r
-    };
-    print_candidates(refa, crate_name, callbacks.result.unwrap(), is_test);
+    print!("{}", serde_json::to_string(&callbacks.result.unwrap()).unwrap());
+    
     Ok(())
 }
 
-fn print_candidates(refactoring: &str, crate_name: &str, candidates: Vec<CandidatePosition>, is_test: bool) {
+fn print_candidates(args: CandidateArgs, candidates: Vec<CandidatePosition>) -> RefactorOutputs {
+    let refa = match args.refactoring.as_ref() {
+        "box-named-field" |
+        "box-tuple-field"  => {
+            "box-field".to_string()
+        },
+        r => r.to_string()
+    };
     let c = CandidateOutput {
-        crate_name: crate_name.to_string(),
-        is_test,
-        refactoring: refactoring.to_string(),
+        crate_name: args.crate_name,
+        is_test: args.is_test,
+        refactoring: refa,
         candidates
     };
     let outputs = RefactorOutputs {
         candidates: vec![c],
         refactorings: vec![]
     };
-    print!("{}", serde_json::to_string(&outputs).unwrap());
+    outputs
 }
