@@ -35,12 +35,14 @@ impl rustc_driver::Callbacks for RustcAfterParsing
         queries: &'tcx rustc_interface::Queries<'tcx>
     ) -> rustc_driver::Compilation {
 
+        let c = crate::refactoring_invocation::AstContext::new(compiler, queries);
+
         let candidates = 
         match self.0.as_ref() {
             "extract-block" => collect_extract_block_candidates(queries),
-            "box-field" => collect_box_field_candidates(queries, CollectFieldMode::All),
-            "box-named-field" => collect_box_field_candidates(queries, CollectFieldMode::Named),
-            "box-tuple-field" => collect_box_field_candidates(queries, CollectFieldMode::Tuple),
+            "box-field" => collect_box_field_candidates(&c, CollectFieldMode::All).unwrap(),
+            "box-named-field" => collect_box_field_candidates(&c, CollectFieldMode::Named).unwrap(),
+            "box-tuple-field" => collect_box_field_candidates(&c, CollectFieldMode::Tuple).unwrap(),
             _ => panic!("Unknown argument to query-candidate: `{}`", self.0)
         };
 

@@ -1,22 +1,23 @@
-use rustc_ast::ast::{StructField, MacCall};
+use rustc_ast::ast::StructField;
 use rustc_ast::visit::{Visitor, walk_crate};
 use rustc_span::Span;
+use crate::refactoring_invocation::{AstContext, QueryResult};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Copy, Clone)]
 pub enum CollectFieldMode {
     Named,
     Tuple,
     All
 }
 
-pub fn collect_box_field_candidates<'tcx>(queries: &'tcx rustc_interface::Queries<'_>, mode: CollectFieldMode) -> Vec<Span> {
-    let mut v = ExtractBlockCandidateVisitor{candidates: vec![], mode};
+pub fn collect_box_field_candidates(ctx: &AstContext, mode: CollectFieldMode) -> QueryResult<Vec<Span>> {
+    
+    let mut visitor = ExtractBlockCandidateVisitor{candidates: vec![], mode};
+    let crate_ = ctx.get_crate();
 
-    let (crate_, ..) = &*queries.expansion().unwrap().peek_mut();
+    walk_crate(&mut visitor, crate_);
 
-    walk_crate(&mut v, crate_);
-
-    v.candidates
+    Ok(visitor.candidates)
 }
 
 struct ExtractBlockCandidateVisitor {
@@ -51,71 +52,61 @@ impl<'ast> Visitor<'ast> for ExtractBlockCandidateVisitor {
 
 #[cfg(test)]
 mod test {
-    use crate::refactorings::utils::get_source_from_compiler;
     use super::*;
-    use crate::run_after_parsing;
-    use quote::quote;
-    use quote::__rt::TokenStream;
-
-    fn create_program_1() -> TokenStream {
-        quote! {
-            struct F;
-            struct G {field: i32}
-            struct H(u32);
-            fn foo() {
-                let g = G {field: 1};
-                let h = H(0);
-                match g {
-                    G{field: _} => {}
-                }
-                match h {
-                    H(_) => {}
-                }
-            }
-        }
+    use crate::test_utils::assert_ast_success3;
+    fn map_all() -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
+        map(CollectFieldMode::All)
     }
-    fn create_program_2() -> TokenStream {
-        quote! {
-            #[derive(Clone)]
-            struct G {field: i32}
-        }
+    fn map_named() -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
+        map(CollectFieldMode::Named)
+    }
+    fn map_tuple() -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
+        map(CollectFieldMode::Tuple)
+    }
+
+    fn map(mode: CollectFieldMode) -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
+        Box::new(
+            move |ast| 
+            Ok(
+                collect_box_field_candidates(ast, mode)?
+                .iter()
+                .map(|span| ast.get_source(*span))
+                .collect::<Vec<_>>()
+            )
+        )
     }
     #[test]
     fn box_named_field_candidate_collector_should_collect_named() {
-        run_after_parsing(create_program_1(), |queries, compiler| {
-            let expected = "field";
-            let actual = collect_box_field_candidates(&queries, CollectFieldMode::Named);
-            assert_eq!(actual.len(), 1);
-            assert_eq!(expected, get_source_from_compiler(compiler, actual[0]));
-        });
+        assert_ast_success3(
+            "struct G {field: i32}",
+            map_named,
+            vec!["field".to_string()]
+        );
     }
     #[test]
     fn box_named_field_candidate_collector_should_collect_tuple() {
-        run_after_parsing(create_program_1(), |queries, compiler| {
-            let expected = "u32";
-            let actual = collect_box_field_candidates(&queries, CollectFieldMode::Tuple);
-            assert_eq!(expected, get_source_from_compiler(compiler, actual[0]));
-            assert_eq!(actual.len(), 1);
-        });
+        assert_ast_success3(
+            "struct H(u32);",
+            map_tuple,
+            vec!["u32".to_string()]
+        );
     }
     #[test]
     fn box_named_field_candidate_collector_should_collect_all() {
-        run_after_parsing(create_program_1(), |queries, compiler| {
-            let expected0 = "field";
-            let expected1 = "u32";
-            let actual = collect_box_field_candidates(&queries, CollectFieldMode::All);
-            assert_eq!(actual.len(), 2);
-            assert_eq!(expected0, get_source_from_compiler(compiler, actual[0]));
-            assert_eq!(expected1, get_source_from_compiler(compiler, actual[1]));
-        });
+        assert_ast_success3(
+            r#"struct H(u32);
+            struct G {field: i32}"#,
+            map_all,
+            vec!["u32".to_string(), "field".to_string()]
+        );
     }
     #[test]
     fn box_named_field_candidate_collector_should_collect_derive() {
-        run_after_parsing(create_program_2(), |queries, compiler| {
-            let expected = "field";
-            let actual = collect_box_field_candidates(&queries, CollectFieldMode::All);
-            assert_eq!(actual.len(), 1);
-            assert_eq!(expected, get_source_from_compiler(compiler, actual[0]));
-        });
+        assert_ast_success3(
+            r#"#[derive(Clone)]
+            struct G {field: i32}"#,
+            map_all,
+            vec!["field".to_string()]
+        );
     }
 }
