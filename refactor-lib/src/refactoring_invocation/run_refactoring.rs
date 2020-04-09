@@ -1,23 +1,10 @@
 use crate::output_types::{FileStringReplacement};
-use crate::refactoring_invocation::{argument_list_to_refactor_def, from_error, from_success, MyRefactorCallbacks, RefactoringErrorInternal, rustc_rerun, serialize, should_run_rustc_again};
-use if_chain::if_chain;
+use crate::refactoring_invocation::{argument_list_to_refactor_def, AstDiff, from_error, from_success, MyRefactorCallbacks, QueryResult, RefactoringErrorInternal, rustc_rerun, serialize, should_run_rustc_again};
 
 pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args: Vec<String>) -> Result<(), i32> {
     
     match run_refactoring(&refactor_args, &rustc_args) {
-        Err(e) => {
-            eprintln!("{}", e.message);
-            Err(-1)
-        },
-        Ok(RefactorResult::Success(replacements)) => {
-            if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
-                print!("{}", serialize(&from_success(&rustc_args, replacements)).unwrap());
-            } else {
-                print!("{}", get_file_content(&replacements).unwrap());
-            }
-            Ok(())
-        }, 
-        Ok(RefactorResult::Err(err)) => {
+        Err(err) => {
             if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
                 println!("{}", serialize(&from_error(&rustc_args, err)).unwrap());
                 Ok(())
@@ -25,12 +12,20 @@ pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args:
                 eprintln!("{}", err.message);
                 Err(-1)
             }
+        },
+        Ok(astdiff) => {
+            if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
+                print!("{}", serialize(&from_success(&rustc_args, astdiff.0)).unwrap());
+            } else {
+                print!("{}", get_file_content(&astdiff.0).unwrap());
+            }
+            Ok(())
         }
     }
 
 }
 
-fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) -> Result<RefactorResult, RefactoringErrorInternal> {
+fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) -> QueryResult<AstDiff> {
 
 
     // 1. Run refactoring callbacks
@@ -38,23 +33,14 @@ fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) -> Res
 
     // 2. Rerun the compiler to check if any errors were introduced
     // Runs with default callbacks
-    if_chain! {
-        if let RefactorResult::Success(replacements) = &refactor_res;
-        if should_run_rustc_again(refactor_args) && !replacements.is_empty();
-        then {
-            rustc_rerun(&replacements, &rustc_args)?;
-        }
+    if should_run_rustc_again(refactor_args) && !refactor_res.0.is_empty() {
+        rustc_rerun(&refactor_res.0, &rustc_args)?;
     }
 
     Ok(refactor_res)
 }
 
-pub enum RefactorResult {
-    Success(Vec<FileStringReplacement>),
-    Err(RefactoringErrorInternal)
-}
-
-fn run_refactoring_internal(rustc_args: &[String], refactor_args: &[String]) -> Result<RefactorResult, RefactoringErrorInternal> {
+fn run_refactoring_internal(rustc_args: &[String], refactor_args: &[String]) -> QueryResult<AstDiff> {
     
     let refactor_def = argument_list_to_refactor_def(refactor_args)?;
 
@@ -74,15 +60,7 @@ fn run_refactoring_internal(rustc_args: &[String], refactor_args: &[String]) -> 
     if err.is_err() {
         return Err(RefactoringErrorInternal::compile_err());
     }
-
-
-    match my_refactor.result {
-        Err(err) => { Ok(RefactorResult::Err(err)) },
-        Ok(astdiff) => {
-            Ok(RefactorResult::Success(astdiff.0))
-        }
-    }
-
+    my_refactor.result
 }
 
 
