@@ -123,4 +123,15 @@ mod test {
             map,
             vec![("j".to_owned(), false)]);
     }
+    #[test]
+    fn expr_use_visit_should_collect_borrow4() {
+        assert_success3(
+        r#"fn foo() {
+            /*START*/let j = 0;/*END*/
+            &j;
+        } 
+        fn borrow(_: &i32) {}"#,
+            map,
+            vec![("j".to_owned(), false)]);
+    }
 }
