@@ -1,18 +1,19 @@
 use rustc_ast::ast::Block;
 use rustc_ast::visit::{Visitor, walk_block, walk_crate};
 use rustc_span::Span;
+use crate::refactoring_invocation::{AstContext, QueryResult};
 /// 
 /// Modules that are not inlined (from files) are not visited in the pre macro exp. AST,
 /// so we should use the post macro exp. AST
 /// 
-pub fn collect_extract_block_candidates<'tcx>(queries: &'tcx rustc_interface::Queries<'_>) -> Vec<Span> {
-    let mut v = ExtractBlockCandidateVisitor{candidates: vec![]};
+pub fn collect_extract_block_candidates(ctx: &AstContext) -> QueryResult<Vec<Span>> {
+    let mut visitor = ExtractBlockCandidateVisitor{candidates: vec![]};
 
-    let (crate_, ..) = &*queries.expansion().unwrap().peek_mut();
+    let crate_ = ctx.get_crate();
 
-    walk_crate(&mut v, crate_);
+    walk_crate(&mut visitor, crate_);
 
-    v.candidates
+    Ok(visitor.candidates)
 }
 
 struct ExtractBlockCandidateVisitor {
@@ -43,79 +44,68 @@ impl<'ast> Visitor<'ast> for ExtractBlockCandidateVisitor {
 
 #[cfg(test)]
 mod test {
-    use crate::refactorings::utils::get_source_from_compiler;
     use super::*;
-    use crate::{create_test_span, run_after_parsing};
-    use quote::quote;
-    use quote::__rt::TokenStream;
+    use crate::test_utils::assert_ast_success3;
 
-    fn create_program_1() -> TokenStream {
-        quote! {
-            fn foo ( ) { 1 ; }
-        }
-    }
-    fn create_program_2() -> TokenStream {
-        quote! {
-            fn foo ( ) -> i32 { 1 }
-        }
-    }
-    fn create_program_3() -> TokenStream {
-        quote! {
-            fn foo ( ) -> i32 { 1 ; 2 }
-        }
-    }
-    fn create_program_4() -> TokenStream {
-        quote! {
-            mod a {
-                struct S;
-                impl S {
-                    fn foo() {
-                        loop {
-                            let _ = 1 ;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    fn create_span(v: Vec<(u32, u32)>) -> Vec<Span> {
-        v.iter().map(|a| create_test_span(a.0, a.1)).collect::<Vec<_>>()
+    fn map() -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
+        Box::new(|ast| 
+            Ok(
+                collect_extract_block_candidates(ast)?
+                .iter()
+                .map(|span| ast.get_source(*span))
+                .collect::<Vec<_>>()
+            )
+        )
     }
     #[test]
     fn local_variable_use_collector_should_collect_uses_1() {
-        run_after_parsing(create_program_1(), |queries, _| {
-            let expected = create_span(vec![(13, 16)]);
-            let actual = collect_extract_block_candidates(&queries);
-            assert_eq!(expected, actual);
-        });
+        assert_ast_success3(
+            r#"fn foo() { 
+                1;
+            }"#,
+            map,
+            vec!["1;".to_string()]
+        );
     }
     #[test]
     fn local_variable_use_collector_should_collect_uses_2() {
-        run_after_parsing(create_program_2(), |queries, _| {
-            let expected = create_span(vec![(20, 21)]);
-            let actual = collect_extract_block_candidates(&queries);
-            assert_eq!(expected, actual);
-        });
+        assert_ast_success3(
+            r#"fn foo() -> u32 { 
+                1
+            }"#,
+            map,
+            vec!["1".to_string()]
+        );
     }
     #[test]
     fn local_variable_use_collector_should_collect_uses_3() {
-        run_after_parsing(create_program_3(), |queries, _| {
-            let expected = create_span(vec![(20, 23), (20, 25), (24, 25)]);
-            let actual = collect_extract_block_candidates(&queries);
-            assert_eq!(expected, actual);
-        });
+        assert_ast_success3(
+            r#"fn foo() -> u32 { 
+                1; 2
+            }"#,
+            map,
+            vec!["1;".to_string(), "1; 2".to_string(), "2".to_string()]
+        );
     }
     #[test]
     fn local_variable_use_collector_should_collect_uses_4() {
-        run_after_parsing(create_program_4(), |queries, compiler| {
-            let expected0 = "loop { let _ = 1 ; }";
-            let expected1 = "let _ = 1 ;";
-            let actual = collect_extract_block_candidates(&queries);
-
-            assert_eq!(actual.len(), 2);
-
-            assert_eq!(get_source_from_compiler(compiler, actual[0]), expected0);
-            assert_eq!(get_source_from_compiler(compiler, actual[1]), expected1);
-        });
+        assert_ast_success3(
+r#"mod a {
+    struct S;
+    impl S {
+        fn foo() {
+            loop {
+                let _ = 1;
+            }
+        }
+    }
+}"#,
+            map,
+            vec![
+r#"loop {
+                let _ = 1;
+            }"#.to_string(), 
+"let _ = 1;".to_string()]
+        );
     }
 }
