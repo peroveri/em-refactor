@@ -8,7 +8,7 @@ pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args:
         Err(e) => {
             eprintln!("{}", e.message);
             Err(-1)
-        }, 
+        },
         Ok(RefactorResult::Success(replacements)) => {
             if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
                 print!("{}", serialize(&from_success(&rustc_args, replacements)).unwrap());

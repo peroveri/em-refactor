@@ -10,6 +10,15 @@ pub enum CollectFieldMode {
     All
 }
 
+pub fn collect_box_field_all_candidates(ctx: &AstContext) -> QueryResult<Vec<Span>> {
+    collect_box_field_candidates(ctx, CollectFieldMode::All)
+}
+pub fn collect_box_field_namede_candidates(ctx: &AstContext) -> QueryResult<Vec<Span>> {
+    collect_box_field_candidates(ctx, CollectFieldMode::Named)
+}
+pub fn collect_box_field_tuple_candidates(ctx: &AstContext) -> QueryResult<Vec<Span>> {
+    collect_box_field_candidates(ctx, CollectFieldMode::Tuple)
+}
 pub fn collect_box_field_candidates(ctx: &AstContext, mode: CollectFieldMode) -> QueryResult<Vec<Span>> {
     
     let mut visitor = ExtractBlockCandidateVisitor{candidates: vec![], mode};
