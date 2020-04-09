@@ -62,7 +62,7 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
 
 /// Vs <- Collect variables declared inside 'span', but used outside 'span'
 /// If one of Vs is a borrow or contains a borrow (struct, tuple type, etc.), then we should return an error
-pub fn collect_vars(tcx: &TyContext, body_id: BodyId, span: Span) -> VariableUseCollection {
+pub fn collect_variables_declared_in_span_and_used_later(tcx: &TyContext, body_id: BodyId, span: Span) -> VariableUseCollection {
     let def_id = body_id.hir_id.owner.to_def_id();
     tcx.0.infer_ctxt().enter(|inf| {
         let mut v = VariableCollectorDelegate {
@@ -93,7 +93,7 @@ mod test {
         Box::new(move |ty| {
             let span = ty.get_span(&file_name, from, to)?;
             let block = collect_innermost_block(ty, span).unwrap();
-            let vars = collect_vars(ty, block.1, span);
+            let vars = collect_variables_declared_in_span_and_used_later(ty, block.1, span);
 
             Ok(vars.get_return_values().into_iter().map(|e| (e.ident, e.is_mutated)).collect::<Vec<_>>())
         })

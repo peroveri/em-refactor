@@ -1,5 +1,5 @@
 // Either "add decl" or "just cut & paste"
-use super::expr_use_visit::collect_vars;
+use super::expr_use_visit::collect_variables_declared_in_span_and_used_later;
 use rustc_hir::BodyId;
 use rustc_span::Span;
 use crate::refactoring_invocation::TyContext;
@@ -9,7 +9,7 @@ pub fn collect_variables_overlapping_span(
     body_id: BodyId,
     span: Span,
 ) -> VariablesUsedOutsideCollection {
-    let rvs = collect_vars(tcx, body_id, span).get_return_values();
+    let rvs = collect_variables_declared_in_span_and_used_later(tcx, body_id, span).get_return_values();
 
     let idents = rvs
         .iter()
