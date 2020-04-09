@@ -1,4 +1,4 @@
-use crate::refactoring_invocation::{AstContext, InternalErrorCodes, Query, QueryResult, RefactoringErrorInternal, RefactorFail, TyContext};
+use crate::refactoring_invocation::{AstContext, InternalErrorCodes, Query, QueryResult, RefactoringErrorInternal, TyContext};
 use rustc_driver::{Callbacks, Compilation};
 use rustc_interface::Queries;
 use rustc_interface::interface::Compiler;
@@ -23,12 +23,12 @@ impl<T> MyRefactorCallbacks<T> {
     }
 }
 
-pub fn serialize<T>(t: &T) ->  Result<String, RefactorFail>
+pub fn serialize<T>(t: &T) ->  Result<String, RefactoringErrorInternal>
     where T: serde::Serialize {
     if let Ok(serialized) = serde_json::to_string(t) {
         Ok(serialized)
     } else {
-        Err(RefactorFail::int("serialization failed"))
+        Err(RefactoringErrorInternal::int("serialization failed"))
     }
 }
 

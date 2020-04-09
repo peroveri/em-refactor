@@ -1,11 +1,11 @@
-use crate::refactoring_invocation::{AstContext, Query, QueryResult, RefactorFail, SourceCodeRange};
+use crate::refactoring_invocation::{AstContext, Query, QueryResult, RefactoringErrorInternal, SourceCodeRange};
 use crate::refactorings::{box_field, close_over_variables, extract_block, inline_macro, introduce_closure, pull_up_item_declaration, split_conflicting_match_arms};
 use crate::refactoring_invocation::{AstDiff, TyContext};
 use rustc_span::Span;
 ///
 /// converts an argument list to a refactoring definition
 ///
-pub fn argument_list_to_refactor_def(args: &[String]) -> Result<Query<AstDiff>, RefactorFail> {
+pub fn argument_list_to_refactor_def(args: &[String]) -> Result<Query<AstDiff>, RefactoringErrorInternal> {
     let parser = RefactorArgsParser { args };
     let args = parser.from_args()?;
     map_args_to_query(args)
@@ -30,7 +30,7 @@ fn to_ty_query(r: SourceCodeRange, f: Box<dyn Fn(&TyContext, Span) -> QueryResul
     }))
 }
 
-fn map_args_to_query(args: RefactoringArgs) -> Result<Query<AstDiff>, RefactorFail> {
+fn map_args_to_query(args: RefactoringArgs) -> Result<Query<AstDiff>, RefactoringErrorInternal> {
     match args.refactoring.as_ref() {
         "box-field" => Ok( to_ty_query(args.range, Box::new(box_field::do_refactoring))),
         "close-over-variables" => Ok(to_ty_query(args.range, Box::new(close_over_variables::do_refactoring))),
@@ -39,17 +39,17 @@ fn map_args_to_query(args: RefactoringArgs) -> Result<Query<AstDiff>, RefactorFa
         "inline-macro" => Ok(to_ast_query(args.range, Box::new(inline_macro::do_refactoring))),
         "pull-up-item-declaration" => Ok(to_ast_query(args.range, Box::new(pull_up_item_declaration::do_refactoring))),
         "split-conflicting-match-arms" => Ok(to_ty_query(args.range, Box::new(split_conflicting_match_arms::do_refactoring))),
-        s => Err(RefactorFail::arg_def(&format!("Unknown refactoring: {}", s)))
+        s => Err(RefactoringErrorInternal::arg_def(&format!("Unknown refactoring: {}", s)))
     }
 }
 impl RefactorArgsParser<'_> {
-    pub fn from_args(&self) -> Result<RefactoringArgs, RefactorFail> {
+    pub fn from_args(&self) -> Result<RefactoringArgs, RefactoringErrorInternal> {
         Ok(RefactoringArgs {
             range: self.parse_range()?,
             refactoring: self.get_param("--refactoring")?.to_string()
         })
     }
-    pub fn parse_range(&self) -> Result<SourceCodeRange, RefactorFail> {
+    pub fn parse_range(&self) -> Result<SourceCodeRange, RefactoringErrorInternal> {
         let selection = self.get_param("--selection")?;
         let file = self.get_param("--file")?;
         let ints = Self::get_int(selection)?;
@@ -60,16 +60,16 @@ impl RefactorArgsParser<'_> {
             to: ints.1,
         })
     }
-    pub fn get_int(selection: &str) -> Result<(u32, u32), RefactorFail> {
+    pub fn get_int(selection: &str) -> Result<(u32, u32), RefactoringErrorInternal> {
         let mut split = selection.split(':');
         if let (Some(from), Some(to)) = (split.nth(0), split.nth(0)) {
-            let from = from.parse().map_err(|_| RefactorFail::arg_def(&format!("{} is not a valid int", from)))?;
-            let to = to.parse().map_err(|_| RefactorFail::arg_def(&format!("{} is not a valid int", from)))?;
+            let from = from.parse().map_err(|_| RefactoringErrorInternal::arg_def(&format!("{} is not a valid int", from)))?;
+            let to = to.parse().map_err(|_| RefactoringErrorInternal::arg_def(&format!("{} is not a valid int", from)))?;
             return Ok((from, to));
         }
-        Err(RefactorFail::arg_def("Selection should be formatted as <byte_from>:<byte_to>"))
+        Err(RefactoringErrorInternal::arg_def("Selection should be formatted as <byte_from>:<byte_to>"))
     }
-    fn get_param(&self, name: &str) -> Result<&str, RefactorFail> {
+    fn get_param(&self, name: &str) -> Result<&str, RefactoringErrorInternal> {
         for t in self.args {
             let mut s = t.split('=');
             if s.nth(0) == Some(name) {
@@ -78,7 +78,7 @@ impl RefactorArgsParser<'_> {
                 }
             }
         }
-        Err(RefactorFail::arg_def(&format!("Expected {}", name)))
+        Err(RefactoringErrorInternal::arg_def(&format!("Expected {}", name)))
     }
 }
 

@@ -1,12 +1,12 @@
 use crate::output_types::FileStringReplacement;
-use crate::refactoring_invocation::{RefactorFail, InMemoryFileLoader};
+use crate::refactoring_invocation::{RefactoringErrorInternal, InMemoryFileLoader};
 
 struct DefaultCallbacks;
 impl rustc_driver::Callbacks for DefaultCallbacks {}
 pub fn should_run_rustc_again(refactor_args: &[String]) -> bool {
     return !refactor_args.contains(&"--unsafe".to_owned());
 }
-pub fn rustc_rerun(changes: &Vec<FileStringReplacement>, rustc_args: &[String]) -> Result<(), RefactorFail> {
+pub fn rustc_rerun(changes: &Vec<FileStringReplacement>, rustc_args: &[String]) -> Result<(), RefactoringErrorInternal> {
     let mut default = DefaultCallbacks;
 
     let mut file_loader = Box::new(InMemoryFileLoader::new(
@@ -26,7 +26,7 @@ pub fn rustc_rerun(changes: &Vec<FileStringReplacement>, rustc_args: &[String]) 
     // });
 
     if err.is_err() {
-        return Err(RefactorFail::int("The refactoring broke the code"));
+        return Err(RefactoringErrorInternal::int("The refactoring broke the code"));
     }
     return Ok(());
     // TODO: output message / status that the code was broken after refactoring

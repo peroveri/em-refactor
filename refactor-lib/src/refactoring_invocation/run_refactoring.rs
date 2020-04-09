@@ -1,5 +1,5 @@
 use crate::output_types::{FileStringReplacement};
-use crate::refactoring_invocation::{argument_list_to_refactor_def, from_error, from_success, MyRefactorCallbacks, RefactorFail, RefactoringErrorInternal, rustc_rerun, serialize, should_run_rustc_again};
+use crate::refactoring_invocation::{argument_list_to_refactor_def, from_error, from_success, MyRefactorCallbacks, RefactoringErrorInternal, rustc_rerun, serialize, should_run_rustc_again};
 use if_chain::if_chain;
 
 pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args: Vec<String>) -> Result<(), i32> {
@@ -30,7 +30,7 @@ pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args:
 
 }
 
-fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) -> Result<RefactorResult, RefactorFail> {
+fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) -> Result<RefactorResult, RefactoringErrorInternal> {
 
 
     // 1. Run refactoring callbacks
@@ -54,7 +54,7 @@ pub enum RefactorResult {
     Err(RefactoringErrorInternal)
 }
 
-fn run_refactoring_internal(rustc_args: &[String], refactor_args: &[String]) -> Result<RefactorResult, RefactorFail> {
+fn run_refactoring_internal(rustc_args: &[String], refactor_args: &[String]) -> Result<RefactorResult, RefactoringErrorInternal> {
     
     let refactor_def = argument_list_to_refactor_def(refactor_args)?;
 
@@ -72,7 +72,7 @@ fn run_refactoring_internal(rustc_args: &[String], refactor_args: &[String]) -> 
     //     rustc_driver::run_compiler(&rustc_args, callbacks, None, Some(emitter))
     // });
     if err.is_err() {
-        return Err(RefactorFail::compile_err());
+        return Err(RefactoringErrorInternal::compile_err());
     }
 
 

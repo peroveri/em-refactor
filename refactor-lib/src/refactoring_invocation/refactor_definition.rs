@@ -22,42 +22,6 @@ pub struct RefactoringErrorInternal {
     pub message: String
 }
 
-// Errors that should cause the tool to halt
-// this should erplace the other error types
-#[derive(Debug, PartialEq)]
-pub enum RefactorFailCode {
-    BadFormatOnInput = 1,
-    CompilerErr = 2,
-    InternalRefactoringError = 3,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct RefactorFail {
-    pub code: RefactorFailCode,
-    pub message: String,
-}
-
-impl RefactorFail {
-    pub fn arg_def(s: &str) -> Self {
-        Self {
-            code: RefactorFailCode::BadFormatOnInput,
-            message: s.to_string(),
-        }
-    }
-    pub fn compile_err() -> Self {
-        Self {
-            code: RefactorFailCode::CompilerErr,
-            message: "failed during refactoring".to_string(),
-        }
-    }
-    pub fn int(s: &str) -> Self {
-        Self {
-            code: RefactorFailCode::InternalRefactoringError,
-            message: s.to_string(),
-        }
-    }
-}
-
 impl RefactoringErrorInternal {
     pub fn new(code: InternalErrorCodes, message: String) -> Self {
         Self { code, message }
@@ -86,10 +50,22 @@ impl RefactoringErrorInternal {
                 "{}:{} is not a valid selection! `{}`",
                 from, to, selection))
     }
+    pub fn int(s: &str) -> Self {
+        Self::new(InternalErrorCodes::Internal, s.to_string())
+    }
+    pub fn arg_def(s: &str) -> Self {
+        Self::new(InternalErrorCodes::BadFormatOnInput, s.to_string())
+    }
+    pub fn compile_err() -> Self {
+        Self::new(InternalErrorCodes::CompileErr, "".to_string())
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum InternalErrorCodes {
     Error = 0,
-    FileNotFound = 1
+    FileNotFound = 1,
+    Internal = 2,
+    BadFormatOnInput = 3,
+    CompileErr = 4
 }
