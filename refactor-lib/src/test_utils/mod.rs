@@ -1,5 +1,5 @@
-use rustc::ty::TyCtxt;
 use rustc_interface::{interface, Queries, interface::Compiler};
+use rustc_middle::ty::TyCtxt;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;

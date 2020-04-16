@@ -1,4 +1,4 @@
-use rustc::ty::TyCtxt;
+use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 use crate::output_types::FileStringReplacement;
 use crate::refactorings::utils::map_change_from_span;

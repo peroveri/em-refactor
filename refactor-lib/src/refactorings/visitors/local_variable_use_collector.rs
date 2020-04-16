@@ -1,8 +1,8 @@
 use rustc_hir::intravisit::{walk_crate, NestedVisitorMap, Visitor, walk_expr};
 use rustc_hir::{Expr, ExprKind, HirId, QPath};
 use rustc_hir::def::Res;
-use rustc::hir::map::Map;
-use rustc::ty::TyCtxt;
+use rustc_middle::hir::map::Map;
+use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 
 ///

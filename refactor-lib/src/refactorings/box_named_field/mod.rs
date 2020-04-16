@@ -1,5 +1,5 @@
-use rustc::ty::TyCtxt;
-use rustc_hir::HirId;
+use rustc_hir::{HirId, Item, ItemKind};
+use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 
 use crate::output_types::FileStringReplacement;
@@ -8,7 +8,6 @@ use crate::refactoring_invocation::RefactoringErrorInternal;
 use super::visitors::{collect_local_variable_use, collect_struct_field_access_expressions};
 use struct_expression_collector::collect_struct_expressions;
 use struct_named_pattern_collector::collect_struct_named_patterns;
-use rustc_hir::{Item, ItemKind};
 
 mod struct_expression_collector;
 pub mod struct_named_pattern_collector;

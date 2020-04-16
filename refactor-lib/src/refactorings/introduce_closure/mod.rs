@@ -2,7 +2,7 @@ use super::utils::{map_change_from_span, get_source};
 use crate::output_types::FileStringReplacement;
 use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal, TyContext};
 use crate::refactorings::visitors::hir::{collect_cfs, collect_innermost_contained_block};
-use rustc::ty::TyCtxt;
+use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 
 fn get_call(tcx: TyCtxt, span: Span) -> FileStringReplacement {

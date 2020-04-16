@@ -1,7 +1,7 @@
 use crate::output_types::FileStringReplacement;
 use crate::refactoring_invocation::{RefactoringErrorInternal, SourceCodeRange};
-use rustc::ty::TyCtxt;
 use rustc_hir::{HirId, StructField};
+use rustc_middle::ty::TyCtxt;
 use rustc_span::{BytePos, FileName, Span};
 use rustc_span::source_map::SourceMap;
 use std::path::PathBuf;

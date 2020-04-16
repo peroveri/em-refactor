@@ -1,4 +1,4 @@
-use rustc::ty::TyCtxt;
+use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 use crate::refactorings::utils::get_source;
 

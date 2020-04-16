@@ -1,7 +1,7 @@
 use rustc_hir::intravisit::{walk_crate, walk_item, NestedVisitorMap, Visitor};
 use rustc_hir::{Item, ItemKind, StructField};
-use rustc::hir::map::Map;
-use rustc::ty::TyCtxt;
+use rustc_middle::hir::map::Map;
+use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 
 ///

@@ -1,7 +1,7 @@
 use rustc_hir::{BodyId, Expr, ExprKind, FnDecl, HirId};
 use rustc_hir::intravisit::{FnKind, walk_expr, walk_fn, walk_crate, NestedVisitorMap, Visitor};
-use rustc::hir::map::Map;
-use rustc::ty::TyCtxt;
+use rustc_middle::hir::map::Map;
+use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 
 ///

@@ -1,7 +1,7 @@
 use rustc_hir::{Arm, BodyId, Destination, Expr, ExprKind, FnDecl, HirId, MatchSource, Node };
 use rustc_hir::intravisit::{NestedVisitorMap, FnKind, Visitor, walk_block, walk_expr};
-use rustc::hir::map::Map;
-use rustc::ty::TyCtxt;
+use rustc_middle::hir::map::Map;
+use rustc_middle::ty::TyCtxt;
 use rustc_span::{BytePos, Span};
 use super::{ControlFlowExpr, ControlFlowExprCollection};
 

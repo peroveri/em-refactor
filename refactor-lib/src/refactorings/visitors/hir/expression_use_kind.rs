@@ -1,5 +1,5 @@
+use rustc_middle::ty::BorrowKind;
 use rustc_typeck::expr_use_visitor::ConsumeMode;
-use rustc::ty::BorrowKind;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub enum ExpressionUseKind {

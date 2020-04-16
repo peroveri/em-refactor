@@ -1,7 +1,7 @@
 use rustc_hir::{HirId, Item, Pat, PatKind};
 use rustc_hir::intravisit::{walk_item, walk_pat, walk_crate, NestedVisitorMap, Visitor};
-use rustc::hir::map::Map;
-use rustc::ty::TyCtxt;
+use rustc_middle::hir::map::Map;
+use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 use super::super::box_field::StructPatternCollection;
 use if_chain::if_chain;

@@ -1,8 +1,8 @@
-use rustc::ty::TyCtxt;
 use rustc_span::{BytePos, Span};
 use rustc_hir::{BodyId, Expr, ExprKind};
 use rustc_hir::intravisit::{NestedVisitorMap, Visitor, walk_expr, walk_crate};
-use rustc::hir::map::Map;
+use rustc_middle::hir::map::Map;
+use rustc_middle::ty::TyCtxt;
 use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal};
 use crate::refactorings::utils::get_source;
 

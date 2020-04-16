@@ -56,7 +56,7 @@ pub struct CandidatePosition {
 impl RefactorOutputs {
     #[allow(unused)]
     pub fn sort(&mut self) {
-        self.candidates.sort_by_key(|a| a.crate_name.clone());
+        self.candidates.sort_by_key(|a| (a.crate_name.clone(), a.is_test));
         self.refactorings.sort_by_key(|a| (a.crate_name.clone(), a.is_test))
     }
     #[allow(unused)]

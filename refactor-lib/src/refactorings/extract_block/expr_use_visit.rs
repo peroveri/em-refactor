@@ -1,6 +1,6 @@
-use rustc::ty::{self, TyCtxt};
 use rustc_hir::{BodyId, Node};
 use rustc_infer::infer::{TyCtxtInferExt};
+use rustc_middle::ty::{self, TyCtxt};
 use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Place, PlaceBase};
 use rustc_span::Span;
 use super::variable_use_collection::VariableUseCollection;

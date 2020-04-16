@@ -1,7 +1,7 @@
 use rustc_hir::{Block, BodyId, FnDecl, HirId };
 use rustc_hir::intravisit::{NestedVisitorMap, FnKind, walk_block, walk_fn, walk_crate, Visitor};
-use rustc::hir::map::Map;
-use rustc::ty::TyCtxt;
+use rustc_middle::hir::map::Map;
+use rustc_middle::ty::TyCtxt;
 use rustc_span::{BytePos, Span};
 use crate::refactorings::utils::get_source;
 use super::walk_desugars;

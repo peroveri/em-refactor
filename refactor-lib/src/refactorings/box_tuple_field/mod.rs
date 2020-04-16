@@ -1,5 +1,5 @@
-use rustc::ty::TyCtxt;
 use rustc_hir::HirId;
+use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 
 use crate::output_types::FileStringReplacement;

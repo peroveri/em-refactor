@@ -1,6 +1,6 @@
-use rustc::ty::{self, TyCtxt};
 use rustc_hir::{BodyId, ExprKind, Node};
 use rustc_infer::infer::{TyCtxtInferExt};
+use rustc_middle::ty::{self, TyCtxt};
 use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Place, PlaceBase};
 use rustc_span::Span;
 use super::variable_use_collection::VariableUseCollection;
@@ -74,7 +74,7 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
     }
 }
 
-pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, body_id: BodyId, span: Span) -> VariableUseCollection {
+pub fn collect_vars(tcx: TyCtxt<'_>, body_id: BodyId, span: Span) -> VariableUseCollection {
     let def_id = body_id.hir_id.owner.to_def_id();
     tcx.infer_ctxt().enter(|inf| {
         let mut v = VariableCollectorDelegate {

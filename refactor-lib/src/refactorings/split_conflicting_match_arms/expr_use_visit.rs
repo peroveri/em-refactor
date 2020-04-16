@@ -1,5 +1,5 @@
-use rustc::ty::{self, TyCtxt};
 use rustc_hir::{Node, PatKind};
+use rustc_middle::ty::{self, TyCtxt};
 use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, Place, PlaceBase};
 use rustc_span::Span;
 // use super::get_source;
@@ -74,7 +74,7 @@ mod test {
     use rustc_infer::infer::{TyCtxtInferExt};
     use rustc_typeck::expr_use_visitor::ExprUseVisitor;
 
-    pub fn collect_vars(tcx: rustc::ty::TyCtxt<'_>, body_id: BodyId) {
+    pub fn collect_vars(tcx: TyCtxt<'_>, body_id: BodyId) {
         let def_id = body_id.hir_id.owner.to_def_id();
         tcx.infer_ctxt().enter(|inf| {
             let mut v = VariableCollectorDelegate {
