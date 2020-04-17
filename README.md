@@ -6,7 +6,7 @@ Requirements:
 - Visual Studio Code - https://code.visualstudio.com
 
 Steps:
-- The rustc-dev component is required, and it can be added to the nightly toolchain using: ```rustup component add --toolchain nightly-2020-04-16 rustc-dev```
+- The rustc-dev component is required, and it can be added to the nightly toolchain using: ```rustup component add --toolchain nightly-2020-04-15 rustc-dev```
 - Compile the refactoring tool by running ```cargo build --bins --release``` in the [./refactor-lib](./refactor-lib) folder.
 - Run ```npm install``` in the [./refactor-ls](./refactor-ls) folder
 - Open Visual Studio Code in the [./refactor-ls](./refactor-ls) folder: ```code refactor-ls```
