@@ -39,4 +39,10 @@ impl ExpressionUseKind {
             _ => false
         }
     }
+    pub fn is_moved(&self) -> bool {
+        match self {
+            ExpressionUseKind::Move => true,
+            _ => false
+        }
+    }
 }

@@ -11,7 +11,6 @@ fn close_over_variables_multiple_params() {
     run_test("multiple_params");
 }
 #[test]
-#[ignore]
 fn close_over_variables_pass_by_mut_ref() {
     run_test("pass_by_mut_ref");
 }
@@ -20,12 +19,6 @@ fn close_over_variables_pass_by_ref() {
     run_test("pass_by_ref");
 }
 #[test]
-#[ignore]
 fn close_over_variables_pass_by_val1() {
     run_test("pass_by_val1");
-}
-#[test]
-#[ignore]
-fn close_over_variables_pass_by_val2() {
-    run_test("pass_by_val2");
 }

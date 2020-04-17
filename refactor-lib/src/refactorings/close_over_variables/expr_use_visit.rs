@@ -194,4 +194,18 @@ r#"fn foo () {
         map,
         vec![(ExpressionUseKind::Mut, "i".to_string(), (59, 60))]);
     }
+    #[test]
+    fn closure_expr_use_visit_should_collect_g() {
+        assert_success3(
+r#"fn foo () {
+    let i = S;
+    /*START*/(|| { 
+        let x = i;
+    })()/*END*/;
+}
+struct S;"#, 
+        map,
+        vec![(ExpressionUseKind::Move, "i".to_string(), (63, 64))]);
+    }
+    // TODO: check patterns, e.g. let _ = i;
 }

@@ -25,7 +25,7 @@ pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
 
     let mut changes = vec![];
 
-    let params = vars.get_params().iter().map(|p| p.as_param()).collect::<Vec<_>>().join(", ");
+    let params = vars.get_params_formatted();
 
     if params.len() > 0 {
         let params = if closure.has_params {
@@ -37,7 +37,7 @@ pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
             map_change_from_span(tcx.get_source_map(), closure.params, params));
     }
 
-    let args = vars.get_args().iter().map(|p| p.as_arg()).collect::<Vec<_>>().join(", ");
+    let args = vars.get_args_formatted();
     if args.len() > 0 {
         let args = if closure.has_params {
             format!(", {}", args)
