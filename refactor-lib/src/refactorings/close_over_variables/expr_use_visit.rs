@@ -182,4 +182,16 @@ r#"fn foo () {
         map,
         vec![(ExpressionUseKind::Copy, "b1".to_string(), (87, 89))]);
     }
+    #[test]
+    fn closure_expr_use_visit_should_collect_f() {
+        assert_success3(
+r#"fn foo () {
+    let mut i = 0;
+    /*START*/(|| { 
+        i = 1;
+    })()/*END*/;
+}"#, 
+        map,
+        vec![(ExpressionUseKind::Mut, "i".to_string(), (59, 60))]);
+    }
 }

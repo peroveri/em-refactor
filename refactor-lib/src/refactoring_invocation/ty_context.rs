@@ -1,5 +1,6 @@
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
+use rustc_span::source_map::SourceMap;
 use crate::output_types::FileStringReplacement;
 use crate::refactorings::utils::map_change_from_span;
 use super::{RefactoringErrorInternal, SourceCodeRange};
@@ -11,6 +12,9 @@ impl<'a> TyContext<'a> {
     }
     pub fn get_source(&self, span: Span) -> String {
         self.0.sess.source_map().span_to_snippet(span).unwrap()
+    }
+    pub fn get_source_map(&self) -> &SourceMap {
+        self.0.sess.source_map()
     }
     #[cfg(test)]
     pub fn get_span(&self, file_name: &str, from: u32, to: u32) -> Result<Span, RefactoringErrorInternal> {

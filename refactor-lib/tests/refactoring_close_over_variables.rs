@@ -7,6 +7,10 @@ fn run_test(name: &str) {
 }
 
 #[test]
+fn close_over_variables_multiple_params() {
+    run_test("multiple_params");
+}
+#[test]
 #[ignore]
 fn close_over_variables_pass_by_mut_ref() {
     run_test("pass_by_mut_ref");

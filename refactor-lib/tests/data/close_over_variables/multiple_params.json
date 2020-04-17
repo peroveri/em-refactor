@@ -1,0 +1,11 @@
+{
+	"file": "multiple_params.rs",
+	"args": {
+		"refactoring": "close-over-variables",
+		"selection": "50:91"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "multiple_params_after.rs"
+	}
+}
