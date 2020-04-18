@@ -1,6 +1,6 @@
 use serde::{Serialize, Deserialize};
 use super::{debug, repo_name, clone_project, get_absp, query_candidates,run_refactoring, init, run_unit_tests, read_settings, Project, map_candidates, write_result};
-use my_refactor_lib::RefactorOutputs;
+use refactor_lib::RefactorOutputs;
 
 struct ExperimentsRunner {
     project: Project,

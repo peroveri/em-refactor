@@ -61,6 +61,6 @@ impl<T> Callbacks for MyRefactorCallbacks<T> {
                 self.result = f(&ctx);
             }
         });
-        Compilation::Stop
+        Compilation::Stop // TODO: if this is a local dependency, we should continue
     }
 }

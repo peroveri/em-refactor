@@ -105,7 +105,7 @@
         {
             "label": "run experiment",
             "type": "shell",
-            "command": "cargo test --test experiments -- --test-threads=1 --ignored",
+            "command": "cargo run --bin refactor-experiments",
             "problemMatcher": [
                 "$rustc"
             ],

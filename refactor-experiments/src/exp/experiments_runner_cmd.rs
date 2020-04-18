@@ -1,16 +1,14 @@
-use assert_cmd::prelude::*;
 use std::io::prelude::*;
 use std::process::Command;
 use tempfile::TempDir;
-use my_refactor_lib::RefactorOutputs;
+use refactor_lib::RefactorOutputs;
 use super::TestResults;
 
-const WORK_DIR: &str = "./tests/exp/work_dir";
+pub const WORK_DIR: &str = "./refactor-experiments/src/exp/work_dir";
 
 pub fn run_refactoring(refactoring: &str, from: u32, to: u32, file: &str, dir: &std::path::PathBuf) -> std::io::Result<()> {
     debug(&format!("trying: {}\n", refactoring))?;
-    let output = Command::cargo_bin("cargo-my-refactor")
-        .unwrap()
+    let output = Command::new("cargo-my-refactor")
         .arg("--output-replacements-as-json")
         .arg(format!("--refactoring={}", refactoring))
         .arg(format!("--selection={}:{}", from, to))
@@ -62,22 +60,22 @@ pub fn run_unit_tests(absp: &std::path::PathBuf, repo_name: &str) -> std::io::Re
 
     let result = TestResults::from(s1)?.sum();
 
-    let p1: std::path::PathBuf = ["./tests/exp/work_dir", &format!("{}.json", repo_name)].iter().collect();
+    let p1: std::path::PathBuf = [WORK_DIR, &format!("{}.json", repo_name)].iter().collect();
     let mut f = std::fs::File::create(p1)?;
     f.write_all(serde_json::to_string(&result)?.as_bytes())?;
     Ok(())
 }
 pub fn write_result(content: &str, name: &str) -> std::io::Result<()> {
-    let p1: std::path::PathBuf = ["./tests/exp/work_dir", &format!("{}.json", name)].iter().collect();
+    let p1: std::path::PathBuf = [WORK_DIR, &format!("{}.json", name)].iter().collect();
     let mut f = std::fs::File::create(p1)?;
     f.write_all(content.as_bytes())?;
     Ok(())
 }
 pub fn query_candidates(absp: &std::path::PathBuf, refactoring: &str) -> std::io::Result<String> {
+    let path: std::path::PathBuf = std::path::Path::new("./target/release/cargo-my-refactor").canonicalize().unwrap();
 
     let output = 
-        Command::cargo_bin("cargo-my-refactor")
-            .unwrap()
+        Command::new(path)
             .arg(format!("--query-candidates={}", refactoring))
             .arg("--")
             .arg(format!(
@@ -118,18 +116,20 @@ pub fn repo_name(url: &str) -> Option<String> {
 }
 
 pub fn debug(s: &str) -> std::io::Result<()> {
+    let path: std::path::PathBuf = [WORK_DIR, "debug.txt"].iter().collect();
     let mut f =  std::fs::OpenOptions::new()
         .append(true)
-        .open("./tests/exp/work_dir/debug.txt")?;
+        .open(path)?;
     f.write_all(s.as_bytes())?;
     Ok(())
 }
 pub fn init() -> std::io::Result<()> {
+    let path: std::path::PathBuf = [WORK_DIR, "debug.txt"].iter().collect();
     std::fs::OpenOptions::new()
         .create(true)
         .write(true)
         .truncate(true)
-        .open("./tests/exp/work_dir/debug.txt")?;
+        .open(path)?;
     // f.flush()?;
     Ok(())
 }
