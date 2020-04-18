@@ -98,8 +98,9 @@ mod test {
     use crate::{create_test_span, run_after_analysis};
     use super::super::collect_field;
     use quote::quote;
+    use quote::__private::TokenStream;
 
-    fn create_program_with_field_access() -> quote::__rt::TokenStream {
+    fn create_program_with_field_access() -> TokenStream {
         quote! {
             struct S { foo: u32 }
             fn foo() {
@@ -108,7 +109,7 @@ mod test {
             }
         }
     }
-    fn create_program_with_field_access_self_param() -> quote::__rt::TokenStream {
+    fn create_program_with_field_access_self_param() -> TokenStream {
         quote! {
             struct S { foo: u32 }
             impl S {
@@ -118,7 +119,7 @@ mod test {
             }
         }
     }
-    fn create_program_with_field_access_self_type() -> quote::__rt::TokenStream {
+    fn create_program_with_field_access_self_type() -> TokenStream {
         quote! {
             struct S { foo: u32 }
             impl S {

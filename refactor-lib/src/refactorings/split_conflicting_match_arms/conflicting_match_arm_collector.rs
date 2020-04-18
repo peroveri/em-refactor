@@ -123,8 +123,9 @@ mod test {
     use crate::refactorings::visitors::collect_field;
     use super::super::super::utils::get_source;
     use quote::quote;
+    use quote::__private::TokenStream;
 
-    fn create_program_match_1() -> quote::__rt::TokenStream {
+    fn create_program_match_1() -> TokenStream {
         quote! {
             fn foo ( s1 : S ) { if let S { f , g : 1 } | S { f : 1 , g : f } = s1 { let _ : i32 = f } } struct S { f : i32 , g : i32 }
         }

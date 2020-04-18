@@ -70,14 +70,15 @@ mod test {
     use crate::refactorings::utils::get_source;
     use crate::{create_test_span, run_after_analysis};
     use quote::quote;
+    use quote::__private::TokenStream;
 
-    fn create_struct() -> quote::__rt::TokenStream {
+    fn create_struct() -> TokenStream {
         quote! {
             struct T {not_this: i32}
             struct S {not_this: i32, field: u32}
         }
     }
-    fn create_tuple() -> quote::__rt::TokenStream {
+    fn create_tuple() -> TokenStream {
         quote! {
             struct T ( i32 );
             struct S ( i32, u32 );

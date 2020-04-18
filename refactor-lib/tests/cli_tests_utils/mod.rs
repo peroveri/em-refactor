@@ -3,9 +3,9 @@ use std::process::Command;
 use tempfile::TempDir;
 use my_refactor_lib::*;
 
-pub const WORKSPACE_ARG: &str = "--workspace-root=./tests/data/crates/hello_world";
-pub const WORKSPACE_ARG_MULTI_ROOT: &str = "--workspace-root=./tests/data/crates/multi_root";
-pub const WORKSPACE_ARG_MULTI_ROOT_OVERLAP: &str = "--workspace-root=./tests/data/crates/multi_root_overlap";
+pub const WORKSPACE_ARG: &str = "--workspace-root=../refactor-examples/crates/hello_world";
+pub const WORKSPACE_ARG_MULTI_ROOT: &str = "--workspace-root=../refactor-examples/crates/multi_root";
+pub const WORKSPACE_ARG_MULTI_ROOT_OVERLAP: &str = "--workspace-root=../refactor-examples/crates/multi_root_overlap";
 
 pub fn cargo_my_refactor() -> Command {
     Command::cargo_bin("cargo-my-refactor").unwrap()

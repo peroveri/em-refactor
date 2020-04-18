@@ -113,7 +113,7 @@ mod test {
 #[cfg(test)]
 mod test_utils {
     use super::*;
-    use quote::__rt::TokenStream;
+    use quote::__private::TokenStream;
     use crate::{create_test_span, run_after_analysis};
     use crate::refactorings::utils::get_source;
 

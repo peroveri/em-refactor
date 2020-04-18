@@ -74,8 +74,9 @@ mod test {
     use super::*;
     use crate::{create_test_span, run_after_analysis};
     use quote::quote;
+    use quote::__private::TokenStream;
 
-    fn create_program_1() -> quote::__rt::TokenStream {
+    fn create_program_1() -> TokenStream {
         quote! {
             struct S {field: u32}
             fn foo() {

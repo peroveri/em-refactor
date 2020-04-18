@@ -122,8 +122,9 @@ mod test {
     use crate::refactorings::visitors::collect_field;
     use crate::{create_test_span, run_after_analysis};
     use quote::quote;
+    use quote::__private::TokenStream;
 
-    fn create_program_self_tuple_wildcard() -> quote::__rt::TokenStream {
+    fn create_program_self_tuple_wildcard() -> TokenStream {
         quote! {
             struct S ( i32 );
             impl S {
@@ -136,7 +137,7 @@ mod test {
             }
         }
     }
-    fn create_program_self_tuple_pattern() -> quote::__rt::TokenStream {
+    fn create_program_self_tuple_pattern() -> TokenStream {
         quote! {
             struct S ( i32 );
             impl S {

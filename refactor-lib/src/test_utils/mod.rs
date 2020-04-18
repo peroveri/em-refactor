@@ -3,7 +3,7 @@ use rustc_middle::ty::TyCtxt;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-use quote::__rt::TokenStream;
+use quote::__private::TokenStream;
 use rustc_span::{BytePos, Span};
 use tempfile::TempDir;
 use crate::refactoring_invocation::{argument_list_to_refactor_def, AstContext, get_sys_root, MyRefactorCallbacks, Query, QueryResult, RefactoringErrorInternal, TyContext};
@@ -13,7 +13,7 @@ use crate::refactoring_invocation::{argument_list_to_refactor_def, AstContext, g
  * Accepts a TokenStream (from quote) and a function with a single parameter TyCtxt.
  */
 #[allow(unused)]
-pub fn run_after_analysis<F>(program: quote::__rt::TokenStream, func: F)
+pub fn run_after_analysis<F>(program: TokenStream, func: F)
 where
     F: Fn(TyCtxt<'_>) -> (),
     F: Send
@@ -28,7 +28,7 @@ where
  * Accepts a TokenStream (from quote) and a function with a single parameter TyCtxt.
  */
 #[allow(unused)]
-pub fn run_after_expansion<F>(program: quote::__rt::TokenStream, func: F)
+pub fn run_after_expansion<F>(program: TokenStream, func: F)
 where
     F: Fn(&Queries<'_>, &Compiler) -> (),
     F: Send,
@@ -44,7 +44,7 @@ where
  * Accepts a TokenStream (from quote) and a function with a single parameter TyCtxt.
  */
 #[allow(unused)]
-pub fn run_after_parsing<F>(program: quote::__rt::TokenStream, func: F)
+pub fn run_after_parsing<F>(program: TokenStream, func: F)
 where
     F: Fn(&Queries<'_>, &Compiler) -> (),
     F: Send,
@@ -163,7 +163,7 @@ pub fn assert_success(prog: TokenStream, refactoring: &str, span: (u32, u32), ex
 
     assert_eq!(crate::refactoring_invocation::get_file_content(&c.result.unwrap().0).unwrap(), expected);
 }
-pub fn assert_err(prog: quote::__rt::TokenStream, refactoring: &str, span: (u32, u32), expected: RefactoringErrorInternal)  {
+pub fn assert_err(prog: TokenStream, refactoring: &str, span: (u32, u32), expected: RefactoringErrorInternal)  {
     let program = &format!("{}", prog);
     
     let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));

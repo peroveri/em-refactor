@@ -117,8 +117,9 @@ mod test {
     use crate::refactorings::visitors::collect_field;
     use super::super::super::utils::get_source;
     use quote::quote;
+    use quote::__private::TokenStream;
 
-    fn create_program_match_1() -> quote::__rt::TokenStream {
+    fn create_program_match_1() -> TokenStream {
         quote! {
             struct S { foo: u32 }
             fn foo() {
@@ -126,7 +127,7 @@ mod test {
             }
         }
     }
-    fn create_program_match_2() -> quote::__rt::TokenStream {
+    fn create_program_match_2() -> TokenStream {
         quote! {
             struct S { foo: u32 }
             fn foo() {
@@ -135,7 +136,7 @@ mod test {
             }
         }
     }
-    fn create_program_match_3() -> quote::__rt::TokenStream {
+    fn create_program_match_3() -> TokenStream {
         quote! {
             struct S { foo: u32 }
             fn foo() {
@@ -144,7 +145,7 @@ mod test {
             }
         }
     }
-    fn create_program_match_4() -> quote::__rt::TokenStream {
+    fn create_program_match_4() -> TokenStream {
         quote! {
             struct S { foo: u32 }
             impl S {
@@ -154,7 +155,7 @@ mod test {
             }
         }
     }
-    fn create_program_match_5() -> quote::__rt::TokenStream {
+    fn create_program_match_5() -> TokenStream {
         quote! {
             struct S { foo: u32 }
             fn bar() {
@@ -164,7 +165,7 @@ mod test {
         }
     }
 
-    fn create_program_match_6() -> quote::__rt::TokenStream {
+    fn create_program_match_6() -> TokenStream {
         quote! {
             # [ derive ( Eq , PartialEq , Ord , PartialOrd , Clone , Hash , Default , Debug ) ] struct S { foo : u32 }
         }

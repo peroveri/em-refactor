@@ -127,8 +127,9 @@ mod test {
     use crate::refactorings::visitors::collect_field;
     use crate::{create_test_span, run_after_analysis};
     use quote::quote;
+    use quote::__private::TokenStream;
 
-    fn create_program_match() -> quote::__rt::TokenStream {
+    fn create_program_match() -> TokenStream {
         quote! {
             struct S { field: u32 }
             fn foo() {
@@ -139,7 +140,7 @@ mod test {
             }
         }
     }
-    fn create_program_match_without_field() -> quote::__rt::TokenStream {
+    fn create_program_match_without_field() -> TokenStream {
         quote! {
             struct S { field: u32 }
             fn foo() {
@@ -151,7 +152,7 @@ mod test {
         }
     }
 
-    fn create_program_if_let() -> quote::__rt::TokenStream {
+    fn create_program_if_let() -> TokenStream {
         quote! {
             struct S { field: u32 }
             fn foo() {
@@ -160,7 +161,7 @@ mod test {
             }
         }
     }
-    fn create_program_self_type() -> quote::__rt::TokenStream {
+    fn create_program_self_type() -> TokenStream {
         quote! {
             struct S { field: u32 }
             impl S {
@@ -173,7 +174,7 @@ mod test {
             }
         }
     }
-    fn create_program_self_type_wildcard() -> quote::__rt::TokenStream {
+    fn create_program_self_type_wildcard() -> TokenStream {
         quote! {
             struct S { field: u32 }
             impl S {
@@ -186,7 +187,7 @@ mod test {
             }
         }
     }
-    fn create_program_match_6() -> quote::__rt::TokenStream {
+    fn create_program_match_6() -> TokenStream {
         quote! {
             # [ derive ( Eq , PartialEq , Ord , PartialOrd , Clone , Hash , Default , Debug ) ] struct S { foo : u32 }
         }

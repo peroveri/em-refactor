@@ -105,8 +105,9 @@ mod test {
     use crate::refactorings::visitors::collect_field;
     use super::super::super::utils::get_source;
     use quote::quote;
+    use quote::__private::TokenStream;
 
-    fn create_program_match_6() -> quote::__rt::TokenStream {
+    fn create_program_match_6() -> TokenStream {
         quote! {
             struct S ( i32 );
             fn foo() {
@@ -114,7 +115,7 @@ mod test {
             }
         }
     }
-    fn create_program_match_7() -> quote::__rt::TokenStream {
+    fn create_program_match_7() -> TokenStream {
         quote! {
             struct S ( i32 );
             fn foo(s: S, b: bool) -> S {

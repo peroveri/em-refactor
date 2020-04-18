@@ -126,7 +126,7 @@ mod test {
     use crate::{create_test_span, run_after_analysis};
     use crate::refactorings::utils::get_source;
     use quote::quote;
-    use quote::__rt::TokenStream;
+    use quote::__private::TokenStream;
 
     fn create_program_match_1() -> TokenStream {
         quote! {

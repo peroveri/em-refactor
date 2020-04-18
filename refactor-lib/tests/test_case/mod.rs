@@ -9,7 +9,7 @@ use tempfile::TempDir;
 // These tests are currently not thread safe for multiple tests on a single .rs file
 // run single threaded with: cargo test -- --test-threads=1
 
-static TEST_CASE_PATH: &str = "./tests/data";
+static TEST_CASE_PATH: &str = "../refactor-examples";
 
 struct TestCase {
     file: String,
