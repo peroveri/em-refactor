@@ -7,17 +7,17 @@ Requirements:
 
 Steps:
 - The rustc-dev component is required, and it can be added to the nightly toolchain using: ```rustup component add --toolchain nightly-2020-04-15 rustc-dev```
-- Compile the refactoring tool by running ```cargo build --bins --release``` in the [./refactor-lib](./refactor-lib) folder.
+- Compile the refactoring tool by running ```cargo build --bins --release``` in this folder.
 - Run ```npm install``` in the [./refactor-ls](./refactor-ls) folder
 - Open Visual Studio Code in the [./refactor-ls](./refactor-ls) folder: ```code refactor-ls```
 - Run the build task (Ctrl+Shift+B)
 - Debug the extension (Debug View -> Launch client)
 - Configure settings
   - Open the vs code extension settings (File->Preferences->Settings) 
-  - Set the "Refactoring Binary Path" setting to the absolute path of the binary file from step 2 ( it will be \<git repo folder> + /refactor-lib/target/release/cargo-my-refactor )
+  - Set the "Refactoring Binary Path" setting to the absolute path of the binary file from step 2 ( it will be \<git repo folder> + /target/release/cargo-my-refactor )
    
 
-## [./refactor-lib/tests/data -- Examples in rust](./refactor-lib/tests/data)
+## [./refactor-examples -- Examples in rust](./refactor-examples)
 This project should contain a list of valid refactorings that can be used for unit tests.
 
 Each refactoring example should contain the code before, after and the arguments passed to the refactoring tool. The arguments must contain refactoring definition name (e.g. 'extract-method') and selection (from and to). Other arguments might be required depending on the actual refactoring.
