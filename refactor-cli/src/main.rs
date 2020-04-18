@@ -24,6 +24,9 @@ Usage:
 /// Wrapper binary which invokes cargo check with the RUSTC_WRAPPER env var set to the binary produced by driver.rs
 /// This will cause cargo to invoke the driver.rs binary with the same arguments as if the driver.rs binary was rustc.
 ///
+/// The main.rs binary should not be linked against librustc_driver
+/// The driver.rs binary will instead be linked against librustc_driver, as cargo executes this binary
+/// 
 /// Invoking on a single file:
 /// - ``
 ///
