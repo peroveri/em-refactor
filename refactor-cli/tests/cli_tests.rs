@@ -1,7 +1,7 @@
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
 use cli_tests_utils::*;
-use refactor_lib::*;
+use refactor_lib_types::*;
 
 mod cli_tests_utils;
 

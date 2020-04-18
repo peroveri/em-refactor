@@ -10,7 +10,7 @@ use rustc_span::Span;
 /// # Example
 /// Given the program:
 ///
-/// ```
+/// ```example
 /// struct S {foo: u32}
 ///           | |
 ///           x y
@@ -18,7 +18,7 @@ use rustc_span::Span;
 /// then `collect_field(x, y)` would return the `StructField` of `foo`
 ///
 /// # Grammar
-/// ```
+/// ```example
 /// StructStruct:
 ///   struct IDENTIFIER  Generics? WhereClause? ( { StructFields? } | ; )
 /// StructFields :

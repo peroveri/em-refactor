@@ -1,7 +1,7 @@
 use super::{arg_value, collect_extract_block_candidates, collect_box_field_all_candidates, collect_box_field_namede_candidates, collect_box_field_tuple_candidates};
 use rustc_span::Span;
 use crate::refactorings::utils::map_span_to_index;
-use crate::output_types::{CandidateOutput, CandidatePosition, RefactorOutputs};
+use refactor_lib_types::{CandidateOutput, CandidatePosition, RefactorOutputs};
 use crate::refactoring_invocation::{AstContext, QueryResult, Query, MyRefactorCallbacks};
 
 pub fn should_query_candidates(refactor_args: &[String]) -> bool {

@@ -1,5 +1,5 @@
 use super::utils::{map_change_from_span, get_source};
-use crate::output_types::FileStringReplacement;
+use refactor_lib_types::FileStringReplacement;
 use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal, TyContext};
 use crate::refactorings::visitors::hir::{collect_cfs, collect_innermost_contained_block};
 use rustc_middle::ty::TyCtxt;

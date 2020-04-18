@@ -9,7 +9,7 @@ use rustc_span::Span;
 /// 
 /// # Example
 /// given:
-/// ```
+/// ```example
 /// let _ = S { foo: 0 };
 ///             | |
 ///             x y
@@ -18,14 +18,12 @@ use rustc_span::Span;
 /// then `collect_struct_expressions(S, "foo")` would return a single byte range `(x, y)`
 /// 
 /// but with:
-/// ```
+/// ```example
 /// let _ = S { ..bar };
 /// ```
 /// then `collect_struct_expressions(S, "foo")` would return an empty list
 /// 
 /// # Grammar
-/// ```
-/// ```
 /// [Struct expression grammar](https://doc.rust-lang.org/stable/reference/expressions/struct-expr.html)
 pub fn collect_struct_expressions(
     tcx: TyCtxt,

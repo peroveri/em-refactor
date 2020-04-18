@@ -1,7 +1,7 @@
 use std::io::prelude::*;
 use std::process::Command;
 use tempfile::TempDir;
-use refactor_lib::RefactorOutputs;
+use refactor_lib_types::RefactorOutputs;
 use super::TestResults;
 
 pub const WORK_DIR: &str = "./refactor-experiments/src/exp/work_dir";

@@ -24,7 +24,7 @@ use if_chain::if_chain;
 /// 
 /// 
 /// # Example TODO
-/// ``` 
+/// ```example
 /// match EXPR {
 /// S {f, g: _} | S{f: _, g: f}
 /// }

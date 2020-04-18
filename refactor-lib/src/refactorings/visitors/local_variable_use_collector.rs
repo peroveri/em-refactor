@@ -10,7 +10,7 @@ use rustc_span::Span;
 /// 
 /// # Example
 /// Given:
-/// ```
+/// ```example
 /// let foo = 0;
 ///     |
 ///     hir_id: x

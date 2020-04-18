@@ -1,4 +1,4 @@
-use crate::output_types::{FileStringReplacement};
+use refactor_lib_types::{FileStringReplacement};
 use crate::refactoring_invocation::{argument_list_to_refactor_def, AstDiff, from_error, from_success, MyRefactorCallbacks, QueryResult, RefactoringErrorInternal, rustc_rerun, serialize, should_run_rustc_again};
 
 pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args: Vec<String>) -> Result<(), i32> {

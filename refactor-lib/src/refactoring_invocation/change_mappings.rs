@@ -1,4 +1,4 @@
-use crate::output_types::{FileStringReplacement, RefactoringError, RefactorOutput, RefactorOutputs};
+use refactor_lib_types::{FileStringReplacement, RefactoringError, RefactorOutput, RefactorOutputs};
 use crate::refactoring_invocation::{arg_value, InternalErrorCodes, RefactoringErrorInternal};
 
 pub fn from_success(rustc_args: &[String], replacements: Vec<FileStringReplacement>) -> RefactorOutputs {

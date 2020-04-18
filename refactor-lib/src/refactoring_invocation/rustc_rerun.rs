@@ -1,4 +1,4 @@
-use crate::output_types::FileStringReplacement;
+use refactor_lib_types::FileStringReplacement;
 use crate::refactoring_invocation::{RefactoringErrorInternal, InMemoryFileLoader};
 
 struct DefaultCallbacks;

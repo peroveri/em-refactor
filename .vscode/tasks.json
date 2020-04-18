@@ -96,7 +96,7 @@
         {
             "label": "build binary",
             "type": "shell",
-            "command": "cargo build --bins --release",
+            "command": "cargo build --bins --lib --release",
             "problemMatcher": [
                 "$rustc"
             ],

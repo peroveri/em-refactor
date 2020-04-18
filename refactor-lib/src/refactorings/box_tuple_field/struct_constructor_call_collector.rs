@@ -10,7 +10,7 @@ use if_chain::if_chain;
 /// 
 /// # Example
 /// given:
-/// ```
+/// ```example
 /// let _ = S (foo);
 ///            | |
 ///            x y
@@ -18,8 +18,6 @@ use if_chain::if_chain;
 /// then `collect_struct_constructor_calls(S, "0")` would return a single byte range `(x, y)`
 /// 
 /// # Grammar
-/// ```
-/// ```
 /// [Struct expression grammar](https://doc.rust-lang.org/stable/reference/expressions/struct-expr.html)
 pub fn collect_struct_constructor_calls(
     tcx: TyCtxt,

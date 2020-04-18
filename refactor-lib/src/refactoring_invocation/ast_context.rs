@@ -4,7 +4,7 @@ use rustc_interface::Queries;
 use rustc_span::Span;
 use rustc_span::source_map::SourceMap;
 use crate::refactorings::utils::{map_range_to_span, map_change_from_span};
-use crate::output_types::FileStringReplacement;
+use refactor_lib_types::FileStringReplacement;
 use super::{RefactoringErrorInternal, SourceCodeRange};
 
 pub struct AstContext<'a, 'b> {

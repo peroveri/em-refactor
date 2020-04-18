@@ -1,4 +1,5 @@
-mod output_types;
+use refactor_lib_types::*;
+
 static DRIVER_NAME: &str = "my-refactor-driver";
 
 const MY_REFACTOR_HELP: &str = r#"Refactorings for the Rust programming language.
@@ -153,10 +154,10 @@ fn clean_local_targets(target_dir: Option<String>) -> Result<(), std::io::Error>
 
 fn combine_output(s: &str) -> String {
     if s.starts_with(r#"{"candidates":"#) {
-        let mut outputs = output_types::RefactorOutputs{candidates: vec![], refactorings: vec![]};
+        let mut outputs = RefactorOutputs{candidates: vec![], refactorings: vec![]};
         for line in s.split("\n") {
             if line.trim().len() > 0 {
-                outputs.extend(serde_json::from_str::<output_types::RefactorOutputs>(&line).unwrap());
+                outputs.extend(serde_json::from_str::<RefactorOutputs>(&line).unwrap());
             }
         }
         outputs.sort();

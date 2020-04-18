@@ -2,7 +2,7 @@ use rustc_hir::{HirId, Item, ItemKind};
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 
-use crate::output_types::FileStringReplacement;
+use refactor_lib_types::FileStringReplacement;
 use crate::refactorings::utils::{get_source, map_change_from_span};
 use crate::refactoring_invocation::RefactoringErrorInternal;
 use super::visitors::{collect_local_variable_use, collect_struct_field_access_expressions};

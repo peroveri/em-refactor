@@ -9,7 +9,7 @@ use rustc_span::Span;
 ///
 /// # Example
 /// given:
-/// ```
+/// ```example
 /// let s = S {foo: 0};
 /// let _ = s.foo;
 ///         |   |
@@ -18,7 +18,7 @@ use rustc_span::Span;
 /// then `collect_field_access_expressions(S, "foo")` would return a single byte range `(x, y)`
 ///
 /// # Syntax
-/// ```
+/// ```example
 /// FieldExpression :
 ///   Expression . IDENTIFIER
 /// ```

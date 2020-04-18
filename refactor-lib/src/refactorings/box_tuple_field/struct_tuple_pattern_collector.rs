@@ -13,7 +13,7 @@ use if_chain::if_chain;
 /// 
 /// # Example
 /// given:
-/// ```
+/// ```example
 /// match (foo) {
 ///   S (field) => {}
 ///      |   |
@@ -23,7 +23,7 @@ use if_chain::if_chain;
 /// then `collect_struct_patterns(S, "0")` would return a single byte range `(x, y)`
 /// 
 /// # Grammar
-/// ```
+/// ```example
 /// StructPattern :
 ///   PathInExpression {
 ///      StructPatternElements ?
