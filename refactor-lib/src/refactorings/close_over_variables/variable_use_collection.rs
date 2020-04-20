@@ -196,7 +196,7 @@ impl Param {
         } else if self.is_mut {
             "&mut "
         } else if self.is_borrow {
-            "& "
+            "&"
         } else {
             ""
         })
