@@ -104,7 +104,7 @@ mod test {
 
     fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(ExpressionUseKind, String, (u32, u32))>> + Send> {
         Box::new(move |ty| {
-            let closure = collect_anonymous_closure(ty.0, ty.get_span(&file_name, from, to)?).unwrap();
+            let closure = collect_anonymous_closure(ty, ty.get_span(&file_name, from, to)?).unwrap();
             let vars = collect_vars(ty.0, closure.body_id, closure.body_span);
 
             Ok(vars.to_cmp())

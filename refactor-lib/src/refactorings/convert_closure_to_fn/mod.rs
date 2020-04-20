@@ -10,7 +10,7 @@ use crate::refactorings::visitors::hir::{collect_anonymous_closure};
 /// 1. For each parameter
 /// 2. If return value:
 pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
-    let closure = collect_anonymous_closure(tcx.0, span)?;
+    let closure = collect_anonymous_closure(tcx, span)?;
 
     let mut changes = vec![];
 
