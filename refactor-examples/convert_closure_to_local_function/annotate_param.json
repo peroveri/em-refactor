@@ -2,7 +2,7 @@
 	"file": "annotate_param.rs",
 	"args": {
 		"refactoring": "convert_closure_to_local_function",
-		"selection": "55:83"
+		"selection": "31:59"
 	},
 	"expected": {
 		"code": 0,
