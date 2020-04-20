@@ -1,5 +1,5 @@
 use crate::refactoring_invocation::{AstContext, Query, QueryResult, RefactoringErrorInternal, SourceCodeRange};
-use crate::refactorings::{box_field, close_over_variables, extract_block, inline_macro, introduce_closure, pull_up_item_declaration, split_conflicting_match_arms};
+use crate::refactorings::{box_field, close_over_variables, convert_closure_to_fn, extract_block, inline_macro, introduce_closure, pull_up_item_declaration, split_conflicting_match_arms};
 use crate::refactoring_invocation::{AstDiff, TyContext};
 use rustc_span::Span;
 ///
@@ -34,6 +34,7 @@ fn map_args_to_query(args: RefactoringArgs) -> Result<Query<AstDiff>, Refactorin
     match args.refactoring.as_ref() {
         "box-field" => Ok( to_ty_query(args.range, Box::new(box_field::do_refactoring))),
         "close-over-variables" => Ok(to_ty_query(args.range, Box::new(close_over_variables::do_refactoring))),
+        "convert-closure-to-function" => Ok(to_ty_query(args.range, Box::new(convert_closure_to_fn::do_refactoring))),
         "extract-block" => Ok(to_ty_query(args.range, Box::new(extract_block::do_refactoring))),
         "introduce-closure" => Ok(to_ty_query(args.range, Box::new(introduce_closure::do_refactoring))),
         "inline-macro" => Ok(to_ast_query(args.range, Box::new(inline_macro::do_refactoring))),
