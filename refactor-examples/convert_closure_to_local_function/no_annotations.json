@@ -1,11 +1,11 @@
 {
-	"file": "fn_with_no_annotations.rs",
+	"file": "no_annotations.rs",
 	"args": {
-		"refactoring": "convert-closure-to-local-function",
+		"refactoring": "convert-closure-to-function",
 		"selection": "16:24"
 	},
 	"expected": {
 		"code": 0,
-		"stdout_file": "fn_with_no_annotations_after.rs"
+		"stdout_file": "no_annotations_after.rs"
 	}
 }

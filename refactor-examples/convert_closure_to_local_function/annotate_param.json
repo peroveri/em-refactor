@@ -1,7 +1,7 @@
 {
 	"file": "annotate_param.rs",
 	"args": {
-		"refactoring": "convert_closure_to_local_function",
+		"refactoring": "convert-closure-to-function",
 		"selection": "31:59"
 	},
 	"expected": {

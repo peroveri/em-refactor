@@ -1,7 +1,7 @@
 {
 	"file": "returns_int.rs",
 	"args": {
-		"refactoring": "convert-closure-to-local-function",
+		"refactoring": "convert-closure-to-function",
 		"selection": "16:25"
 	},
 	"expected": {
