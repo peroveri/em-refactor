@@ -1,11 +1,9 @@
 use super::utils::{map_change_from_span, get_source};
 use crate::refactoring_invocation::{AstDiff, QueryResult, TyContext};
 use rustc_span::Span;
-use anonymous_closure_collector::collect_anonymous_closure;
 use expr_use_visit::collect_vars;
-use crate::refactorings::visitors::hir::ExpressionUseKind;
+use crate::refactorings::visitors::hir::{collect_anonymous_closure, ExpressionUseKind};
 
-mod anonymous_closure_collector;
 mod expr_use_visit;
 mod variable_use_collection;
 
