@@ -68,11 +68,13 @@ impl RefactorOutputs {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RefactorArgs {
-    pub refactoring: Option<String>,
-    pub selection: Option<String>,
-    pub query_candidates: Option<String>,
-    pub file: Option<String>,
+    pub refactoring: String,
+    pub selection: String,
+    pub file: String,
     pub usafe: bool,
-    pub single_file: bool,
     pub output_replacements_as_json: bool,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct CandidateArgs {
+    pub refactoring: String,
 }

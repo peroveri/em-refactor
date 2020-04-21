@@ -48,16 +48,14 @@ impl RefactorArgsParser {
     pub fn from_args(&self) -> Result<RefactoringArgs, RefactoringErrorInternal> {
         Ok(RefactoringArgs {
             range: self.parse_range()?,
-            refactoring: self.args.refactoring.clone().ok_or_else(|| RefactoringErrorInternal::arg_def("Expected --refactoring"))?
+            refactoring: self.args.refactoring.clone()
         })
     }
     pub fn parse_range(&self) -> Result<SourceCodeRange, RefactoringErrorInternal> {
-        let selection = self.args.selection.clone().ok_or_else(|| RefactoringErrorInternal::arg_def("Expected --selection"))?;
-        let file = self.args.file.clone().ok_or_else(|| RefactoringErrorInternal::arg_def("Expected --file"))?;
-        let ints = Self::get_int(&selection)?;
+        let ints = Self::get_int(&self.args.selection)?;
 
         Ok(SourceCodeRange {
-            file_name: file.to_string(),
+            file_name: self.args.file.to_string(),
             from: ints.0,
             to: ints.1,
         })
@@ -80,12 +78,10 @@ mod test {
     fn refactor_def_from_args() {
         let parser = RefactorArgsParser {
             args: RefactorArgs {
-                file: Some("main.rs".to_owned()),
+                file: "main.rs".to_owned(),
                 output_replacements_as_json: false,
-                query_candidates: None,
-                refactoring: Some("extract-block".to_owned()),
-                selection: Some("1:2".to_owned()),
-                single_file: false,
+                refactoring: "extract-block".to_owned(),
+                selection: "1:2".to_owned(),
                 usafe: false
             }
         };

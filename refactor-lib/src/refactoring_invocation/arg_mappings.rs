@@ -1,6 +1,6 @@
 use std::path::Path;
 use crate::refactoring_invocation::get_sys_root;
-use refactor_lib_types::RefactorArgs;
+use refactor_lib_types::{CandidateArgs, RefactorArgs};
 
 pub fn arg_value<'a>(
     args: impl IntoIterator<Item = &'a String>,
@@ -23,8 +23,16 @@ pub fn arg_value<'a>(
     None
 }
 
+pub fn get_candidate_args() -> Option<CandidateArgs> {
+    if let Ok(args) = std::env::var("CANDIDATE_ARGS") {
+        Some(serde_json::from_str::<CandidateArgs>(&args).unwrap())
+    } else {
+        None
+    }
+}
+
 pub fn get_refactor_args() -> RefactorArgs {
-    std::env::var("MY_REFACTOR_ARGS")
+    std::env::var("REFACTORING_ARGS")
         .map(|s| serde_json::from_str::<RefactorArgs>(&s).unwrap())
         .unwrap()
 }

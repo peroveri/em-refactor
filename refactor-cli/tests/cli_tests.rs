@@ -9,15 +9,17 @@ mod cli_tests_utils;
 fn cli_missing_args_should_output_nicely() {
     cargo_my_refactor()
         .arg(WORKSPACE_ARG)
-        .arg("--selection=0:0")
-        .arg("--file=main.rs")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
         ))
+        .arg("refactor")
         .assert()
         .failure()
-        .stderr(predicate::str::starts_with("Expected --refactoring\n"));
+        .stderr(predicate::str::starts_with(r#"error: The following required arguments were not provided:
+    <refactoring>
+    <file>
+    <selection>"#));
 }
 
 #[test]
@@ -44,14 +46,16 @@ fn cli_multiroot_project_lib() {
 
     let actual = cargo_my_refactor()
         .arg(WORKSPACE_ARG_MULTI_ROOT)
-        .arg("--output-replacements-as-json")
-        .arg("--refactoring=box-field")
-        .arg("--selection=11:16")
-        .arg("--file=src/lib.rs")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
-        )).output()
+        ))
+        .arg("refactor")
+        .arg("box-field")
+        .arg("src/lib.rs")
+        .arg("11:16")
+        .arg("--output-replacements-as-json")
+        .output()
         .unwrap();
 
     assert_json_eq(expected, actual);
@@ -81,14 +85,16 @@ fn cli_multiroot_project_main() {
 
     let actual = cargo_my_refactor()
         .arg(WORKSPACE_ARG_MULTI_ROOT)
-        .arg("--output-replacements-as-json")
-        .arg("--refactoring=box-field")
-        .arg("--selection=11:16")
-        .arg("--file=src/main.rs")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
-        )).output().unwrap();
+        ))
+        .arg("refactor")
+        .arg("box-field")
+        .arg("src/main.rs")
+        .arg("11:16")
+        .arg("--output-replacements-as-json")
+        .output().unwrap();
 
     assert_json_eq(expected, actual);
 }
@@ -115,14 +121,15 @@ fn cli_output_json() {
 
     let actual = cargo_my_refactor()
         .arg(WORKSPACE_ARG)
-        .arg("--output-replacements-as-json")
-        .arg("--refactoring=extract-block")
-        .arg("--selection=16:40")
-        .arg("--file=src/main.rs")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
         ))
+        .arg("refactor")
+        .arg("extract-block")
+        .arg("src/main.rs")
+        .arg("16:40")
+        .arg("--output-replacements-as-json")
         .output().unwrap();
     
     assert_json_eq(expected, actual);
@@ -153,11 +160,12 @@ fn cli_query_candidates_1() {
 
     cargo_my_refactor()
         .arg(WORKSPACE_ARG)
-        .arg("--query-candidates=extract-block")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
         ))
+        .arg("candidates")
+        .arg("extract-block")
         .assert()
         .success()
         .stdout(expected);
@@ -190,11 +198,12 @@ fn cli_query_candidates_multi_root_overlap() {
 
     cargo_my_refactor()
         .arg(WORKSPACE_ARG_MULTI_ROOT_OVERLAP)
-        .arg("--query-candidates=extract-block")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
         ))
+        .arg("candidates")
+        .arg("extract-block")
         .assert()
         .success()
         .stdout(expected);
@@ -211,8 +220,7 @@ fn cli_should_display_help() {
 Per Ove Ringdal <peroveri@gmail.com>
 
 USAGE:
-    cargo-my-refactor [FLAGS] [OPTIONS] [-- <cargo-args>...]"#,
-        ));
+    cargo-my-refactor [FLAGS] [OPTIONS] <SUBCOMMAND>"#));
 }
 
 #[test]
@@ -221,14 +229,15 @@ fn cli_single_file() {
 
     cargo_my_refactor()
         .arg(SINGLE_FILE_ARG)
-        .arg("--refactoring=extract-block")
-        .arg("--selection=11:13")
-        .arg("--file=main.rs")
-        .arg("--single-file")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
         ))
+        .arg("--single-file")
+        .arg("refactor")
+        .arg("extract-block")
+        .arg("main.rs")
+        .arg("11:13")
         .assert()
         .success()
         .stdout(expected);
@@ -247,13 +256,14 @@ fn cli_should_display_version() {
 fn cli_unknown_refactoring() {
     cargo_my_refactor()
         .arg(WORKSPACE_ARG)
-        .arg("--refactoring=invalid_refactoring_name")
-        .arg("--selection=0:0")
-        .arg("--file=src/lib.rs")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
         ))
+        .arg("refactor")
+        .arg("invalid_refactoring_name")
+        .arg("src/lib.rs")
+        .arg("0:0")
         .assert()
         .failure()
         .stderr(predicate::str::starts_with(

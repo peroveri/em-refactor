@@ -13,7 +13,7 @@ extern crate rustc_span;
 extern crate rustc_typeck;
 
 use std::process::exit;
-use refactor_lib::refactoring_invocation::{get_compiler_args, get_refactor_args, pass_to_rustc, run_refactoring_and_output_result, should_pass_to_rustc};
+use refactor_lib::refactoring_invocation::{get_candidate_args, get_compiler_args, get_refactor_args, pass_to_rustc, run_refactoring_and_output_result, should_pass_to_rustc};
 
 ///
 /// 1. Run rustc with refactoring callbacks
@@ -28,13 +28,10 @@ fn run_rustc() -> Result<(), i32> {
         return Ok(());
     }
 
-    let refactor_args = get_refactor_args();
-
-    if let Some(candidate) = &refactor_args.query_candidates {
-        return refactor_lib::extra::list_candidates(candidate, &rustc_args);
+    if let Some(args) = get_candidate_args() {
+        return refactor_lib::extra::list_candidates(&args.refactoring, &rustc_args);
     }
-
-    run_refactoring_and_output_result(&refactor_args, rustc_args)
+    run_refactoring_and_output_result(&get_refactor_args(), rustc_args)
 }
 
 pub fn main() {

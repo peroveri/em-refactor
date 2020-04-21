@@ -154,12 +154,10 @@ pub fn assert_success(prog: TokenStream, refactoring: &str, span: (u32, u32), ex
 
     let q = argument_list_to_refactor_def(
         &RefactorArgs {
-            file: Some(format!("{}", d.path().join("./main.rs").to_str().unwrap().to_owned())),
+            file: format!("{}", d.path().join("./main.rs").to_str().unwrap().to_owned()),
             output_replacements_as_json: false,
-            query_candidates: None,
-            refactoring: Some(format!("{}", refactoring)),
-            selection: Some(format!("{}:{}", span.0, span.1)),
-            single_file: true,
+            refactoring: format!("{}", refactoring),
+            selection: format!("{}:{}", span.0, span.1),
             usafe: false
         }
     ).unwrap();
@@ -176,12 +174,10 @@ pub fn assert_err(prog: TokenStream, refactoring: &str, span: (u32, u32), expect
     let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
     let q = argument_list_to_refactor_def(
         &RefactorArgs {
-            file: Some(format!("{}", d.path().join("./main.rs").to_str().unwrap().to_owned())),
+            file: format!("{}", d.path().join("./main.rs").to_str().unwrap().to_owned()),
             output_replacements_as_json: false,
-            query_candidates: None,
-            refactoring: Some(format!("{}", refactoring)),
-            selection: Some(format!("{}:{}", span.0, span.1)),
-            single_file: false,
+            refactoring: format!("{}", refactoring),
+            selection: format!("{}:{}", span.0, span.1),
             usafe: false
         }
     ).unwrap();

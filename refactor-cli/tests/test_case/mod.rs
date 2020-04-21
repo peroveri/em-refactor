@@ -13,7 +13,8 @@ static TEST_CASE_PATH: &str = "../refactor-examples";
 
 struct TestCase {
     file: String,
-    args: Vec<String>,
+    refactoring: String,
+    selection: String,
     expected: Expected,
 }
 /**
@@ -29,9 +30,11 @@ struct Expected {
 impl TestCase {
     fn from_json(s: &str) -> serde_json::Result<TestCase> {
         let v: Value = serde_json::from_str(s)?;
+        let args = TestCase::json_str_to_param_vec(&v);
         Ok(TestCase {
             file: v["file"].as_str().unwrap().to_string(),
-            args: TestCase::json_str_to_param_vec(&v)?,
+            refactoring: args.0,
+            selection: args.1,
             expected: TestCase::map_expected(&v).unwrap(),
         })
     }
@@ -44,16 +47,9 @@ impl TestCase {
             stdout_file: expected["stdout_file"].as_str().map(|s| s.to_string()),
         })
     }
-    fn json_str_to_param_vec(v: &Value) -> serde_json::Result<Vec<String>> {
-        let args_serde = &v["args"];
-        let args = vec![
-            format!(
-                "--refactoring={}",
-                args_serde["refactoring"].as_str().unwrap()
-            ),
-            format!("--selection={}", args_serde["selection"].as_str().unwrap()),
-        ];
-        Ok(args)
+    fn json_str_to_param_vec(v: &Value) -> (String, String) {
+        let args = &v["args"];
+        (args["refactoring"].as_str().unwrap().to_string(), args["selection"].as_str().unwrap().to_string())
     }
 }
 
@@ -93,9 +89,11 @@ fn run_tool_and_assert(test: TestCase, folder: &str) -> std::io::Result<()> {
         .unwrap()
         .current_dir(path)
         .arg(format!("--target-dir={}", tmp_dir_path.to_str().unwrap()))
-        .args(test.args)
-        .arg(format!("--file={}", &test.file))
         .arg("--single-file")
+        .arg("refactor")
+        .arg(&test.refactoring)
+        .arg(&test.file)
+        .arg(&test.selection)
         .assert();
 
     if let Some(code) = test.expected.code {
