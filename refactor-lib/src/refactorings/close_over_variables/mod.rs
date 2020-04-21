@@ -19,7 +19,7 @@ mod variable_use_collection;
 ///    c. If V' is a borrow, add deref to all occurences of V' in C'
 pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
     let closure = collect_anonymous_closure(tcx, span)?;
-    let vars = collect_vars(tcx.0, closure.body_id, closure.body_span);
+    let vars = collect_vars(tcx.0, closure.body_id, tcx.get_body_span(closure.body_id));
 
     let mut changes = vec![];
 
@@ -32,7 +32,7 @@ pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
             params
         };
         changes.push(
-            map_change_from_span(tcx.get_source_map(), closure.params, params));
+            map_change_from_span(tcx.get_source_map(), closure.get_next_param_pos(), params));
     }
 
     let args = vars.get_args_formatted();
@@ -42,7 +42,7 @@ pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
         } else {
             args
         };
-        changes.push(map_change_from_span(tcx.get_source_map(), closure.args, args.to_string()));
+        changes.push(map_change_from_span(tcx.get_source_map(), closure.get_next_arg_pos(), args.to_string()));
     }
 
     for v in vars.get_borrows() {

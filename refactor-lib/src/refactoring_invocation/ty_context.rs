@@ -1,3 +1,4 @@
+use rustc_hir::BodyId;
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 use rustc_span::source_map::SourceMap;
@@ -29,5 +30,8 @@ impl<'a> TyContext<'a> {
     }
     pub fn span_err(&self, span: Span) -> RefactoringErrorInternal {
         RefactoringErrorInternal::invalid_selection_with_code(span.lo().0, span.hi().0, &self.get_source(span))
+    }
+    pub fn get_body_span(&self, body_id: BodyId) -> Span {
+        self.0.hir().body(body_id).value.span
     }
 }
