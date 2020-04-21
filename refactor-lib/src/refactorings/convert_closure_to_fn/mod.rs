@@ -72,7 +72,7 @@ impl FunctionDefinition {
     }
     fn format_output(&self) -> String {
         if let Some(s) = &self.output {
-            format!("-> {}", s)
+            format!(" -> {}", s)
         } else {
             "".to_owned()
         }
