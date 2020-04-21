@@ -23,6 +23,6 @@
 	},
 	"scripts": {
 		"pretest": "cd .. && npm run compile",
-		"test": "mocha 'out/**/*.js'"		
+		"test": "mocha 'out/**/*.js'"
 	}
 }
