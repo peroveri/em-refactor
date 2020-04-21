@@ -32,6 +32,7 @@ impl<'v> Visitor<'v> for ClosureCollector<'v> {
                             self.result = Some(Closure {
                                 body_id: _body,
                                 call_expr: ex,
+                                call_fn_expr: call_fn_expr,
                                 has_params: args.len() > 0,
                                 params_span: closure_params,
                                 fn_decl: _fn_decl,
@@ -53,6 +54,7 @@ impl<'v> Visitor<'v> for ClosureCollector<'v> {
 pub struct Closure<'v> {
     pub params_span: Span,
     pub call_expr: &'v Expr<'v>,
+    pub call_fn_expr: &'v Expr<'v>,
     pub has_params: bool,
     pub body_id: BodyId,
     pub fn_decl: &'v FnDecl<'v>,

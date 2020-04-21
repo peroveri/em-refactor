@@ -7,12 +7,10 @@ fn run_test(name: &str) {
 }
 
 #[test]
-#[ignore]
 fn convert_closure_to_local_function_annotate_param() {
     run_test("annotate_param");
 }
 #[test]
-#[ignore]
 fn convert_closure_to_local_function_no_annotations() {
     run_test("no_annotations");
 }
