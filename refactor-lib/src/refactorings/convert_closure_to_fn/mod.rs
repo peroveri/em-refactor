@@ -1,4 +1,5 @@
 use rustc_hir::{BodyId, Expr, ExprKind, Param, PatKind, Ty, TyKind};
+use rustc_middle::ty::TyS;
 use rustc_span::Span;
 use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal, TyContext};
 use crate::refactorings::visitors::hir::collect_anonymous_closure;
@@ -36,12 +37,17 @@ pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
         let input = &closure.fn_decl.inputs[i];
         let type_s = 
         if contains_infer(input) {
-            infer_concrete(tcx, &closure.args_1[i], closure.body_id)?
+            format_ty(infer_concrete(tcx, &closure.args_1[i], closure.body_id)?)
         } else {
             rustc_hir_pretty::to_string(rustc_hir_pretty::NO_ANN, |s| s.print_type(input))
         };
         new_fn.params.push((ident, type_s));
         i += 1;
+    }
+
+    let out = infer_concrete(tcx, &body.value, closure.body_id)?;
+    if !out.is_unit() {
+        new_fn.output = Some(format_ty(out));
     }
 
     changes.push(tcx.map_change(closure.call_fn_expr.span, format!("({{{}\n{}}})", new_fn.formatted(), new_fn.ident)));
@@ -95,12 +101,16 @@ fn contains_infer(pat: &Ty) -> bool {
     }
 }
 
-fn infer_concrete(tcx: &TyContext, expr: &Expr, body_id: BodyId) -> QueryResult<String> {
+fn format_ty(ty: &TyS) -> String {
+    format!("{}", ty)
+}
+
+fn infer_concrete<'v>(tcx: &'v TyContext, expr: &Expr, body_id: BodyId) -> QueryResult<&'v TyS<'v>> {
 
     let def_id = tcx.0.hir().body_owner_def_id(body_id);
     let typecheck_table = tcx.0.typeck_tables_of(def_id);
     if let Some(expr_type) = typecheck_table.expr_ty_adjusted_opt(expr) {
-        Ok(format!("{}", expr_type))
+        Ok(expr_type)
     } else {
         Err(RefactoringErrorInternal::int(&format!("Failed to get type of expression: {}", tcx.get_source(expr.span))))
     } 
