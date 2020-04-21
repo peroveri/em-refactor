@@ -15,7 +15,6 @@ export class SettingsService {
 
 interface LSPExtensionSettings {
     isGenerateTestFilesEnabled: boolean;
-    isHoverEnabled: boolean;
     isUnsafeRefactoringShown: boolean;
     refactoringBinaryPath: string;
 }

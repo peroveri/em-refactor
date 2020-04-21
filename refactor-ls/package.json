@@ -25,12 +25,6 @@
 			"type": "object",
 			"title": "Example configuration",
 			"properties": {
-				"languageServerExample.isHoverEnabled": {
-					"scope": "window",
-					"type": "boolean",
-					"default": false,
-					"description": "Shows type information and macro expansion on hover."
-				},
 				"languageServerExample.isGenerateTestFilesEnabled": {
 					"scope": "window",
 					"type": "boolean",

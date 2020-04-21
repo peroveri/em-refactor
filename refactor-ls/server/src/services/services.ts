@@ -69,7 +69,6 @@ function initConnection(): [Connection, TextDocuments] {
                 executeCommandProvider: {
                     commands: listAllCommands()
                 },
-                hoverProvider: true
             }
         };
     });
