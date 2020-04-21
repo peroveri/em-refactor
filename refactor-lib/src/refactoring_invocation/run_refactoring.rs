@@ -1,11 +1,11 @@
-use refactor_lib_types::{FileStringReplacement};
-use crate::refactoring_invocation::{argument_list_to_refactor_def, AstDiff, from_error, from_success, MyRefactorCallbacks, QueryResult, RefactoringErrorInternal, rustc_rerun, serialize, should_run_rustc_again};
+use refactor_lib_types::{FileStringReplacement, RefactorArgs};
+use crate::refactoring_invocation::{argument_list_to_refactor_def, AstDiff, from_error, from_success, MyRefactorCallbacks, QueryResult, RefactoringErrorInternal, rustc_rerun, serialize};
 
-pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args: Vec<String>) -> Result<(), i32> {
+pub fn run_refactoring_and_output_result(refactor_args: &RefactorArgs, rustc_args: Vec<String>) -> Result<(), i32> {
     
-    match run_refactoring(&refactor_args, &rustc_args) {
+    match run_refactoring(refactor_args, &rustc_args) {
         Err(err) => {
-            if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
+            if refactor_args.output_replacements_as_json {
                 println!("{}", serialize(&from_error(&rustc_args, err)).unwrap());
                 Ok(())
             } else {
@@ -14,7 +14,7 @@ pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args:
             }
         },
         Ok(astdiff) => {
-            if refactor_args.contains(&"--output-replacements-as-json".to_owned()) {
+            if refactor_args.output_replacements_as_json {
                 print!("{}", serialize(&from_success(&rustc_args, astdiff.0)).unwrap());
             } else {
                 print!("{}", get_file_content(&astdiff.0).unwrap());
@@ -25,7 +25,7 @@ pub fn run_refactoring_and_output_result(refactor_args: Vec<String>, rustc_args:
 
 }
 
-fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) -> QueryResult<AstDiff> {
+fn run_refactoring(refactor_args: &RefactorArgs, rustc_args: &Vec<String>) -> QueryResult<AstDiff> {
 
 
     // 1. Run refactoring callbacks
@@ -33,14 +33,14 @@ fn run_refactoring(refactor_args: &Vec<String>, rustc_args: &Vec<String>) -> Que
 
     // 2. Rerun the compiler to check if any errors were introduced
     // Runs with default callbacks
-    if should_run_rustc_again(refactor_args) && !refactor_res.0.is_empty() {
+    if !refactor_args.usafe && !refactor_res.0.is_empty() {
         rustc_rerun(&refactor_res.0, &rustc_args)?;
     }
 
     Ok(refactor_res)
 }
 
-fn run_refactoring_internal(rustc_args: &[String], refactor_args: &[String]) -> QueryResult<AstDiff> {
+fn run_refactoring_internal(rustc_args: &[String], refactor_args: &RefactorArgs) -> QueryResult<AstDiff> {
     
     let refactor_def = argument_list_to_refactor_def(refactor_args)?;
 

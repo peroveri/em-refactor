@@ -1,24 +1,49 @@
 use refactor_lib_types::*;
+use clap::{Arg, App, ArgMatches};
 
 static DRIVER_NAME: &str = "my-refactor-driver";
 
-const MY_REFACTOR_HELP: &str = r#"Refactorings for the Rust programming language.
+fn app<'a, 'b>() -> App<'a, 'b> {
+    App::new("Refactoring tool")
+     .version("0.0.1")
+     .author("Per Ove Ringdal <peroveri@gmail.com>")
+     .arg(Arg::with_name("refactoring")
+          .short("r")
+          .long("refactoring")
+          .value_name("refactoring")
+          .help("Id of the refactoring")
+          .takes_value(true))
+    .arg(Arg::with_name("query-candidates")
+          .long("query-candidates")
+          .value_name("REFACTORING")
+          .help("Id of the refactoring")
+          .takes_value(true))
+     .arg(Arg::with_name("selection")
+          .short("s")
+          .long("selection")
+          .help("Selection on format from:to")
+          .takes_value(true))
+    .arg(Arg::with_name("file")
+        .short("f")
+        .long("file")
+        .help("File name")
+        .takes_value(true))
+    .arg(Arg::with_name("workspace-root")
+        .long("workspace-root")
+        .takes_value(true))
+    .arg(Arg::with_name("unsafe")
+        .long("unsafe"))
+    .arg(Arg::with_name("output-replacements-as-json")
+        .long("output-replacements-as-json"))
+    .arg(Arg::with_name("single-file")
+        .long("single-file"))
+    .arg(Arg::with_name("target-dir")
+        .long("target-dir")
+        .takes_value(true))
+    .arg(Arg::with_name("cargo-args")
+        .raw(true))
+}
 
-Usage: 
-    cargo my-refactor [<refactor-opts>...] [--] [cargo-check-options]
-
-[cargo-check-options] are passed to cargo check.
-
-<refactor-opts>:
-[--help]
-[--version]
---refactoring=[]
---selection=[]
---file=[]
-[--workspace-root=<path>]
-[--unsafe]
-[--output-changes-as-json]
-"#;
 
 ///
 /// Wrapper binary which invokes cargo check with the RUSTC_WRAPPER env var set to the binary produced by driver.rs
@@ -33,50 +58,30 @@ Usage:
 ///
 ///
 pub fn main() {
-    if let Err(code) = process(std::env::args().skip(1)) {
+    if let Err(code) = process() {
         std::process::exit(code);
     }
 }
 
-fn get_option(args: &[String], option: &str) -> Option<String> {
-    for arg in args {
-        if arg.starts_with(option) {
-            return Some(arg[option.len()..].to_string());
-        }
+fn get_args(m: &ArgMatches) -> RefactorArgs {
+    RefactorArgs {
+        file: m.value_of("file").map(|s| s.to_string()),
+        output_replacements_as_json: m.is_present("output-replacements-as-json"),
+        query_candidates: m.value_of("query-candidates").map(|s| s.to_string()),
+        refactoring: m.value_of("refactoring").map(|s| s.to_string()),
+        selection: m.value_of("selection").map(|s| s.to_string()),
+        single_file: m.is_present("single-file"),
+        usafe: m.is_present("usafe"),
     }
-    None
 }
 
-fn process<I>(mut old_args: I) -> Result<(), i32>
-where
-    I: Iterator<Item = String>,
-{
-    let mut my_refactor_args = old_args
-        .by_ref()
-        .take_while(|s| s != "--")
-        .collect::<Vec<_>>();
-    let mut args = vec!["+nightly-2020-04-15".to_owned(), "check".to_owned(), "-j".to_owned(), "1".to_owned(), "--quiet".to_owned(), "--tests".to_owned(), "--benches".to_owned(), "--examples".to_owned(), "--bins".to_owned()];
-    args.extend(old_args.collect::<Vec<_>>());
+fn process() -> Result<(), i32> {
+    let matches = app().get_matches();
+    let cargo_args = matches.value_of("cargo-args");
+    let refactor_args = get_args(&matches);
+    let target_dir = matches.value_of("target-dir");
 
-    // TODO: collect as JSON
-    if my_refactor_args.contains(&"--help".to_owned()) {
-        println!("{}", MY_REFACTOR_HELP);
-        return Ok(());
-    }
-
-    if my_refactor_args.contains(&"--version".to_owned()) {
-        println!("Version: 0.0.1");
-        return Ok(());
-    }
-
-    let mut path = std::env::current_exe()
-        .expect("current executable path invalid")
-        .with_file_name(DRIVER_NAME);
-    if cfg!(windows) {
-        path.set_extension("exe");
-    }
-
-    if let Some(workspace_path) = get_option(&my_refactor_args, "--workspace-root=") {
+    if let Some(workspace_path) = matches.value_of("workspace-root") {
         let res = std::env::set_current_dir(&workspace_path);
         if res.is_err() {
             eprintln!(
@@ -86,7 +91,55 @@ where
             );
             return Err(1);
         }
-        my_refactor_args.retain(|s| !s.starts_with("--workspace-root"));
+    }
+
+    if refactor_args.single_file {
+        run_single(refactor_args, target_dir)
+    } else {
+        run_crate(refactor_args, target_dir, cargo_args)
+    }
+}
+
+fn run_single(refactor_args: RefactorArgs, target_dir: Option<&str>) -> Result<(), i32> {
+    let mut path = std::env::current_exe()
+        .expect("current executable path invalid")
+        .with_file_name(DRIVER_NAME);
+    if cfg!(windows) {
+        path.set_extension("exe");
+    }
+    let output = std::process::Command::new(path)
+        .arg(refactor_args.file.clone().unwrap())
+        .arg(format!("--out-dir={}", target_dir.unwrap()))
+        .env("MY_REFACTOR_ARGS", serde_json::to_string(&refactor_args).unwrap())
+        .output().unwrap();
+
+    if output.status.success() {
+        let s = std::str::from_utf8(output.stdout.as_slice()).unwrap();
+        print!("{}", combine_output(s));
+        eprint!("{}", combine_output(std::str::from_utf8(output.stdout.as_slice()).unwrap()));
+        Ok(())
+    } else {
+        let s = std::str::from_utf8(output.stderr.as_slice()).unwrap();
+        eprint!("{}", combine_output(s));
+        Err(output.status.code().unwrap_or(-1))
+    }
+}
+
+fn run_crate(refactor_args: RefactorArgs, target_dir: Option<&str>, cargo_args: Option<&str>) -> Result<(), i32> {
+    
+    let mut path = std::env::current_exe()
+        .expect("current executable path invalid")
+        .with_file_name(DRIVER_NAME);
+    if cfg!(windows) {
+        path.set_extension("exe");
+    }
+    let mut args = vec!["+nightly-2020-04-15".to_owned(), "check".to_owned(), "-j".to_owned(), "1".to_owned(), "--quiet".to_owned(), "--tests".to_owned(), "--benches".to_owned(), "--examples".to_owned(), "--bins".to_owned()];
+
+    if let Some(arg) = target_dir {
+        args.push(format!("--target-dir={}", arg));
+    }
+    if let Some(arg) = cargo_args {
+        args.push(arg.to_string());
     }
 
     // Clean local targets
@@ -94,12 +147,12 @@ where
     // might be fixed?
     // https://github.com/rust-lang/cargo/issues/7490
     //
-    clean_local_targets(get_option(&args, "--target-dir=")).unwrap();
+    clean_local_targets(target_dir).unwrap();
 
     let output = std::process::Command::new("cargo")
         .args(&args)
         .env("RUSTC_WRAPPER", path)
-        .env("MY_REFACTOR_ARGS", my_refactor_args.join(";"))
+        .env("MY_REFACTOR_ARGS", serde_json::to_string(&refactor_args).unwrap())
         .stdout(std::process::Stdio::piped())
         .output().unwrap();
     
@@ -121,7 +174,7 @@ where
 // in order to ensure that all the files in the current crate actually get built
 // when we run cargo check. Hopefully eventually there'll be a nicer way to
 // integrate with cargo such that we won't need to do this.
-fn clean_local_targets(target_dir: Option<String>) -> Result<(), std::io::Error> {
+fn clean_local_targets(target_dir: Option<&str>) -> Result<(), std::io::Error> {
     let output = std::process::Command::new("cargo")
         .args(vec!["metadata", "--no-deps", "--format-version=1"])
         .stdout(std::process::Stdio::piped())
@@ -168,19 +221,4 @@ fn combine_output(s: &str) -> String {
     } else {
         s.to_string()
     }
-}
-
-#[test]
-fn test_get_option_some() {
-    assert_eq!(
-        get_option(
-            &["--workspace-root=./some-path".to_owned()],
-            "--workspace-root="
-        ),
-        Some("./some-path".to_owned())
-    );
-}
-#[test]
-fn test_get_option_none() {
-    assert_eq!(get_option(&["...".to_owned()], "--workspace-root"), None);
 }

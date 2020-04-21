@@ -65,3 +65,14 @@ impl RefactorOutputs {
         self.refactorings.extend(other.refactorings);
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct RefactorArgs {
+    pub refactoring: Option<String>,
+    pub selection: Option<String>,
+    pub query_candidates: Option<String>,
+    pub file: Option<String>,
+    pub usafe: bool,
+    pub single_file: bool,
+    pub output_replacements_as_json: bool,
+}

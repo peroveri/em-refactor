@@ -3,9 +3,6 @@ use crate::refactoring_invocation::{RefactoringErrorInternal, InMemoryFileLoader
 
 struct DefaultCallbacks;
 impl rustc_driver::Callbacks for DefaultCallbacks {}
-pub fn should_run_rustc_again(refactor_args: &[String]) -> bool {
-    return !refactor_args.contains(&"--unsafe".to_owned());
-}
 pub fn rustc_rerun(changes: &Vec<FileStringReplacement>, rustc_args: &[String]) -> Result<(), RefactoringErrorInternal> {
     let mut default = DefaultCallbacks;
 

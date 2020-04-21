@@ -89,15 +89,13 @@ fn run_tool_and_assert(test: TestCase, folder: &str) -> std::io::Result<()> {
         "failed to create tmp dir: {}",
         tmp_dir_path.to_str().unwrap_or("")
     );
-    let mut assert = Command::cargo_bin("my-refactor-driver")
+    let mut assert = Command::cargo_bin("cargo-my-refactor")
         .unwrap()
         .current_dir(path)
-        .arg(format!("--out-dir={}", tmp_dir_path.to_str().unwrap()))
-        .arg(&test.file)
-        .arg("--")
+        .arg(format!("--target-dir={}", tmp_dir_path.to_str().unwrap()))
         .args(test.args)
         .arg(format!("--file={}", &test.file))
-        .arg("--output-changes")
+        .arg("--single-file")
         .assert();
 
     if let Some(code) = test.expected.code {

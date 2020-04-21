@@ -7,6 +7,7 @@ use quote::__private::TokenStream;
 use rustc_span::{BytePos, Span};
 use tempfile::TempDir;
 use crate::refactoring_invocation::{argument_list_to_refactor_def, AstContext, get_sys_root, MyRefactorCallbacks, Query, QueryResult, RefactoringErrorInternal, TyContext};
+use refactor_lib_types::RefactorArgs;
 
 /**
  * Function that can be used to run unit tests.
@@ -151,11 +152,17 @@ pub fn assert_success(prog: TokenStream, refactoring: &str, span: (u32, u32), ex
     
     let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
 
-    let q = argument_list_to_refactor_def(&vec![
-        format!("--file={}", d.path().join("./main.rs").to_str().unwrap().to_owned()),
-        format!("--selection={}:{}", span.0, span.1),
-        format!("--refactoring={}", refactoring),
-    ]).unwrap();
+    let q = argument_list_to_refactor_def(
+        &RefactorArgs {
+            file: Some(format!("{}", d.path().join("./main.rs").to_str().unwrap().to_owned())),
+            output_replacements_as_json: false,
+            query_candidates: None,
+            refactoring: Some(format!("{}", refactoring)),
+            selection: Some(format!("{}:{}", span.0, span.1)),
+            single_file: true,
+            usafe: false
+        }
+    ).unwrap();
 
     let mut c = MyRefactorCallbacks::from_arg(q);
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
@@ -167,11 +174,17 @@ pub fn assert_err(prog: TokenStream, refactoring: &str, span: (u32, u32), expect
     let program = &format!("{}", prog);
     
     let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
-    let q = argument_list_to_refactor_def(&vec![
-        format!("--file={}", d.path().join("./main.rs").to_str().unwrap().to_owned()),
-        format!("--selection={}:{}", span.0, span.1),
-        format!("--refactoring={}", refactoring),
-    ]).unwrap();
+    let q = argument_list_to_refactor_def(
+        &RefactorArgs {
+            file: Some(format!("{}", d.path().join("./main.rs").to_str().unwrap().to_owned())),
+            output_replacements_as_json: false,
+            query_candidates: None,
+            refactoring: Some(format!("{}", refactoring)),
+            selection: Some(format!("{}:{}", span.0, span.1)),
+            single_file: false,
+            usafe: false
+        }
+    ).unwrap();
 
     let mut c = MyRefactorCallbacks::from_arg(q);
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);

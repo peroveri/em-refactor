@@ -21,7 +21,7 @@ pub use refactor_definition::*;
 pub use refactor_definition_parser::*;
 pub use run_refactoring::*;
 pub use rustc_pass::{pass_to_rustc, should_pass_to_rustc};
-pub use rustc_rerun::{rustc_rerun, should_run_rustc_again};
+pub use rustc_rerun::rustc_rerun;
 pub use rustc_utils::get_sys_root;
 pub use ty_context::*;
 pub use types::*;

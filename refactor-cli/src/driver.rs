@@ -28,13 +28,13 @@ fn run_rustc() -> Result<(), i32> {
         return Ok(());
     }
 
-    let refactor_args = get_refactor_args(&std_env_args);
+    let refactor_args = get_refactor_args();
 
-    if refactor_lib::extra::should_query_candidates(&refactor_args) {
-        return refactor_lib::extra::list_candidates(&refactor_args, &rustc_args);
+    if let Some(candidate) = &refactor_args.query_candidates {
+        return refactor_lib::extra::list_candidates(candidate, &rustc_args);
     }
 
-    run_refactoring_and_output_result(refactor_args, rustc_args)
+    run_refactoring_and_output_result(&refactor_args, rustc_args)
 }
 
 pub fn main() {

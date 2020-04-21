@@ -1,18 +1,19 @@
 use crate::refactoring_invocation::{AstContext, Query, QueryResult, RefactoringErrorInternal, SourceCodeRange};
 use crate::refactorings::{box_field, close_over_variables, convert_closure_to_fn, extract_block, inline_macro, introduce_closure, pull_up_item_declaration, split_conflicting_match_arms};
 use crate::refactoring_invocation::{AstDiff, TyContext};
+use refactor_lib_types::RefactorArgs;
 use rustc_span::Span;
 ///
 /// converts an argument list to a refactoring definition
 ///
-pub fn argument_list_to_refactor_def(args: &[String]) -> Result<Query<AstDiff>, RefactoringErrorInternal> {
-    let parser = RefactorArgsParser { args };
+pub fn argument_list_to_refactor_def(args: &RefactorArgs) -> Result<Query<AstDiff>, RefactoringErrorInternal> {
+    let parser = RefactorArgsParser { args: args.clone() };
     let args = parser.from_args()?;
     map_args_to_query(args)
 }
 
-struct RefactorArgsParser<'a> {
-    args: &'a [String],
+struct RefactorArgsParser {
+    args: RefactorArgs,
 }
 #[derive(Debug, PartialEq)]
 struct RefactoringArgs {
@@ -43,17 +44,17 @@ fn map_args_to_query(args: RefactoringArgs) -> Result<Query<AstDiff>, Refactorin
         s => Err(RefactoringErrorInternal::arg_def(&format!("Unknown refactoring: {}", s)))
     }
 }
-impl RefactorArgsParser<'_> {
+impl RefactorArgsParser {
     pub fn from_args(&self) -> Result<RefactoringArgs, RefactoringErrorInternal> {
         Ok(RefactoringArgs {
             range: self.parse_range()?,
-            refactoring: self.get_param("--refactoring")?.to_string()
+            refactoring: self.args.refactoring.clone().ok_or_else(|| RefactoringErrorInternal::arg_def("Expected --refactoring"))?
         })
     }
     pub fn parse_range(&self) -> Result<SourceCodeRange, RefactoringErrorInternal> {
-        let selection = self.get_param("--selection")?;
-        let file = self.get_param("--file")?;
-        let ints = Self::get_int(selection)?;
+        let selection = self.args.selection.clone().ok_or_else(|| RefactoringErrorInternal::arg_def("Expected --selection"))?;
+        let file = self.args.file.clone().ok_or_else(|| RefactoringErrorInternal::arg_def("Expected --file"))?;
+        let ints = Self::get_int(&selection)?;
 
         Ok(SourceCodeRange {
             file_name: file.to_string(),
@@ -70,17 +71,6 @@ impl RefactorArgsParser<'_> {
         }
         Err(RefactoringErrorInternal::arg_def("Selection should be formatted as <byte_from>:<byte_to>"))
     }
-    fn get_param(&self, name: &str) -> Result<&str, RefactoringErrorInternal> {
-        for t in self.args {
-            let mut s = t.split('=');
-            if s.nth(0) == Some(name) {
-                if let Some(r) = s.nth(0) {
-                    return Ok(r);
-                }
-            }
-        }
-        Err(RefactoringErrorInternal::arg_def(&format!("Expected {}", name)))
-    }
 }
 
 #[cfg(test)]
@@ -89,11 +79,15 @@ mod test {
     #[test]
     fn refactor_def_from_args() {
         let parser = RefactorArgsParser {
-            args: &vec![
-                "--refactoring=extract-block".to_owned(),
-                "--file=main.rs".to_owned(),
-                "--selection=1:2".to_owned(),
-            ]
+            args: RefactorArgs {
+                file: Some("main.rs".to_owned()),
+                output_replacements_as_json: false,
+                query_candidates: None,
+                refactoring: Some("extract-block".to_owned()),
+                selection: Some("1:2".to_owned()),
+                single_file: false,
+                usafe: false
+            }
         };
         let expected = Ok(RefactoringArgs {
             range: SourceCodeRange {

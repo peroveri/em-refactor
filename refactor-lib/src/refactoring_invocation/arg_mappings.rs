@@ -1,5 +1,6 @@
 use std::path::Path;
 use crate::refactoring_invocation::get_sys_root;
+use refactor_lib_types::RefactorArgs;
 
 pub fn arg_value<'a>(
     args: impl IntoIterator<Item = &'a String>,
@@ -22,35 +23,10 @@ pub fn arg_value<'a>(
     None
 }
 
-// Call compiler with refactoring tools callbacks
-// Args to the compiler: file, sysroot, ++
-// args to the refactoring tools: refactoringargs
-// returns: a set of changes
-//
-fn is_wrapper_mode(args: &[String]) -> bool {
-    Path::new(&args[1]).file_stem() == Some("rustc".as_ref())
-}
-fn get_file_path(args: &[String]) -> Option<&String> {
-    args.iter().find(|s| !s.starts_with('-'))
-}
-pub fn get_refactor_args(args: &[String]) -> Vec<String> {
-    if is_wrapper_mode(&args) {
-        std::env::var("MY_REFACTOR_ARGS")
-            .unwrap()
-            .split(';')
-            .map(|s| s.to_string())
-            .collect()
-    } else {
-        let mut ret = args
-            .iter()
-            .skip_while(|s| *s != "--")
-            .skip(1)
-            .map(|s| s.to_string())
-            .collect::<Vec<_>>();
-
-        ret.push(format!("--file={}", get_file_path(args).unwrap()));
-        ret
-    }
+pub fn get_refactor_args() -> RefactorArgs {
+    std::env::var("MY_REFACTOR_ARGS")
+        .map(|s| serde_json::from_str::<RefactorArgs>(&s).unwrap())
+        .unwrap()
 }
 
 ///

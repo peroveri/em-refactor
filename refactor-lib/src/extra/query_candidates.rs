@@ -46,9 +46,9 @@ struct CandidateArgs {
 }
 
 impl CandidateArgs {
-    fn parse(refactor_args: &[String], rustc_args: &[String]) -> Self {
+    fn parse(candidate: &str, rustc_args: &[String]) -> Self {
         Self {
-            refactoring: arg_value(refactor_args, "--query-candidates", |_| true).unwrap().to_string(),
+            refactoring: candidate.to_string(),
             crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap().to_string(),
             is_test: rustc_args.contains(&"--test".to_owned())
         }
@@ -56,9 +56,9 @@ impl CandidateArgs {
 }
 
 /// TODO: Should use the refa. invocation instead and remove this
-pub fn list_candidates(refactor_args: &[String], rustc_args: &[String]) -> Result<(), i32> {
+pub fn list_candidates(candidate: &str, rustc_args: &[String]) -> Result<(), i32> {
 
-    let args = CandidateArgs::parse(refactor_args, rustc_args);
+    let args = CandidateArgs::parse(candidate, rustc_args);
     let query = map_to_query(args);
 
     let mut callbacks = MyRefactorCallbacks::from_arg(query);

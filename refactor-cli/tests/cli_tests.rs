@@ -11,7 +11,6 @@ fn cli_missing_args_should_output_nicely() {
         .arg(WORKSPACE_ARG)
         .arg("--selection=0:0")
         .arg("--file=main.rs")
-        .arg("--")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
@@ -49,7 +48,6 @@ fn cli_multiroot_project_lib() {
         .arg("--refactoring=box-field")
         .arg("--selection=11:16")
         .arg("--file=src/lib.rs")
-        .arg("--")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
@@ -87,7 +85,6 @@ fn cli_multiroot_project_main() {
         .arg("--refactoring=box-field")
         .arg("--selection=11:16")
         .arg("--file=src/main.rs")
-        .arg("--")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
@@ -122,7 +119,6 @@ fn cli_output_json() {
         .arg("--refactoring=extract-block")
         .arg("--selection=16:40")
         .arg("--file=src/main.rs")
-        .arg("--")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
@@ -158,7 +154,6 @@ fn cli_query_candidates_1() {
     cargo_my_refactor()
         .arg(WORKSPACE_ARG)
         .arg("--query-candidates=extract-block")
-        .arg("--")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
@@ -196,7 +191,6 @@ fn cli_query_candidates_multi_root_overlap() {
     cargo_my_refactor()
         .arg(WORKSPACE_ARG_MULTI_ROOT_OVERLAP)
         .arg("--query-candidates=extract-block")
-        .arg("--")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
@@ -213,16 +207,40 @@ fn cli_should_display_help() {
         .assert()
         .success()
         .stdout(predicate::str::starts_with(
-            "Refactorings for the Rust programming language.",
+            r#"Refactoring tool 0.0.1
+Per Ove Ringdal <peroveri@gmail.com>
+
+USAGE:
+    cargo-my-refactor [FLAGS] [OPTIONS] [-- <cargo-args>...]"#,
         ));
 }
+
+#[test]
+fn cli_single_file() {
+    let expected =  "fn main() {{1;}}";
+
+    cargo_my_refactor()
+        .arg(SINGLE_FILE_ARG)
+        .arg("--refactoring=extract-block")
+        .arg("--selection=11:13")
+        .arg("--file=main.rs")
+        .arg("--single-file")
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
+        .assert()
+        .success()
+        .stdout(expected);
+}
+
 #[test]
 fn cli_should_display_version() {
     cargo_my_refactor()
         .arg("--version")
         .assert()
         .success()
-        .stdout(predicate::str::starts_with("Version:"));
+        .stdout(predicate::str::starts_with("Refactoring tool 0.0.1"));
 }
 
 #[test]
@@ -232,7 +250,6 @@ fn cli_unknown_refactoring() {
         .arg("--refactoring=invalid_refactoring_name")
         .arg("--selection=0:0")
         .arg("--file=src/lib.rs")
-        .arg("--")
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
