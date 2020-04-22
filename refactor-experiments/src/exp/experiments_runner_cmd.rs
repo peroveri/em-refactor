@@ -1,137 +1,135 @@
+use std::fs::File;
 use std::io::prelude::*;
+use std::path::PathBuf;
 use std::process::Command;
 use tempfile::TempDir;
-use refactor_lib_types::RefactorOutputs;
+use refactor_lib_types::{CandidatePosition, RefactorOutputs};
 use super::TestResults;
+use itertools::Itertools;
 
-pub const WORK_DIR: &str = "./refactor-experiments/src/exp/work_dir";
-
-pub fn run_refactoring(refactoring: &str, from: u32, to: u32, file: &str, dir: &std::path::PathBuf) -> std::io::Result<()> {
-    debug(&format!("trying: {}\n", refactoring))?;
-    let output = Command::new("cargo-my-refactor")
-        .arg("--output-replacements-as-json")
-        .arg(format!("--refactoring={}", refactoring))
-        .arg(format!("--selection={}:{}", from, to))
-        .arg(format!("--file={}", file))
-        .arg("--")
-        .arg(format!(
-            "--target-dir={}",
-            create_tmp_dir().path().to_str().unwrap()
-        ))
-        .current_dir(dir)
-        .output().unwrap();
-
-    let stdout = std::str::from_utf8(output.stdout.as_slice()).unwrap();
-    let stderr = std::str::from_utf8(output.stderr.as_slice()).unwrap();
-    debug(&format!("stdout: {}\n", stdout))?;
-    debug(&format!("stderr: {}\n", stderr))?;
-
-    Ok(())
+pub struct CmdRunner {
+    crate_path: PathBuf,
+    tool_path: PathBuf,
+    tmp_dir: TempDir
 }
-pub fn get_absp(repo_name: &str, subdir: &Option<String>) -> std::io::Result<std::path::PathBuf> {
 
-    let mut p = std::path::PathBuf::new();
-    p.push(WORK_DIR);
-    p.push(&repo_name);
-    if let Some(d) = subdir {
-        p.push(d);
+impl CmdRunner {
+    pub fn new(crate_path: &PathBuf, tool_path: PathBuf, tmp_dir: TempDir) -> Self {
+        Self {
+            crate_path: crate_path.clone(),
+            tool_path: tool_path.clone(),
+            tmp_dir
+        }
     }
-    
-    let absp = std::fs::canonicalize(p)?;
-    if !absp.is_dir() {
-        panic!("{} is not a dir", absp.display());
+    pub fn new_default_tmp_dir(crate_path: &PathBuf, tool_path: PathBuf) -> Self {
+        Self::new(crate_path, tool_path, create_tmp_dir())
     }
-    Ok(absp)
-}
-pub fn run_unit_tests(absp: &std::path::PathBuf, repo_name: &str) -> std::io::Result<()> {
 
-    let out = Command::new("cargo")
-        .arg("test")
-        .arg("--no-fail-fast")
-        .arg("--")
-        .arg("--test-threads=1")
-        .current_dir(absp)
-        .output()?;
+    pub fn has_repo_changes(&self) -> std::io::Result<bool> {
+        Ok(self.has_repo_staged_changes(true)? || self.has_repo_staged_changes(false)?)
+    }
+    pub fn has_repo_staged_changes(&self, staged: bool) -> std::io::Result<bool> {
+        let mut args = vec!["--quiet", "--exit-code"];
+        if staged {
+            args.push("--cached");
+        }
+        let out = Command::new("git")
+            .arg("diff")
+            .args(args)
+            .current_dir(&self.crate_path)
+            .output()?;
+        Ok(!out.status.success())
+    }
+    pub fn reset_repo(&self) -> std::io::Result<()> {
+        let out = Command::new("git")
+            .arg("reset")
+            .arg("--hard")
+            .current_dir(&self.crate_path)
+            .output()?;
+        
+        assert!(out.status.success());
+        Ok(())
+    }
+    pub fn query_candidates(&self, refactoring: &str) -> std::io::Result<RefactorOutputs> {
+        let output = 
+            Command::new(&self.tool_path)
+                .arg("--workspace-root")
+                .arg(&self.crate_path)
+                .arg("--target-dir")
+                .arg(self.tmp_dir.path())
+                .arg("candidates")
+                .arg(refactoring)
+                .output()?;
+        
+        assert_eq!(output.status.code(), Some(0));
+        
+        let s = std::str::from_utf8(output.stdout.as_slice()).unwrap();
 
-    // let res = out.stdout;
-
-    let s1 = std::str::from_utf8(out.stdout.as_slice()).unwrap();
-    // let s2 = std::str::from_utf8(out.stderr.as_slice()).unwrap();
-
-    let result = TestResults::from(s1)?.sum();
-
-    let p1: std::path::PathBuf = [WORK_DIR, &format!("{}.json", repo_name)].iter().collect();
-    let mut f = std::fs::File::create(p1)?;
-    f.write_all(serde_json::to_string(&result)?.as_bytes())?;
-    Ok(())
-}
-pub fn write_result(content: &str, name: &str) -> std::io::Result<()> {
-    let p1: std::path::PathBuf = [WORK_DIR, &format!("{}.json", name)].iter().collect();
-    let mut f = std::fs::File::create(p1)?;
-    f.write_all(content.as_bytes())?;
-    Ok(())
-}
-pub fn query_candidates(absp: &std::path::PathBuf, refactoring: &str) -> std::io::Result<String> {
-    let path: std::path::PathBuf = std::path::Path::new("./target/release/cargo-my-refactor").canonicalize().unwrap();
-
-    let output = 
-        Command::new(path)
-            .arg(format!("--query-candidates={}", refactoring))
-            .arg("--")
-            .arg(format!(
-                "--target-dir={}",
-                create_tmp_dir().path().to_str().unwrap()
-            ))
-            .current_dir(absp)
+        Ok(serde_json::from_str(s).unwrap())
+    }
+    pub fn refactor(&self, candidate: &CandidatePosition, refactoring: &str) -> std::io::Result<RefactorOutputs> {
+        let output = Command::new(&self.tool_path)
+            .arg("--workspace-root")
+            .arg(&self.crate_path)
+            .arg("--target-dir")
+            .arg(self.tmp_dir.path())
+            .arg("refactor")
+            .arg(refactoring)
+            .arg(&candidate.file)
+            .arg(format!("{}:{}", candidate.from, candidate.to))
+            .arg("--output-replacements-as-json")
             .output().unwrap();
 
-    assert_eq!(output.status.code(), Some(0));
+        assert!(output.status.success());
     
-    let s = std::str::from_utf8(output.stdout.as_slice()).unwrap();
-    debug(s)?;
-    Ok(s.to_string())
-}
-pub fn map_candidates(s: &str) -> RefactorOutputs {
-    serde_json::from_str(s).unwrap()
-}
-pub fn clone_project(repo_name: &str, git_repo: &str) -> std::io::Result<()> {
-    let w: std::path::PathBuf = [WORK_DIR].iter().collect();
-    if !w.exists() {
-        panic!("path doesnt exist: {}", WORK_DIR);
+        let stdout = std::str::from_utf8(output.stdout.as_slice()).unwrap();
+        Ok(serde_json::from_str(stdout).unwrap())
     }
-    let p: std::path::PathBuf = [WORK_DIR, &repo_name].iter().collect();
-    if !p.exists() {
-        let abs = std::fs::canonicalize(w)?;
-        Command::new("git")
-        .current_dir(abs)
-        .arg("clone")
-        .arg(format!("{}", git_repo))
-        .status()?;
+    pub fn apply_changes(&self, changes: RefactorOutputs) -> std::io::Result<()> {
+        
+        let replacements = changes.refactorings.iter()
+            .flat_map(|r| &r.replacements).collect::<Vec<_>>();
+        let r = replacements.iter().unique().collect::<Vec<_>>();
+
+        for (file_path, changes) in &r.into_iter().group_by(|a| a.file_name.clone()) {
+
+            let mut changes = changes.collect::<Vec<_>>();
+            changes.sort_by_key(|c| c.byte_start);
+            changes.reverse();
+
+            let path: PathBuf = [&self.crate_path, &PathBuf::from(&file_path)].iter().collect();
+            
+            let mut file = File::open(&path)?;
+            let mut content = String::new();
+            file.read_to_string(&mut content).unwrap();
+            
+            for change in &changes {
+                let s1 = &content[..(change.byte_start) as usize];
+                let s2 = &content[(change.byte_end) as usize..];
+                content = format!("{}{}{}", s1, change.replacement, s2);
+            }
+            println!("writing to: {:?}", &path);
+            let mut file = File::create(&path)?;
+            file.write_all(content.as_bytes())?;
+        }
+
+        Ok(())
     }
-    Ok(())
-}
-
-pub fn repo_name(url: &str) -> Option<String> {
-    Some(url[1+url.rfind("/")?..].to_string())
-}
-
-pub fn debug(s: &str) -> std::io::Result<()> {
-    let path: std::path::PathBuf = [WORK_DIR, "debug.txt"].iter().collect();
-    let mut f =  std::fs::OpenOptions::new()
-        .append(true)
-        .open(path)?;
-    f.write_all(s.as_bytes())?;
-    Ok(())
-}
-pub fn init() -> std::io::Result<()> {
-    let path: std::path::PathBuf = [WORK_DIR, "debug.txt"].iter().collect();
-    std::fs::OpenOptions::new()
-        .create(true)
-        .write(true)
-        .truncate(true)
-        .open(path)?;
-    // f.flush()?;
-    Ok(())
+    pub fn run_unit_tests(&self) -> std::io::Result<TestResults> {
+    
+        let out = Command::new("cargo")
+            .arg("test")
+            .arg("--no-fail-fast")
+            .arg("--all-targets")
+            .current_dir(&self.crate_path)
+            .output()?;
+    
+        let s1 = std::str::from_utf8(out.stdout.as_slice()).unwrap();
+    
+        let result = TestResults::from(s1)?;
+    
+        Ok(result)
+    }
 }
 
 pub fn create_tmp_dir() -> TempDir {

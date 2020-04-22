@@ -105,7 +105,7 @@
         {
             "label": "run experiment",
             "type": "shell",
-            "command": "cargo run --bin refactor-experiments",
+            "command": "cargo build --bins --lib && cargo run --bin refactor-experiments -- extract-method --workspace-root \"../../local/rust-examples/experiment\"",
             "problemMatcher": [
                 "$rustc"
             ],

@@ -1,71 +1,56 @@
 use regex::Regex;
 use serde::Serialize;
 
-// Before
-// For each refa
-//  after
-
-#[derive(Debug, PartialEq, Serialize)]
-pub struct TestRefacoringResult {
-    pub before: TestResult,
-    pub candidates: Vec<Candidate>,
-    // pub applied: AppliedRefactoringResult
-}
-
-// #[derive(Debug, PartialEq, Serialize)]
-// pub struct Candidates {
-// }
-
-#[derive(Debug, PartialEq, Serialize)]
-pub struct Candidate {
-    pub refactoring: String,
-    pub count: usize
-}
-
-
-// #[derive(Debug, PartialEq, Serialize)]
-// pub struct AppliedRefactoringResult {
-//     pub refactoring: String,
-//     pub args: String,
-//     pub tests_after: TestResult
-// }
-
-
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct TestResults {
-    pub results: Vec<TestResult>
+    pub results: Vec<TestResult>,
+    pub sum: TestResult
 }
 impl TestResults {
+    pub fn new() -> Self {
+        Self {
+            results: vec![],
+            sum: TestResult::new(0, 0, 0, 0, 0)
+        }
+    }
     pub fn from(s: &str) -> std::io::Result<Self> {
-        let reg = Regex::new(r"test result: [^ ]+ (\d+) passed; (\d+) failed; \d+ ignored; \d+ measured; \d+ filtered out").unwrap();
-        let mut r = Self {
-            results: vec![]
+        let reg = Regex::new(r"test result: [^ ]+ (\d+) passed; (\d+) failed; (\d+) ignored; (\d+) measured; (\d+) filtered out").unwrap();
+        let mut results = Self {
+            results: vec![],
+            sum: TestResult::new(0, 0, 0, 0, 0)
         };
         for line in s.split("\n") {
             if let Some(cap) = reg.captures(line) {
-                r.results.push(
-                    TestResult::new(
-                        cap.get(1).unwrap().as_str().parse().unwrap(),
-                        cap.get(2).unwrap().as_str().parse().unwrap(),
-                    )
+                let result = TestResult::new(
+                    cap.get(1).unwrap().as_str().parse().unwrap(),
+                    cap.get(2).unwrap().as_str().parse().unwrap(),
+                    cap.get(3).unwrap().as_str().parse().unwrap(),
+                    cap.get(4).unwrap().as_str().parse().unwrap(),
+                    cap.get(5).unwrap().as_str().parse().unwrap(),
                 );
+                results.sum.passed += result.passed;
+                results.sum.failed += result.failed;
+                results.sum.ignored += result.ignored;
+                results.sum.measured += result.measured;
+                results.sum.filtered_out += result.filtered_out;
+                results.results.push(result);
             }
         }
-        Ok(r)
+        Ok(results)
     }
-    pub fn sum(&self) -> TestResult {
-        let mut ret = TestResult::new(0, 0);
-        for r in &self.results {
-            ret.passed += r.passed;
-            ret.failed += r.failed;
-            ret.ignored += r.ignored;
-            ret.measured += r.measured;
-            ret.filtered_out += r.filtered_out;
-        }
-        ret
-    }
+    // pub fn sum(&self) -> TestResult {
+    //     let mut ret = TestResult::new(0, 0);
+    //     for r in &self.results {
+    //         ret.passed += r.passed;
+    //         ret.failed += r.failed;
+    //         ret.ignored += r.ignored;
+    //         ret.measured += r.measured;
+    //         ret.filtered_out += r.filtered_out;
+    //     }
+    //     ret
+    // }
 }
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct TestResult {
     pub passed: usize,
     pub failed: usize,
@@ -74,13 +59,13 @@ pub struct TestResult {
     pub filtered_out: usize
 }
 impl TestResult {
-    pub fn new(passed: usize, failed: usize) -> Self {
+    pub fn new(passed: usize, failed: usize, ignored: usize, measured: usize, filtered_out: usize) -> Self {
         Self {
             passed,
             failed,
-            ignored: 0,
-            measured: 0,
-            filtered_out: 0
+            ignored,
+            measured,
+            filtered_out
         }
     }
 }
@@ -104,17 +89,11 @@ test result: ok. 5 passed; 3 failed; 1 ignored; 0 measured; 0 filtered out";
 
     #[test] 
     fn test_result_should_parse() -> std::io::Result<()> {
-        let expected = vec![TestResult::new(2, 0), TestResult::new(5, 3)];
+        let expected = TestResults {
+            results: vec![TestResult::new(2, 0, 2, 0, 0), TestResult::new(5, 3, 1, 0, 0)],
+            sum: TestResult::new(7, 3, 3, 0, 0)
+        };
         let actual = TestResults::from(TEST_OUTPUT)?;
-
-        assert_eq!(actual.results, expected);
-
-        Ok(())
-    }
-    #[test] 
-    fn test_result_should_sum() -> std::io::Result<()> {
-        let expected = TestResult::new(7, 3);
-        let actual = TestResults::from(TEST_OUTPUT)?.sum();
 
         assert_eq!(actual, expected);
 
