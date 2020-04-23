@@ -89,6 +89,9 @@ export class WorkspaceFolderInfo {
     getFileRelativePath(fileUri: string) {
         return path.relative(this.uri, fileUri);
     }
+    join(otherPath: string) {
+        return path.join(this.uri, otherPath);
+    }
 
     static map(folders: WorkspaceFolder[] | null) {
         if (folders === null || folders.length <= 0 || !folders[0].uri) {

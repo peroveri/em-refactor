@@ -4,7 +4,7 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as path from 'path';
-import { workspace, ExtensionContext } from 'vscode';
+import * as vscode from 'vscode';
 
 import {
 	LanguageClient,
@@ -14,8 +14,9 @@ import {
 } from 'vscode-languageclient';
 
 let client: LanguageClient;
+let statusBar: vscode.StatusBarItem;
 
-export function activate(context: ExtensionContext) {
+export function activate(context: vscode.ExtensionContext) {
 	// The server is implemented in node
 	let serverModule = context.asAbsolutePath(
 		path.join('server', 'out', 'server.js')
@@ -45,12 +46,24 @@ export function activate(context: ExtensionContext) {
 		synchronize: {
 			// Notify the server about file changes to '.clientrc files contained in the workspace
 			fileEvents: [
-				workspace.createFileSystemWatcher('**/.clientrc'),
-				workspace.createFileSystemWatcher('**/.rs'),
+				vscode.workspace.createFileSystemWatcher('**/.clientrc'),
+				vscode.workspace.createFileSystemWatcher('**/.rs'),
 			],
 		}
 	};
 
+	const showCustomCommandsId = 'refactor-tool.showCustomCommands';
+	context.subscriptions.push(vscode.commands.registerCommand(showCustomCommandsId, () => {
+		vscode.window.showQuickPick(listCustomCommands()).then( async (val) => {
+			return await executeCommand(val);
+		});
+	}));
+
+	statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+	statusBar.command = showCustomCommandsId;
+	context.subscriptions.push(statusBar);
+	context.subscriptions.push(vscode.window.onDidChangeTextEditorSelection(updateStatusBarItem));
+	
 	// Create the language client and start the client.
 	client = new LanguageClient(
 		'languageServerExample',
@@ -61,6 +74,36 @@ export function activate(context: ExtensionContext) {
 
 	// Start the client. This will also launch the server
 	client.start();
+	statusBar.show();
+}
+
+function listCustomCommands() {
+	return [
+		"cargo check --target-dir=./target/refactorings",
+		"candidates extract block",
+		"candidates box field"
+	];
+}
+
+function executeCommand(cmd: string) {
+
+	switch (cmd) {
+		case 'cargo check --target-dir=./target/refactorings': {
+			return vscode.commands.executeCommand("mrefactor.cargo_check");
+		}
+		case 'candidates extract block': {
+			return vscode.commands.executeCommand("mrefactor.candidates", "extract-block");
+		}
+		case 'candidates box field': {
+			return vscode.commands.executeCommand("mrefactor.candidates", "box-field");
+		}
+		default: {}
+	}
+}
+
+function updateStatusBarItem() {
+	statusBar.show();
+	statusBar.text = `Refactor Tool`;
 }
 
 export function deactivate(): Thenable<void> | undefined {

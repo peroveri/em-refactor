@@ -44,6 +44,37 @@ export class ShellService {
         }
         return result;
     }
+
+    runCargoCheck() {
+        /* https://github.com/shelljs/shelljs/wiki/Electron-compatibility */
+        if (shell.config.execPath === null) {
+            shell.config.execPath = shell.which('node').toString();
+        }
+        let res = this.shellExec("cargo +nightly-2020-04-15 check --target-dir=./target/refactorings --all-targets");
+        if(res instanceof Error) {
+            this.notifications.sendErrorNotification(res.message);
+        } else {
+            this.notifications.sendInfoNotification(`cargo check returned with status: ${res.code}`);
+        }
+    }
+    queryCandidates(refactoring: string, binaryPath: string) {
+        /* https://github.com/shelljs/shelljs/wiki/Electron-compatibility */
+        if (shell.config.execPath === null) {
+            shell.config.execPath = shell.which('node').toString();
+        }
+        let cmd = convertToCandidateCmd(refactoring, binaryPath);
+        if (cmd instanceof Error) {
+            return new Error(cmd.message);
+        }
+        let res = this.shellExec(cmd);
+        if(res instanceof Error) {
+            return res;
+        }
+        if(res.code !== 0) {
+            return new Error(`candidates failed with code: ${res.code}\nstderr:${res.stderr}`);
+        }
+        return res.toString();
+    }
 }
 
 const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, unsafe: boolean, binaryPath: string): string | Error => {
@@ -51,6 +82,14 @@ const convertToCmd = (relativeFilePath: string, refactoring: string, selection: 
         return new Error(`'${binaryPath}' is not a valid binary file`);
     }
     const refactorArgs = `--target-dir=./target/refactoring refactor ${refactoring} ${relativeFilePath} ${selection} --output-replacements-as-json` + (unsafe ? ' --unsafe' : '');
+
+    return `${binaryPath} ${refactorArgs}`;
+}
+const convertToCandidateCmd = (refactoring: string, binaryPath: string): string | Error => {
+    if (!isValidBinaryPath(binaryPath)) {
+        return new Error(`'${binaryPath}' is not a valid binary file`);
+    }
+    const refactorArgs = `--target-dir=./target/refactoring candidates ${refactoring}`;
 
     return `${binaryPath} ${refactorArgs}`;
 }

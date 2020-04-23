@@ -30,6 +30,8 @@ export const listCodeActions = (doc: TextDocument, params: CodeActionParams, isG
 export const listAllCommands = () => [
         config.refactorCommand,
         config.generateTestJsonCommand,
+        config.candidatesCommand,
+        config.cargoCheckCommand,
     ];
 
 export const listAllCodeActionKinds = () => [
