@@ -110,7 +110,7 @@ fn serialize_args(m: &ArgMatches) -> (String, String) {
     } else if let Some(subcommand_matches) = m.subcommand_matches("refactor") {
         ("REFACTORING_ARGS".to_owned(), serde_json::to_string(&get_refactor_args(subcommand_matches)).unwrap())
     } else {
-        panic!();
+        panic!("Unexpected subcommand: {:?}", m.subcommand_name());
     }
 }
 

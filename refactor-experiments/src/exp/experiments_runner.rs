@@ -79,7 +79,7 @@ pub fn run_all_exp(refactoring: &str, crate_path: &str) -> std::io::Result<()> {
         if refactoring == "extract-method" {
             vec!["extract-block".to_owned()]
         } else {
-            panic!()
+            panic!("Unexpected refactoring: {}", refactoring)
         };
     let cmd_runner = CmdRunner::new_default_tmp_dir(&PathBuf::from(crate_path), tool_path);
     let mut experiments_runner = ExperimentsRunner::new(refactorings, cmd_runner);
