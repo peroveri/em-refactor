@@ -71,7 +71,7 @@ pub struct RefactorArgs {
     pub refactoring: String,
     pub selection: String,
     pub file: String,
-    pub usafe: bool,
+    pub unsafe_: bool,
     pub output_replacements_as_json: bool,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

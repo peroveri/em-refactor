@@ -158,7 +158,7 @@ pub fn assert_success(prog: TokenStream, refactoring: &str, span: (u32, u32), ex
             output_replacements_as_json: false,
             refactoring: format!("{}", refactoring),
             selection: format!("{}:{}", span.0, span.1),
-            usafe: false
+            unsafe_: false
         }
     ).unwrap();
 
@@ -178,7 +178,7 @@ pub fn assert_err(prog: TokenStream, refactoring: &str, span: (u32, u32), expect
             output_replacements_as_json: false,
             refactoring: format!("{}", refactoring),
             selection: format!("{}:{}", span.0, span.1),
-            usafe: false
+            unsafe_: false
         }
     ).unwrap();
 

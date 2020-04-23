@@ -33,7 +33,7 @@ fn run_refactoring(refactor_args: &RefactorArgs, rustc_args: &Vec<String>) -> Qu
 
     // 2. Rerun the compiler to check if any errors were introduced
     // Runs with default callbacks
-    if !refactor_args.usafe && !refactor_res.0.is_empty() {
+    if !refactor_args.unsafe_ && !refactor_res.0.is_empty() {
         rustc_rerun(&refactor_res.0, &rustc_args)?;
     }
 

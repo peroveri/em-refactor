@@ -72,7 +72,7 @@ fn get_refactor_args(m: &ArgMatches) -> RefactorArgs {
         output_replacements_as_json: m.is_present("output-replacements-as-json"),
         refactoring: m.value_of("refactoring").unwrap().to_string(),
         selection: m.value_of("selection").unwrap().to_string(),
-        usafe: m.is_present("usafe"),
+        unsafe_: m.is_present("unsafe"),
     }
 }
 fn get_candidate_args(m: &ArgMatches) -> CandidateArgs {

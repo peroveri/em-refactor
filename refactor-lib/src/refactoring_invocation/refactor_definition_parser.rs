@@ -82,7 +82,7 @@ mod test {
                 output_replacements_as_json: false,
                 refactoring: "extract-block".to_owned(),
                 selection: "1:2".to_owned(),
-                usafe: false
+                unsafe_: false
             }
         };
         let expected = Ok(RefactoringArgs {
