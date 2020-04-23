@@ -1,0 +1,11 @@
+{
+	"file": "borrow_from_trait.rs",
+	"args": {
+		"refactoring": "close-over-variables",
+		"selection": "27:55"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "borrow_from_trait_after.rs"
+	}
+}

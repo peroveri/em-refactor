@@ -7,6 +7,11 @@ fn run_test(name: &str) {
 }
 
 #[test]
+#[ignore]
+fn close_over_variables_borrow_from_trait() {
+    run_test("borrow_from_trait");
+}
+#[test]
 fn close_over_variables_multiple_params() {
     run_test("multiple_params");
 }
