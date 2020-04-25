@@ -158,11 +158,12 @@ pub fn assert_success(prog: TokenStream, refactoring: &str, span: (u32, u32), ex
             output_replacements_as_json: false,
             refactoring: format!("{}", refactoring),
             selection: format!("{}:{}", span.0, span.1),
-            unsafe_: false
+            unsafe_: false,
+            deps: vec![]
         }
     ).unwrap();
 
-    let mut c = MyRefactorCallbacks::from_arg(q);
+    let mut c = MyRefactorCallbacks::from_arg(q, false);
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
     err.unwrap();
 
@@ -178,11 +179,12 @@ pub fn assert_err(prog: TokenStream, refactoring: &str, span: (u32, u32), expect
             output_replacements_as_json: false,
             refactoring: format!("{}", refactoring),
             selection: format!("{}:{}", span.0, span.1),
-            unsafe_: false
+            unsafe_: false,
+            deps: vec![]
         }
     ).unwrap();
 
-    let mut c = MyRefactorCallbacks::from_arg(q);
+    let mut c = MyRefactorCallbacks::from_arg(q, false);
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
     err.unwrap();
     assert_eq!(c.result.unwrap_err(), expected);
@@ -194,7 +196,7 @@ pub fn assert_success2(prog: TokenStream, init: Box<dyn Fn(String) -> Box<dyn Fn
     let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
     let q = init(d.path().join("./main.rs").to_str().unwrap().to_owned());
 
-    let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q));
+    let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q), false);
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
     err.unwrap();
 
@@ -207,7 +209,7 @@ pub fn assert_err2(prog: TokenStream, init: Box<dyn Fn(String) -> Box<dyn Fn(&As
     let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
     let q = init(d.path().join("./main.rs").to_str().unwrap().to_owned());
 
-    let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q));
+    let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q), false);
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
     err.unwrap();
 
@@ -226,7 +228,7 @@ pub fn assert_success3<T, F>(program: &str, init: F, expected: T)
     let main_path = d.path().join("./main.rs").to_str().unwrap().to_owned();
     let q = init(main_path, s0, s1);
 
-    let mut c = MyRefactorCallbacks::from_arg(Query::AfterParsing(q));
+    let mut c = MyRefactorCallbacks::from_arg(Query::AfterParsing(q), false);
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
     err.unwrap();
 
@@ -240,7 +242,7 @@ pub fn assert_ast_success3<T, F>(program: &str, init: F, expected: T)
     let (rustc_args, _d) = init_main_rs_and_get_args(program);
     let q = init();
 
-    let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q));
+    let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q), false);
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
     err.unwrap();
 

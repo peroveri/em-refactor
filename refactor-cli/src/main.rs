@@ -66,18 +66,20 @@ pub fn main() {
     }
 }
 
-fn get_refactor_args(m: &ArgMatches) -> RefactorArgs {
+fn get_refactor_args(m: &ArgMatches, deps: Vec<String>) -> RefactorArgs {
     RefactorArgs {
         file: m.value_of("file").unwrap().to_string(),
         output_replacements_as_json: m.is_present("output-replacements-as-json"),
         refactoring: m.value_of("refactoring").unwrap().to_string(),
         selection: m.value_of("selection").unwrap().to_string(),
         unsafe_: m.is_present("unsafe"),
+        deps
     }
 }
-fn get_candidate_args(m: &ArgMatches) -> CandidateArgs {
+fn get_candidate_args(m: &ArgMatches, deps: Vec<String>) -> CandidateArgs {
     CandidateArgs {
         refactoring: m.value_of("refactoring").unwrap().to_string(),
+        deps
     }
 }
 
@@ -104,18 +106,18 @@ fn process() -> Result<(), i32> {
     }
 }
 
-fn serialize_args(m: &ArgMatches) -> (String, String) {
+fn serialize_args(m: &ArgMatches, deps: Vec<String>) -> (String, String) {
     if let Some(subcommand_matches) = m.subcommand_matches("candidates") {
-        ("CANDIDATE_ARGS".to_owned(), serde_json::to_string(&get_candidate_args(subcommand_matches)).unwrap())
+        ("CANDIDATE_ARGS".to_owned(), serde_json::to_string(&get_candidate_args(subcommand_matches, deps)).unwrap())
     } else if let Some(subcommand_matches) = m.subcommand_matches("refactor") {
-        ("REFACTORING_ARGS".to_owned(), serde_json::to_string(&get_refactor_args(subcommand_matches)).unwrap())
+        ("REFACTORING_ARGS".to_owned(), serde_json::to_string(&get_refactor_args(subcommand_matches, deps)).unwrap())
     } else {
         panic!("Unexpected subcommand: {:?}", m.subcommand_name());
     }
 }
 
 fn run_single(matches: &ArgMatches, target_dir: Option<&str>) -> Result<(), i32> {
-    let refactor_args = get_refactor_args(&matches.subcommand_matches("refactor").unwrap());
+    let refactor_args = get_refactor_args(&matches.subcommand_matches("refactor").unwrap(), vec![]);
 
     let mut path = std::env::current_exe()
         .expect("current executable path invalid")
@@ -149,7 +151,6 @@ fn run_crate(matches: &ArgMatches, target_dir: Option<&str>) -> Result<(), i32> 
     if cfg!(windows) {
         path.set_extension("exe");
     }
-    let env_args = serialize_args(matches);
     let mut args = vec!["+nightly-2020-04-15".to_owned(), "check".to_owned(), "-j".to_owned(), "1".to_owned(), "--quiet".to_owned(), "--tests".to_owned(), "--benches".to_owned(), "--examples".to_owned(), "--bins".to_owned()];
 
     if let Some(arg) = target_dir {
@@ -161,7 +162,8 @@ fn run_crate(matches: &ArgMatches, target_dir: Option<&str>) -> Result<(), i32> 
     // might be fixed?
     // https://github.com/rust-lang/cargo/issues/7490
     //
-    clean_local_targets(target_dir).unwrap();
+    let deps = clean_local_targets(target_dir).unwrap();
+    let env_args = serialize_args(matches, deps);
 
     let output = Command::new("cargo")
         .args(&args)
@@ -188,7 +190,8 @@ fn run_crate(matches: &ArgMatches, target_dir: Option<&str>) -> Result<(), i32> 
 // in order to ensure that all the files in the current crate actually get built
 // when we run cargo check. Hopefully eventually there'll be a nicer way to
 // integrate with cargo such that we won't need to do this.
-fn clean_local_targets(target_dir: Option<&str>) -> Result<(), std::io::Error> {
+fn clean_local_targets(target_dir: Option<&str>) -> Result<Vec<String>, std::io::Error> {
+    let mut deps = vec![];
     let output = std::process::Command::new("cargo")
         .args(vec!["metadata", "--no-deps", "--format-version=1"])
         .stdout(std::process::Stdio::piped())
@@ -216,10 +219,21 @@ fn clean_local_targets(target_dir: Option<&str>) -> Result<(), std::io::Error> {
                 args.push(format!("--target-dir={}", dir));
             }
             std::process::Command::new("cargo").args(args).status()?;
+
+            if let Some(arr) = package["dependencies"].as_array() {
+                for dep in arr {
+                    if let Some(dep_name) = dep["name"].as_str().map(|s| s.to_string()) {
+                        if !deps.contains(&dep_name) {
+                            deps.push(dep_name);
+                        }
+                    }
+                }
+            }
+
             // }
         }
     }
-    Ok(())
+    Ok(deps)
 }
 
 fn combine_output(s: &str) -> String {

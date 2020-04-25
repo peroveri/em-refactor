@@ -12,13 +12,15 @@ use rustc_interface::interface::Compiler;
 pub struct MyRefactorCallbacks<T> {
     pub query: Query<T>,
     pub result: QueryResult<T>,
+    pub continue_compilation: bool
 }
 
 impl<T> MyRefactorCallbacks<T> {
-    pub fn from_arg(q: Query<T>) -> Self {
+    pub fn from_arg(q: Query<T>, continue_compilation: bool) -> Self {
         Self {
             query: q,
             result: Err(RefactoringErrorInternal::new(InternalErrorCodes::Error, "".to_owned())), // shouldnt be Err by default, but something like None
+            continue_compilation
         }
     }
 }
@@ -43,7 +45,12 @@ impl<T> Callbacks for MyRefactorCallbacks<T> {
             let mut ctx = AstContext::new(compiler, queries);
             ctx.load_crate();
             self.result = f(&ctx);
-            Compilation::Stop
+
+            if self.continue_compilation {
+                Compilation::Continue
+            } else {
+                Compilation::Stop
+            }
         } else {
             Compilation::Continue
         }
@@ -61,6 +68,10 @@ impl<T> Callbacks for MyRefactorCallbacks<T> {
                 self.result = f(&ctx);
             }
         });
-        Compilation::Stop // TODO: if this is a local dependency, we should continue
+        if self.continue_compilation {
+            Compilation::Continue
+        } else {
+            Compilation::Stop
+        }
     }
 }

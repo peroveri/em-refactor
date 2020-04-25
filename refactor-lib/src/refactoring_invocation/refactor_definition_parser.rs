@@ -82,7 +82,8 @@ mod test {
                 output_replacements_as_json: false,
                 refactoring: "extract-block".to_owned(),
                 selection: "1:2".to_owned(),
-                unsafe_: false
+                unsafe_: false,
+                deps: vec![]
             }
         };
         let expected = Ok(RefactoringArgs {

@@ -73,8 +73,10 @@ pub struct RefactorArgs {
     pub file: String,
     pub unsafe_: bool,
     pub output_replacements_as_json: bool,
+    pub deps: Vec<String>
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CandidateArgs {
     pub refactoring: String,
+    pub deps: Vec<String>
 }

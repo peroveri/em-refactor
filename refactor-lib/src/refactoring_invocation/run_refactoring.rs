@@ -1,5 +1,5 @@
 use refactor_lib_types::{FileStringReplacement, RefactorArgs};
-use crate::refactoring_invocation::{argument_list_to_refactor_def, AstDiff, from_error, from_success, MyRefactorCallbacks, QueryResult, RefactoringErrorInternal, rustc_rerun, serialize};
+use crate::refactoring_invocation::{arg_value, argument_list_to_refactor_def, AstDiff, from_error, from_success, MyRefactorCallbacks, QueryResult, RefactoringErrorInternal, rustc_rerun, serialize};
 
 pub fn run_refactoring_and_output_result(refactor_args: &RefactorArgs, rustc_args: Vec<String>) -> Result<(), i32> {
     
@@ -44,7 +44,7 @@ fn run_refactoring_internal(rustc_args: &[String], refactor_args: &RefactorArgs)
     
     let refactor_def = argument_list_to_refactor_def(refactor_args)?;
 
-    let mut my_refactor = MyRefactorCallbacks::from_arg(refactor_def);
+    let mut my_refactor = MyRefactorCallbacks::from_arg(refactor_def, is_dep(&refactor_args.deps, rustc_args));
 
     let callbacks: &mut (dyn rustc_driver::Callbacks + Send) = &mut my_refactor;
 
@@ -82,4 +82,12 @@ pub fn get_file_content(changes: &[FileStringReplacement]) -> Option<String> {
     }
 
     return Some(content);
+}
+
+pub fn is_dep(deps: &[String], rustc_arg: &[String]) -> bool {
+    if let Some(val) = arg_value(rustc_arg, "--crate-name", |_| true) {
+        deps.iter().any(|s| s == val)
+    } else {
+        false
+    }
 }

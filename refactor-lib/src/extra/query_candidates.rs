@@ -1,14 +1,14 @@
 use super::{arg_value, collect_extract_block_candidates, collect_box_field_all_candidates, collect_box_field_namede_candidates, collect_box_field_tuple_candidates};
 use rustc_span::Span;
 use crate::refactorings::utils::map_span_to_index;
-use refactor_lib_types::{CandidateOutput, CandidatePosition, RefactorOutputs};
-use crate::refactoring_invocation::{AstContext, QueryResult, Query, MyRefactorCallbacks};
+use refactor_lib_types::{CandidateArgs, CandidateOutput, CandidatePosition, RefactorOutputs};
+use crate::refactoring_invocation::{AstContext, is_dep, QueryResult, Query, MyRefactorCallbacks};
 
 pub fn should_query_candidates(refactor_args: &[String]) -> bool {
     arg_value(refactor_args, "--query-candidates", |_| true).is_some()
 }
 
-fn map_to_pos_query(args: CandidateArgs, f: Box<dyn Fn(&AstContext) -> QueryResult<Vec<Span>> + Send>) -> Query<RefactorOutputs> {
+fn map_to_pos_query(args: CandidateQueryArgs, f: Box<dyn Fn(&AstContext) -> QueryResult<Vec<Span>> + Send>) -> Query<RefactorOutputs> {
     Query::AfterExpansion(
         Box::new(
             move |ast| {
@@ -28,7 +28,7 @@ fn map_to_pos_query(args: CandidateArgs, f: Box<dyn Fn(&AstContext) -> QueryResu
     )
 }
 
-fn map_to_query(args: CandidateArgs) -> Query<RefactorOutputs> {
+fn map_to_query(args: CandidateQueryArgs) -> Query<RefactorOutputs> {
     match args.refactoring.as_ref() {
         "extract-block" => map_to_pos_query(args, Box::new(collect_extract_block_candidates)),
         "box-field" => map_to_pos_query(args, Box::new(collect_box_field_all_candidates)),
@@ -39,13 +39,13 @@ fn map_to_query(args: CandidateArgs) -> Query<RefactorOutputs> {
 }
 
 #[derive(Clone)]
-struct CandidateArgs {
+struct CandidateQueryArgs {
     refactoring: String,
     crate_name: String,
-    is_test: bool
+    is_test: bool,
 }
 
-impl CandidateArgs {
+impl CandidateQueryArgs {
     fn parse(candidate: &str, rustc_args: &[String]) -> Self {
         Self {
             refactoring: candidate.to_string(),
@@ -56,12 +56,12 @@ impl CandidateArgs {
 }
 
 /// TODO: Should use the refa. invocation instead and remove this
-pub fn list_candidates(candidate: &str, rustc_args: &[String]) -> Result<(), i32> {
+pub fn list_candidates(candidate: &CandidateArgs, rustc_args: &[String]) -> Result<(), i32> {
 
-    let args = CandidateArgs::parse(candidate, rustc_args);
+    let args = CandidateQueryArgs::parse(&candidate.refactoring, rustc_args);
     let query = map_to_query(args);
 
-    let mut callbacks = MyRefactorCallbacks::from_arg(query);
+    let mut callbacks = MyRefactorCallbacks::from_arg(query, is_dep(&candidate.deps, rustc_args));
 
     let emitter = Box::new(Vec::new());
     std::env::set_var("RUST_BACKTRACE", "1");
@@ -73,7 +73,7 @@ pub fn list_candidates(candidate: &str, rustc_args: &[String]) -> Result<(), i32
     Ok(())
 }
 
-fn print_candidates(args: CandidateArgs, candidates: Vec<CandidatePosition>) -> RefactorOutputs {
+fn print_candidates(args: CandidateQueryArgs, candidates: Vec<CandidatePosition>) -> RefactorOutputs {
     let refa = match args.refactoring.as_ref() {
         "box-named-field" |
         "box-tuple-field"  => {
