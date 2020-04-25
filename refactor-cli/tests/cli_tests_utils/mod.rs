@@ -7,6 +7,8 @@ pub const SINGLE_FILE_ARG: &str = "--workspace-root=../refactor-examples/crates/
 pub const WORKSPACE_ARG: &str = "--workspace-root=../refactor-examples/crates/hello_world";
 pub const WORKSPACE_ARG_MULTI_ROOT: &str = "--workspace-root=../refactor-examples/crates/multi_root";
 pub const WORKSPACE_ARG_MULTI_ROOT_OVERLAP: &str = "--workspace-root=../refactor-examples/crates/multi_root_overlap";
+pub const WORKSPACE_DEPS_ARG: &str = "--workspace-root=../refactor-examples/crates/workspace_deps";
+pub const WORKSPACE_NO_DEPS_ARG: &str = "--workspace-root=../refactor-examples/crates/workspace_no_deps";
 
 pub fn cargo_my_refactor() -> Command {
     Command::cargo_bin("cargo-my-refactor").unwrap()

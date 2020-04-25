@@ -270,3 +270,31 @@ fn cli_unknown_refactoring() {
             "Unknown refactoring: invalid_refactoring_name\n",
         ));
 }
+
+#[test]
+fn cli_workspace_deps() {
+    cargo_my_refactor()
+        .arg(WORKSPACE_DEPS_ARG)
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
+        .arg("candidates")
+        .arg("extract-block")
+        .assert()
+        .success();
+}
+
+#[test]
+fn cli_workspace_no_deps() {
+    cargo_my_refactor()
+        .arg(WORKSPACE_NO_DEPS_ARG)
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
+        .arg("candidates")
+        .arg("extract-block")
+        .assert()
+        .success();
+}
