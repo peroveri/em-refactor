@@ -25,7 +25,7 @@ pub fn arg_value<'a>(
 
 pub fn get_candidate_args() -> Option<CandidateArgs> {
     if let Ok(args) = std::env::var("CANDIDATE_ARGS") {
-        Some(serde_json::from_str::<CandidateArgs>(&args).unwrap())
+        serde_json::from_str::<CandidateArgs>(&args).ok()
     } else {
         None
     }

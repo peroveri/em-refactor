@@ -238,7 +238,7 @@ fn clean_local_targets(target_dir: Option<&str>) -> Result<Vec<String>, std::io:
 
 fn combine_output(s: &str) -> String {
     if s.starts_with(r#"{"candidates":"#) {
-        let mut outputs = RefactorOutputs{candidates: vec![], refactorings: vec![]};
+        let mut outputs = RefactorOutputs::new();
         for line in s.split("\n") {
             if line.trim().len() > 0 {
                 outputs.extend(serde_json::from_str::<RefactorOutputs>(&line).unwrap());

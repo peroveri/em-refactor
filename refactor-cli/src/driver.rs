@@ -29,7 +29,8 @@ fn run_rustc() -> Result<(), i32> {
     }
 
     if let Some(args) = get_candidate_args() {
-        return refactor_lib::extra::list_candidates(&args, &rustc_args);
+        refactor_lib::extra::list_candidates(&args, &rustc_args);
+        return Ok(());
     }
     run_refactoring_and_output_result(&get_refactor_args(), rustc_args)
 }

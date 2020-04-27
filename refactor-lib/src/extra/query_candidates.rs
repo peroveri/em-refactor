@@ -1,34 +1,38 @@
 use super::{arg_value, collect_extract_block_candidates, collect_box_field_all_candidates, collect_box_field_namede_candidates, collect_box_field_tuple_candidates};
 use rustc_span::Span;
 use crate::refactorings::utils::map_span_to_index;
-use refactor_lib_types::{CandidateArgs, CandidateOutput, CandidatePosition, RefactorOutputs};
-use crate::refactoring_invocation::{AstContext, is_dep, QueryResult, Query, MyRefactorCallbacks};
+use refactor_lib_types::{CandidateArgs, CandidateOutput, CandidatePosition, RefactoringError, RefactorOutputs};
+use crate::refactoring_invocation::{AstContext, is_dep, QueryResult, Query, RefactoringErrorInternal, MyRefactorCallbacks};
 
 pub fn should_query_candidates(refactor_args: &[String]) -> bool {
     arg_value(refactor_args, "--query-candidates", |_| true).is_some()
 }
 
-fn map_to_pos_query(args: CandidateQueryArgs, f: Box<dyn Fn(&AstContext) -> QueryResult<Vec<Span>> + Send>) -> Query<RefactorOutputs> {
+fn map_to_pos_query(args: CandidateQueryArgs, f: Box<dyn Fn(&AstContext) -> QueryResult<Vec<Span>> + Send>) -> Query<CandidateOutput> {
     Query::AfterExpansion(
         Box::new(
             move |ast| {
                 let res = f(ast)?;
 
-                let candidates = res.iter().map(|span| {
-                    let (file, range) = map_span_to_index(ast.get_source_map(), *span);
-                    CandidatePosition {
-                        file,
-                        from: range.from.byte,
-                        to: range.to.byte
-                    }}).collect::<Vec<_>>();
+                let mut candidates = vec![];
+                for span in res.into_iter() {
+                    let (file, range) = map_span_to_index(ast.get_source_map(), span)?;
+                    candidates.push(
+                        CandidatePosition {
+                            file,
+                            from: range.from.byte,
+                            to: range.to.byte
+                        }
+                    );
+                }
 
-                Ok(print_candidates(args.clone(), candidates))
+                Ok(map_candidates_to_output(args.clone(), candidates))
             }
         )
     )
 }
 
-fn map_to_query(args: CandidateQueryArgs) -> Query<RefactorOutputs> {
+fn map_to_query(args: CandidateQueryArgs) -> Query<CandidateOutput> {
     match args.refactoring.as_ref() {
         "extract-block" => map_to_pos_query(args, Box::new(collect_extract_block_candidates)),
         "box-field" => map_to_pos_query(args, Box::new(collect_box_field_all_candidates)),
@@ -56,24 +60,24 @@ impl CandidateQueryArgs {
 }
 
 /// TODO: Should use the refa. invocation instead and remove this
-pub fn list_candidates(candidate: &CandidateArgs, rustc_args: &[String]) -> Result<(), i32> {
+pub fn list_candidates(candidate: &CandidateArgs, rustc_args: &[String]) {
 
     let args = CandidateQueryArgs::parse(&candidate.refactoring, rustc_args);
-    let query = map_to_query(args);
+    let query = map_to_query(args.clone());
 
     let mut callbacks = MyRefactorCallbacks::from_arg(query, is_dep(&candidate.deps, rustc_args));
 
-    let emitter = Box::new(Vec::new());
     std::env::set_var("RUST_BACKTRACE", "1");
-    let err = rustc_driver::run_compiler(&rustc_args, &mut callbacks, None, Some(emitter));
-    err.unwrap();
+    rustc_driver::run_compiler(&rustc_args, &mut callbacks, None, None).map_err(|_| RefactoringErrorInternal::compile_err()).unwrap();
 
-    print!("{}", serde_json::to_string(&callbacks.result.unwrap()).unwrap());
-    
-    Ok(())
+    let result = match callbacks.result {
+        Ok(r) => RefactorOutputs::from_candidate(r),
+        Err(err) => RefactorOutputs::from_candidate(map_err_to_output(args, err))
+    };
+    print!("{}", serde_json::to_string(&result).unwrap());
 }
 
-fn print_candidates(args: CandidateQueryArgs, candidates: Vec<CandidatePosition>) -> RefactorOutputs {
+fn map_candidates_to_output(args: CandidateQueryArgs, candidates: Vec<CandidatePosition>) -> CandidateOutput {
     let refa = match args.refactoring.as_ref() {
         "box-named-field" |
         "box-tuple-field"  => {
@@ -81,15 +85,30 @@ fn print_candidates(args: CandidateQueryArgs, candidates: Vec<CandidatePosition>
         },
         r => r.to_string()
     };
-    let c = CandidateOutput {
+    CandidateOutput {
         crate_name: args.crate_name,
         is_test: args.is_test,
         refactoring: refa,
-        candidates
+        candidates,
+        errors: vec![]
+    }
+}
+fn map_err_to_output(args: CandidateQueryArgs, err: RefactoringErrorInternal) -> CandidateOutput {
+    let refa = match args.refactoring.as_ref() {
+        "box-named-field" |
+        "box-tuple-field"  => {
+            "box-field".to_string()
+        },
+        r => r.to_string()
     };
-    let outputs = RefactorOutputs {
-        candidates: vec![c],
-        refactorings: vec![]
-    };
-    outputs
+    CandidateOutput {
+        crate_name: args.crate_name,
+        is_test: args.is_test,
+        refactoring: refa,
+        candidates: vec![],
+        errors: vec![RefactoringError {
+            is_error: true,
+            message: err.message
+        }]
+    }
 }

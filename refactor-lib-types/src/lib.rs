@@ -43,7 +43,8 @@ pub struct CandidateOutput {
     pub candidates: Vec<CandidatePosition>,
     pub crate_name: String,
     pub is_test: bool,
-    pub refactoring: String
+    pub refactoring: String,
+    pub errors: Vec<RefactoringError>
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -54,10 +55,34 @@ pub struct CandidatePosition {
 }
 
 impl RefactorOutputs {
+    pub fn new() -> Self {
+        Self {
+            candidates: vec![],
+            refactorings: vec![]
+        }
+    }
+    pub fn from_candidate(candidate: CandidateOutput) -> Self {
+        Self {
+            candidates: vec![candidate],
+            refactorings: vec![]
+        }
+    }
+    pub fn from_candidates(candidates: Vec<CandidateOutput>) -> Self {
+        Self {
+            candidates,
+            refactorings: vec![]
+        }
+    }
+    pub fn from_refactorings(refactorings: Vec<RefactorOutput>) -> Self {
+        Self {
+            candidates: vec![],
+            refactorings
+        }
+    }
     #[allow(unused)]
     pub fn sort(&mut self) {
         self.candidates.sort_by_key(|a| (a.crate_name.clone(), a.is_test));
-        self.refactorings.sort_by_key(|a| (a.crate_name.clone(), a.is_test))
+        self.refactorings.sort_by_key(|a| (a.crate_name.clone(), a.is_test));
     }
     #[allow(unused)]
     pub fn extend(&mut self, other: RefactorOutputs) {
