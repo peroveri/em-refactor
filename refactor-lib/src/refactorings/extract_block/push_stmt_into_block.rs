@@ -1,4 +1,3 @@
-// Either "add decl" or "just cut & paste"
 use super::expr_use_visit::collect_variables_declared_in_span_and_used_later;
 use rustc_hir::BodyId;
 use rustc_span::Span;
@@ -36,22 +35,14 @@ impl VariablesUsedOutsideCollection {
         }
     }
 
-    fn decls_fmt(&self) -> String {
+    pub fn len(&self) -> usize {
+        self.decls.len()
+    }
+
+    pub fn decls_fmt(&self) -> String {
         self.decls.join(", ")
     }
-    fn idents_fmt(&self) -> String {
+    pub fn idents_fmt(&self) -> String {
         self.idents.join(", ")
-    }
-    /// (let statement, expression, semicolon?)
-    pub fn get_let_expr_end(&self) -> (String, String, String) {
-        match self.idents.len() {
-            0 => ("".to_owned(), "".to_owned(), "".to_owned()),
-            1 => (format!("let {} = \n", self.decls_fmt()), self.idents_fmt(), ";".to_owned()),
-            _ => (
-                format!("let ({}) = \n", self.decls_fmt()),
-                format!("({})", self.idents_fmt()),
-                ";".to_owned(),
-            ),
-        }
     }
 }

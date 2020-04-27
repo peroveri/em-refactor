@@ -35,8 +35,11 @@ pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
 
     // Add declaration with assignment, and expression at end of block
     // for variables declared in the selection and used later
-    let (let_b, expr, end) = vars.get_let_expr_end();
-    let new_block_source = format!("{}{{{}{}}}{}", let_b, statements_source, expr, end);
+    let new_block_source = match vars.len() {
+        0 => format!("{{{}}}", statements_source),
+        1 => format!("let {} = \n{{{}{}}};", vars.decls_fmt(), statements_source, vars.idents_fmt()),
+        _ => format!("let ({}) = \n{{{}({})}};", vars.decls_fmt(), statements_source, vars.idents_fmt())
+    };
 
     Ok(AstDiff(vec![tcx.map_change(
         span,
