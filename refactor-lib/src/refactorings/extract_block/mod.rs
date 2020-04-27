@@ -30,7 +30,7 @@ mod variable_use_collection;
 pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
     let selection = collect_innermost_block(tcx, span)?;
 
-    let vars = push_stmt_into_block::collect_variables_overlapping_span(tcx, selection.1, span);
+    let vars = push_stmt_into_block::collect_variables_overlapping_span(tcx, selection.1, span)?;
     let statements_source = tcx.get_source(span);
 
     // Add declaration with assignment, and expression at end of block

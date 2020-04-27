@@ -5,30 +5,36 @@ use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Plac
 use rustc_span::Span;
 use super::variable_use_collection::VariableUseCollection;
 use crate::refactorings::visitors::hir::ExpressionUseKind;
-use crate::refactoring_invocation::TyContext;
+use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal, TyContext};
 
 struct VariableCollectorDelegate<'tcx> {
     tcx: TyCtxt<'tcx>,
     extract_span: Span,
     usages: VariableUseCollection,
+    err: QueryResult<()>
 }
 
 impl<'tcx> VariableCollectorDelegate<'tcx> {
-    fn get_ident_and_decl_span(&self, place: &Place) -> Option<(String, Span)> {
+    fn get_ident_and_decl_span(&self, place: &Place) -> QueryResult<Option<String>> {
         match place.base {
-            PlaceBase::Local(lid) => {
-                let decl_span = self.tcx.hir().span(lid);
-                let node = self.tcx.hir().get(lid);
+            PlaceBase::Local(local_id) => {
+                let decl_span = self.tcx.hir().span(local_id);
+                if !self.extract_span.contains(decl_span) {
+                    return Ok(None);
+                }
+
+                let node = self.tcx.hir().get(local_id);
                 if let Node::Binding(pat) = node {
-                    Some((format!("{}", pat.simple_ident().unwrap()), decl_span))
+
+                    Ok(Some(format!("{}", pat.simple_ident().ok_or_else(|| RefactoringErrorInternal::int(&format!("ident missing: {:?}", pat)))?)))
                 } else {
-                    panic!("unhandled type"); // TODO: check which types node can be here
+                    Err(RefactoringErrorInternal::int(&format!("unhandled type: {:?}", place))) // TODO: check which types node can be here
                 }
             },
             // PlaceBase::Interior(cmt, ..) => {
             //     self.get_ident_and_decl_span(&cmt.cat)
             // },
-            _ => None,
+            _ => Ok(None),
         }
     }
     fn var_used(
@@ -37,12 +43,18 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
         place: &Place,
         use_kind: ExpressionUseKind,
     ) {
-        if let Some((ident, decl_span)) = self.get_ident_and_decl_span(place) {
-            if !self.extract_span.contains(used_span) && self.extract_span.contains(decl_span) {
+        if self.extract_span.contains(used_span) {
+            return;
+        }
+        match self.get_ident_and_decl_span(place) {
+            Ok(None) => {},
+            Ok(Some(ident)) => {
                 // should be ret val
                 self.usages.add_return_value(ident, use_kind);
-            }
-        }
+            },
+            Err(res) => self.err = Err(res)
+        };
+
     }
 }
 
@@ -62,13 +74,14 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
 
 /// Vs <- Collect variables declared inside 'span', but used outside 'span'
 /// If one of Vs is a borrow or contains a borrow (struct, tuple type, etc.), then we should return an error
-pub fn collect_variables_declared_in_span_and_used_later(tcx: &TyContext, body_id: BodyId, span: Span) -> VariableUseCollection {
+pub fn collect_variables_declared_in_span_and_used_later(tcx: &TyContext, body_id: BodyId, span: Span) -> QueryResult<VariableUseCollection> {
     let def_id = body_id.hir_id.owner.to_def_id();
     tcx.0.infer_ctxt().enter(|inf| {
         let mut v = VariableCollectorDelegate {
             tcx: tcx.0,
             extract_span: span,
             usages: VariableUseCollection::new(),
+            err: Ok(())
         };
         ExprUseVisitor::new(
             &mut v,
@@ -79,7 +92,8 @@ pub fn collect_variables_declared_in_span_and_used_later(tcx: &TyContext, body_i
         )
         .consume_body(tcx.0.hir().body(body_id));
 
-        v.usages
+        v.err?;
+        Ok(v.usages)
     })
 }
 
@@ -93,7 +107,7 @@ mod test {
         Box::new(move |ty| {
             let span = ty.get_span(&file_name, from, to)?;
             let block = collect_innermost_block(ty, span).unwrap();
-            let vars = collect_variables_declared_in_span_and_used_later(ty, block.1, span);
+            let vars = collect_variables_declared_in_span_and_used_later(ty, block.1, span)?;
 
             Ok(vars.get_return_values().into_iter().map(|e| (e.ident, e.is_mutated)).collect::<Vec<_>>())
         })
@@ -131,6 +145,16 @@ mod test {
             &j;
         } 
         fn borrow(_: &i32) {}"#,
+            map,
+            vec![("j".to_owned(), false)]);
+    }
+    #[test]
+    fn expr_use_visit_should_collect_borrow5() {
+        assert_success3(
+        r#"fn foo() {
+            /*START*/let j = 0;/*END*/
+            let &(ref x) = &(&j);
+        }"#,
             map,
             vec![("j".to_owned(), false)]);
     }

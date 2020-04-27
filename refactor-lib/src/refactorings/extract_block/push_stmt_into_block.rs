@@ -2,14 +2,14 @@
 use super::expr_use_visit::collect_variables_declared_in_span_and_used_later;
 use rustc_hir::BodyId;
 use rustc_span::Span;
-use crate::refactoring_invocation::TyContext;
+use crate::refactoring_invocation::{QueryResult, TyContext};
 
 pub fn collect_variables_overlapping_span(
     tcx: &TyContext,
     body_id: BodyId,
     span: Span,
-) -> VariablesUsedOutsideCollection {
-    let rvs = collect_variables_declared_in_span_and_used_later(tcx, body_id, span).get_return_values();
+) -> QueryResult<VariablesUsedOutsideCollection> {
+    let rvs = collect_variables_declared_in_span_and_used_later(tcx, body_id, span)?.get_return_values();
 
     let idents = rvs
         .iter()
@@ -20,7 +20,7 @@ pub fn collect_variables_overlapping_span(
         .map(|rv| format!("{}{}", if rv.is_mutated { "mut " } else { "" }, rv.ident))
         .collect::<Vec<_>>();
 
-    VariablesUsedOutsideCollection::new(decls, idents)
+    Ok(VariablesUsedOutsideCollection::new(decls, idents))
 }
 
 pub struct VariablesUsedOutsideCollection {
