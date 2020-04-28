@@ -151,7 +151,7 @@ fn run_crate(matches: &ArgMatches, target_dir: Option<&str>) -> Result<(), i32> 
     if cfg!(windows) {
         path.set_extension("exe");
     }
-    let mut args = vec!["+nightly-2020-04-15".to_owned(), "check".to_owned(), "-j".to_owned(), "1".to_owned(), "--quiet".to_owned(), "--tests".to_owned(), "--benches".to_owned(), "--examples".to_owned(), "--bins".to_owned()];
+    let mut args = vec!["+nightly-2020-04-15".to_owned(), "check".to_owned(), "-j".to_owned(), "1".to_owned(), "--quiet".to_owned(), "--all-targets".to_owned()];
 
     if let Some(arg) = target_dir {
         args.push(format!("--target-dir={}", arg));

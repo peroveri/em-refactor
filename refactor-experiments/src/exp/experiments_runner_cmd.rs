@@ -6,19 +6,20 @@ use tempfile::TempDir;
 use refactor_lib_types::{CandidatePosition, RefactorOutputs};
 use super::TestResults;
 use itertools::Itertools;
+use log::info;
 
 pub struct CmdRunner {
     crate_path: PathBuf,
     tool_path: PathBuf,
-    tmp_dir: TempDir
+    _tmp_dir: TempDir
 }
 
 impl CmdRunner {
-    pub fn new(crate_path: &PathBuf, tool_path: PathBuf, tmp_dir: TempDir) -> Self {
+    pub fn new(crate_path: &PathBuf, tool_path: PathBuf, _tmp_dir: TempDir) -> Self {
         Self {
             crate_path: crate_path.clone(),
             tool_path: tool_path.clone(),
-            tmp_dir
+            _tmp_dir
         }
     }
     pub fn new_default_tmp_dir(crate_path: &PathBuf, tool_path: PathBuf) -> Self {
@@ -53,15 +54,15 @@ impl CmdRunner {
     pub fn query_candidates(&self, refactoring: &str) -> std::io::Result<RefactorOutputs> {
         let output = 
             Command::new(&self.tool_path)
-                .arg("--workspace-root")
-                .arg(&self.crate_path)
-                .arg("--target-dir")
-                .arg(self.tmp_dir.path())
+                .current_dir(&self.crate_path)
+                .arg("--target-dir=target/refactorings")
+                // .arg("--target-dir")
+                // .arg(self.tmp_dir.path())
                 .arg("candidates")
                 .arg(refactoring)
                 .output()?;
         
-        assert_eq!(output.status.code(), Some(0));
+        assert_eq!(output.status.code(), Some(0), "stdout: {}\nstderr:{}", std::str::from_utf8(output.stdout.as_slice()).unwrap(), std::str::from_utf8(output.stderr.as_slice()).unwrap());
         
         let s = std::str::from_utf8(output.stdout.as_slice()).unwrap();
 
@@ -69,10 +70,8 @@ impl CmdRunner {
     }
     pub fn refactor(&self, candidate: &CandidatePosition, refactoring: &str) -> std::io::Result<RefactorOutputs> {
         let output = Command::new(&self.tool_path)
-            .arg("--workspace-root")
-            .arg(&self.crate_path)
-            .arg("--target-dir")
-            .arg(self.tmp_dir.path())
+            .current_dir(&self.crate_path)
+            .arg("--target-dir=target/refactorings")
             .arg("refactor")
             .arg(refactoring)
             .arg(&candidate.file)
@@ -80,7 +79,8 @@ impl CmdRunner {
             .arg("--output-replacements-as-json")
             .output().unwrap();
 
-        assert!(output.status.success());
+        assert!(output.status.success(), "stdout: {}\nstderr:{}", std::str::from_utf8(output.stdout.as_slice()).unwrap(), std::str::from_utf8(output.stderr.as_slice()).unwrap());
+        
     
         let stdout = std::str::from_utf8(output.stdout.as_slice()).unwrap();
         Ok(serde_json::from_str(stdout).unwrap())
@@ -108,7 +108,7 @@ impl CmdRunner {
                 let s2 = &content[(change.byte_end) as usize..];
                 content = format!("{}{}{}", s1, change.replacement, s2);
             }
-            println!("writing to: {:?}", &path);
+            info!("apply_changes: {:?}", &path);
             let mut file = File::create(&path)?;
             file.write_all(content.as_bytes())?;
         }

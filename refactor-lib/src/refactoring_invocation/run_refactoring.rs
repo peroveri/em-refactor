@@ -85,8 +85,13 @@ pub fn get_file_content(changes: &[FileStringReplacement]) -> Option<String> {
 }
 
 pub fn is_dep(deps: &[String], rustc_arg: &[String]) -> bool {
-    if let Some(val) = arg_value(rustc_arg, "--crate-name", |_| true) {
+    (if let Some(val) = arg_value(rustc_arg, "--crate-name", |_| true) {
         deps.iter().any(|s| s == val)
+    } else {
+        false
+    }) || // libraries can be dependencies of examples
+    if let Some(val) = arg_value(rustc_arg, "--crate-type", |_| true) {
+        val == "lib"
     } else {
         false
     }

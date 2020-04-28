@@ -1,6 +1,13 @@
 mod exp;
 use clap::{Arg, App};
+use log::{SetLoggerError, LevelFilter};
 
+static LOGGER: exp::SimpleLogger = exp::SimpleLogger;
+
+pub fn init_logger() -> Result<(), SetLoggerError> {
+    log::set_logger(&LOGGER)
+        .map(|()| log::set_max_level(LevelFilter::Info))
+}
 fn app<'a, 'b>() -> App<'a, 'b> {
      App::new("Refactoring experiments runner")
           .version("0.0.1")
@@ -24,6 +31,7 @@ fn app<'a, 'b>() -> App<'a, 'b> {
 // run experiment --refactoring=extract-method
 
 fn main() -> std::io::Result<()> {
+     init_logger().unwrap();
      let matches = app().get_matches();
      exp::run_all_exp(
          matches.value_of("refactoring").unwrap(),

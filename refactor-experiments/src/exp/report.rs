@@ -1,6 +1,7 @@
 use refactor_lib_types::{CandidatePosition, CandidateOutput, RefactoringError};
 use serde::Serialize;
 use super::{TestResult, TestResults};
+use log::info;
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct Report {
@@ -21,6 +22,23 @@ impl Report {
             test_result: TestResults::new(),
             unit_err: vec![]
         }
+    }
+    pub fn add_err(&mut self, candidate: CandidatePosition, err: RefactoringError) {
+        info!("Report::add_err {}", self.errs.len() + 1);
+        info!("Report::add_err candidate: {:?}, err: {:?}", candidate, err);
+        self.errs.push((candidate, err));
+    }
+    pub fn add_successful(&mut self, candidate: CandidatePosition) {
+        info!("Report::add_successful {}", self.success.len() + 1);
+        self.success.push(candidate);
+    }
+    pub fn set_candidates(&mut self, candidates: Vec<CandidateOutput>) {
+        info!("Report::set_candidates: {}", candidates.iter().map(|c| c.candidates.len().to_string()).collect::<Vec<_>>().join(", "));
+        self.candidates = candidates;
+    }
+    pub fn set_test_result(&mut self, test_result: TestResults) {
+        info!("Report::set_test_result: {}", test_result.to_single_line());
+        self.test_result = test_result;
     }
 }
 #[derive(Debug, Clone, Serialize, PartialEq)]

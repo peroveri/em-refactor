@@ -1,6 +1,7 @@
-use super::{CmdRunner, Report, ShortReport};
+use super::{CmdRunner, Report, ShortReport, Stopwatch};
 use refactor_lib_types::CandidatePosition;
 use std::path::PathBuf;
+use log::{error, info};
 
 /// # Algo (Extract Method)
 /// Given Project / Crate
@@ -31,11 +32,11 @@ impl ExperimentsRunner {
 
     fn run_exp_on_project(&mut self) -> std::io::Result<()> {
         if self.cmd_runner.has_repo_changes()? {
-            println!("repo has changes");
+            error!("repo has changes");
             return Ok(());
         }
-        self.report.test_result = self.cmd_runner.run_unit_tests()?;
-        self.report.candidates = self.cmd_runner.query_candidates(&self.refactorings[0])?.candidates;
+        self.report.set_test_result(self.cmd_runner.run_unit_tests()?);
+        self.report.set_candidates(self.cmd_runner.query_candidates(&self.refactorings[0])?.candidates);
 
         for candidates_crate in self.report.candidates.clone().iter().filter(|c| !c.is_test) {
             for candidate in &candidates_crate.candidates {
@@ -46,22 +47,25 @@ impl ExperimentsRunner {
     }
 
     fn run_candidate_refactoring(&mut self, candidate: &CandidatePosition, refactoring: &str) -> std::io::Result<()> {
+        let mut stopwatch = Stopwatch::start("run_candidate_refactoring".to_owned());
         let changes = self.cmd_runner.refactor(candidate, refactoring)?;
         let err = changes.refactorings.iter()
             .find_map(|r| r.errors.iter().find(|e| e.is_error));
         
         if let Some(err) = err {
-            self.report.errs.push((candidate.clone(), err.clone()));
+            self.report.add_err(candidate.clone(), err.clone());
         } else {
             self.cmd_runner.apply_changes(changes)?;
             let next_test_result = self.cmd_runner.run_unit_tests()?;
             if !next_test_result.eq(&self.report.test_result) {
                 self.report.unit_err.push((candidate.clone(), next_test_result));
             } else {
-                self.report.success.push(candidate.clone());
+                self.report.add_successful(candidate.clone());
             }
             self.cmd_runner.reset_repo()?;
         }
+        stopwatch.add("apply_change".to_owned());
+        info!("{}", stopwatch.report().unwrap());
         
         Ok(())
     }

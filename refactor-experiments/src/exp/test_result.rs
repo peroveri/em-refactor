@@ -38,6 +38,10 @@ impl TestResults {
         }
         Ok(results)
     }
+    pub fn to_single_line(&self) -> String {
+        let sum = &self.sum;
+        format!("passed: {}, failed: {}, ignored: {}, measured: {}, filtered_out: {}", sum.passed, sum.failed, sum.ignored, sum.measured, sum.filtered_out)
+    }
     // pub fn sum(&self) -> TestResult {
     //     let mut ret = TestResult::new(0, 0);
     //     for r in &self.results {
