@@ -6,6 +6,6 @@
     },
     "expected": {
         "code": 255,
-        "stderr": "Field: 0 is used in a pattern and cannot be boxed.\n"
+        "stderr": "Error\nField: 0 is used in a pattern and cannot be boxed.\n"
     }
 }

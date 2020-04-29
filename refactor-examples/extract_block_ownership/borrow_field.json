@@ -6,6 +6,6 @@
 	},
 	"expected": {
 		"code": 255,
-		"stderr": "The refactoring broke the code\n"
+		"stderr": "ReCompileErr\nerror[E0597]: `i.0` does not live long enough\n --> borrow_field.rs:5:13\n  |\n3 |     let j = \n  |         - borrow later stored here\n4 | {let i = S(0);\n5 |     let j = &i.0;j};\n  |             ^^^^  - `i.0` dropped here while still borrowed\n  |             |\n  |             borrowed value does not live long enough\n\n\nerror: aborting due to previous error\n\n\nFor more information about this error, try `rustc --explain E0597`.\n\n"
 	}
 }

@@ -5,6 +5,7 @@ use refactor_lib_types::*;
 
 pub const SINGLE_FILE_ARG: &str = "--workspace-root=../refactor-examples/crates/single_file";
 pub const WORKSPACE_ARG: &str = "--workspace-root=../refactor-examples/crates/hello_world";
+pub const WORKSPACE_ARG2: &str = "--workspace-root=../refactor-examples/crates/hello_world2";
 pub const WORKSPACE_ARG_MULTI_ROOT: &str = "--workspace-root=../refactor-examples/crates/multi_root";
 pub const WORKSPACE_ARG_MULTI_ROOT_OVERLAP: &str = "--workspace-root=../refactor-examples/crates/multi_root_overlap";
 pub const WORKSPACE_DEPS_ARG: &str = "--workspace-root=../refactor-examples/crates/workspace_deps";
@@ -42,18 +43,9 @@ pub fn create_output_err(crate_name: &str, is_test: bool, is_error: bool, messag
         replacements: vec![],
         errors: vec![RefactoringError {
             is_error,
-            message: message.to_string()
+            message: message.to_string(),
+            kind: RefactorErrorType::Internal,
+            codes: vec![]
         }]
     }
-}
-
-pub fn assert_json_eq(expected: RefactorOutputs, actual: std::process::Output) {
-
-    let out_str = String::from_utf8(actual.stdout.clone()).unwrap();
-
-    actual.assert().success();
-    
-    let actual_json = serde_json::from_str::<RefactorOutputs>(&out_str).unwrap();
-
-    assert_eq!(expected, actual_json);
 }

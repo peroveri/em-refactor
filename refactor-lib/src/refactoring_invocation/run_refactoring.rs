@@ -9,7 +9,7 @@ pub fn run_refactoring_and_output_result(refactor_args: &RefactorArgs, rustc_arg
                 println!("{}", serialize(&from_error(&rustc_args, err)).unwrap());
                 Ok(())
             } else {
-                eprintln!("{}", err.message);
+                eprintln!("{:?}\n{}", err.code, err.message);
                 Err(-1)
             }
         },

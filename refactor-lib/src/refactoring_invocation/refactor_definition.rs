@@ -19,45 +19,56 @@ pub struct SourceCodeRange {
 #[derive(Debug, Clone, PartialEq)]
 pub struct RefactoringErrorInternal {
     pub code: InternalErrorCodes,
-    pub message: String
+    pub message: String,
+    pub external_codes: Vec<String>
 }
 
 impl RefactoringErrorInternal {
-    pub fn new(code: InternalErrorCodes, message: String) -> Self {
-        Self { code, message }
+    pub fn new(code: InternalErrorCodes, message: String, external_codes: Vec<String>) -> Self {
+        Self { code, message, external_codes }
+    }
+    fn new_int(code: InternalErrorCodes, message: String) -> Self {
+        Self::new(code, message, vec![])
     }
     pub fn used_in_pattern(ident: &str) -> Self {
-        Self::new(InternalErrorCodes::Error,
+        Self::new_int(InternalErrorCodes::Error,
             format!(
                 "Field: {} is used in a pattern and cannot be boxed.",
                 ident))
     }
     pub fn file_not_found(name: &str) -> Self {
-        Self::new(InternalErrorCodes::FileNotFound,
+        Self::new_int(InternalErrorCodes::FileNotFound,
             format!(
                 "Couldn't find file: {}",
                 name))
     }
     pub fn invalid_selection(from: u32, to: u32) -> Self {
-        Self::new(InternalErrorCodes::Error,
+        Self::new_int(InternalErrorCodes::Error,
             format!(
                 "{}:{} is not a valid selection!",
                 from, to))
     }
     pub fn invalid_selection_with_code(from: u32, to: u32, selection: &str) -> Self {
-        Self::new(InternalErrorCodes::Error,
+        Self::new_int(InternalErrorCodes::Error,
             format!(
                 "{}:{} is not a valid selection! `{}`",
                 from, to, selection))
     }
+    pub fn refactoring_not_invoked() -> Self {
+        Self::new_int(InternalErrorCodes::Error,
+           "The refactoring was not invoked".to_owned())
+    }
     pub fn int(s: &str) -> Self {
-        Self::new(InternalErrorCodes::Internal, s.to_string())
+        Self::new_int(InternalErrorCodes::Internal, s.to_string())
     }
     pub fn arg_def(s: &str) -> Self {
-        Self::new(InternalErrorCodes::BadFormatOnInput, s.to_string())
+        Self::new_int(InternalErrorCodes::BadFormatOnInput, s.to_string())
     }
     pub fn compile_err() -> Self {
-        Self::new(InternalErrorCodes::CompileErr, "".to_string())
+        Self::new_int(InternalErrorCodes::CompileErr, "".to_string())
+    }
+    pub fn recompile_err(s: &str, codes: Vec<String>) -> Self {
+        Self::new(InternalErrorCodes::ReCompileErr, s.to_string(), codes)
     }
 }
 
@@ -67,5 +78,6 @@ pub enum InternalErrorCodes {
     FileNotFound = 1,
     Internal = 2,
     BadFormatOnInput = 3,
-    CompileErr = 4
+    CompileErr = 4,
+    ReCompileErr = 5
 }

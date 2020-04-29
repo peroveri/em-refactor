@@ -1,4 +1,4 @@
-use crate::refactoring_invocation::{AstContext, InternalErrorCodes, Query, QueryResult, RefactoringErrorInternal, TyContext};
+use crate::refactoring_invocation::{AstContext, Query, QueryResult, RefactoringErrorInternal, TyContext};
 use rustc_driver::{Callbacks, Compilation};
 use rustc_interface::Queries;
 use rustc_interface::interface::Compiler;
@@ -19,7 +19,7 @@ impl<T> MyRefactorCallbacks<T> {
     pub fn from_arg(q: Query<T>, continue_compilation: bool) -> Self {
         Self {
             query: q,
-            result: Err(RefactoringErrorInternal::new(InternalErrorCodes::Error, "".to_owned())), // shouldnt be Err by default, but something like None
+            result: Err(RefactoringErrorInternal::refactoring_not_invoked()),
             continue_compilation
         }
     }

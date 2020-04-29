@@ -14,15 +14,18 @@ pub struct FileStringReplacement {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RefactoringError {
-    // pub byte_end: u32,
-    // pub byte_start: u32,
-    // pub char_end: usize,
-    // pub char_start: usize,
-    // pub file_name: String,
-    // pub line_end: usize,
-    // pub line_start: usize,
     pub is_error: bool,
-    pub message: String
+    pub message: String,
+    pub kind: RefactorErrorType,
+    pub codes: Vec<String>
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum RefactorErrorType {
+    Internal = 0,
+    Refactoring = 1,
+    RustCError1 = 2,
+    RustCError2 = 3,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

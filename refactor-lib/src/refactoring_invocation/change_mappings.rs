@@ -1,4 +1,4 @@
-use refactor_lib_types::{FileStringReplacement, RefactoringError, RefactorOutput, RefactorOutputs};
+use refactor_lib_types::{FileStringReplacement, RefactorErrorType, RefactoringError, RefactorOutput, RefactorOutputs};
 use crate::refactoring_invocation::{arg_value, InternalErrorCodes, RefactoringErrorInternal};
 
 pub fn from_success(rustc_args: &[String], replacements: Vec<FileStringReplacement>) -> RefactorOutputs {
@@ -20,7 +20,12 @@ pub fn from_error(rustc_args: &[String], error: RefactoringErrorInternal) -> Ref
             replacements: vec![],
             errors: vec![RefactoringError {
                 message: error.message,
-                is_error: error.code != InternalErrorCodes::FileNotFound
+                is_error: error.code != InternalErrorCodes::FileNotFound,
+                kind: match error.code {
+                    InternalErrorCodes::ReCompileErr => RefactorErrorType::RustCError2,
+                    _ => RefactorErrorType::Internal
+                },
+                codes: error.external_codes
             }]
         }
     ])

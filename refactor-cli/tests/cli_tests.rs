@@ -34,14 +34,14 @@ fn cli_multiroot_project_lib() {
         line_start: 0,
         replacement: "Box<i32>".to_owned(),
     };
-    let expected = RefactorOutputs::from_refactorings(vec![
+    let expected = serde_json::to_string(&RefactorOutputs::from_refactorings(vec![
         create_output("lib", false, &replacement),
         create_output("lib", true, &replacement),
         create_output_err("main", false, false, "Couldn't find file: src/lib.rs"),
         create_output_err("main", true, false, "Couldn't find file: src/lib.rs"),
-    ]);
+    ])).unwrap();
 
-    let actual = cargo_my_refactor()
+    cargo_my_refactor()
         .arg(WORKSPACE_ARG_MULTI_ROOT)
         .arg(format!(
             "--target-dir={}",
@@ -52,10 +52,9 @@ fn cli_multiroot_project_lib() {
         .arg("src/lib.rs")
         .arg("11:16")
         .arg("--output-replacements-as-json")
-        .output()
-        .unwrap();
-
-    assert_json_eq(expected, actual);
+        .assert()
+        .success()
+        .stdout(expected);
 }
 
 #[test]
@@ -70,14 +69,14 @@ fn cli_multiroot_project_main() {
         line_start: 0,
         replacement: "Box<i32>".to_owned(),
     };
-    let expected = RefactorOutputs::from_refactorings(vec![
+    let expected = serde_json::to_string(&RefactorOutputs::from_refactorings(vec![
         create_output_err("lib", false, false, "Couldn't find file: src/main.rs"),
         create_output_err("lib", true, false, "Couldn't find file: src/main.rs"),
         create_output("main", false, &replacement),
         create_output("main", true, &replacement),
-    ]);
+    ])).unwrap();
 
-    let actual = cargo_my_refactor()
+    cargo_my_refactor()
         .arg(WORKSPACE_ARG_MULTI_ROOT)
         .arg(format!(
             "--target-dir={}",
@@ -88,9 +87,9 @@ fn cli_multiroot_project_main() {
         .arg("src/main.rs")
         .arg("11:16")
         .arg("--output-replacements-as-json")
-        .output().unwrap();
-
-    assert_json_eq(expected, actual);
+        .assert()
+        .success()
+        .stdout(expected);
 }
 
 #[test]
@@ -105,12 +104,12 @@ fn cli_output_json() {
         line_start: 1,
         replacement: "let s = \n{let s = \"Hello, world!\";s};".to_owned(),
     };
-    let expected =  RefactorOutputs::from_refactorings(vec![
+    let expected = serde_json::to_string(&RefactorOutputs::from_refactorings(vec![
         create_output("hello_world", false, &replacement),
         create_output("hello_world", true, &replacement),
-    ]);
+    ])).unwrap();
     
-    let actual = cargo_my_refactor()
+    cargo_my_refactor()
         .arg(WORKSPACE_ARG)
         .arg(format!(
             "--target-dir={}",
@@ -121,9 +120,48 @@ fn cli_output_json() {
         .arg("src/main.rs")
         .arg("16:40")
         .arg("--output-replacements-as-json")
-        .output().unwrap();
+        .assert()
+        .success()
+        .stdout(expected);
+}
+
+#[test]
+fn cli_output_json_rustc_codes() {
+    let err = RefactoringError {
+        is_error: true,
+        message: "error[E0597]: `i` does not live long enough\n --> src/main.rs:4:13\n  |\n2 |     let j = \n  |         - borrow later stored here\n3 | {let i = 0;\n4 |     let j = &i;j};\n  |             ^^  - `i` dropped here while still borrowed\n  |             |\n  |             borrowed value does not live long enough\n\n\nerror: aborting due to previous error\n\n\nFor more information about this error, try `rustc --explain E0597`.\n".to_owned(),
+        kind: RefactorErrorType::RustCError2,
+        codes: vec!["E0597".to_owned()]
+    };
+    let expected = serde_json::to_string(&RefactorOutputs::from_refactorings(vec![
+        RefactorOutput {
+            crate_name: "hello_world2".to_owned(),
+            errors: vec![err.clone()],
+            is_test: false,
+            replacements: vec![] 
+        },
+        RefactorOutput {
+            crate_name: "hello_world2".to_owned(),
+            errors: vec![err.clone()],
+            is_test: true,
+            replacements: vec![] 
+        },
+    ])).unwrap();
     
-    assert_json_eq(expected, actual);
+    cargo_my_refactor()
+        .arg(WORKSPACE_ARG2)
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
+        .arg("refactor")
+        .arg("extract-block")
+        .arg("src/main.rs")
+        .arg("16:42")
+        .arg("--output-replacements-as-json")
+        .assert()
+        .success()
+        .stdout(expected);
 }
 
 #[test]
@@ -266,7 +304,7 @@ fn cli_unknown_refactoring() {
         .assert()
         .failure()
         .stderr(predicate::str::starts_with(
-            "Unknown refactoring: invalid_refactoring_name\n",
+            "BadFormatOnInput\nUnknown refactoring: invalid_refactoring_name\n",
         ));
 }
 
