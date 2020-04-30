@@ -5,7 +5,7 @@ import { SettingsService } from "./SettingsService";
 import { NotificationService } from "./NotificationService";
 import { ShellService } from "./ShellService";
 import { WorkspaceService } from "./WorkspaceService";
-import { mapRefactorResultToWorkspaceEdit, mapOutputToCrateList, getErrors } from "./mappings/workspace-mappings"
+import { mapRefactorResultToWorkspaceEdit, RefactorOutputs } from "./mappings/workspace-mappings"
 import { RefactorArgs } from "./mappings/code-action-refactoring-mappings";
 import config from "./mappings/config";
 
@@ -80,16 +80,15 @@ export class ExecuteCommandService {
         if (result.code === 0) {
             let outputs;
             try {
-                outputs = mapOutputToCrateList(result.stdout).refactorings;
+                outputs = JSON.parse(result.stdout) as RefactorOutputs;
             } catch(e) {
                 console.log(e);
                 throw e;
             }
 
-            let errors = getErrors(outputs);
-            if(errors.length > 0) {
-                this.notificationService.sendErrorNotification(errors[0].message);
-                return Promise.reject(errors[0].message);
+            if(outputs.errors.length > 0) {
+                this.notificationService.sendErrorNotification(outputs.errors[0].message);
+                return Promise.reject(outputs.errors[0].message);
             }
             
             let edit = mapRefactorResultToWorkspaceEdit(arg, outputs, workspaceInfo.uri);
