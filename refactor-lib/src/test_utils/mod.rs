@@ -7,7 +7,7 @@ use quote::__private::TokenStream;
 use rustc_span::{BytePos, Span};
 use tempfile::TempDir;
 use crate::refactoring_invocation::{argument_list_to_refactor_def, AstContext, get_sys_root, MyRefactorCallbacks, Query, QueryResult, RefactoringErrorInternal, TyContext};
-use refactor_lib_types::RefactorArgs;
+use refactor_lib_types::{RefactorArgs, SelectionType};
 
 /**
  * Function that can be used to run unit tests.
@@ -157,7 +157,7 @@ pub fn assert_success(prog: TokenStream, refactoring: &str, span: (u32, u32), ex
             file: format!("{}", d.path().join("./main.rs").to_str().unwrap().to_owned()),
             output_replacements_as_json: false,
             refactoring: format!("{}", refactoring),
-            selection: format!("{}:{}", span.0, span.1),
+            selection: SelectionType::Range(format!("{}:{}", span.0, span.1)),
             unsafe_: false,
             deps: vec![]
         }
@@ -178,7 +178,7 @@ pub fn assert_err(prog: TokenStream, refactoring: &str, span: (u32, u32), expect
             file: format!("{}", d.path().join("./main.rs").to_str().unwrap().to_owned()),
             output_replacements_as_json: false,
             refactoring: format!("{}", refactoring),
-            selection: format!("{}:{}", span.0, span.1),
+            selection: SelectionType::Range(format!("{}:{}", span.0, span.1)),
             unsafe_: false,
             deps: vec![]
         }

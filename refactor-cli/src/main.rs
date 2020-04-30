@@ -72,7 +72,7 @@ fn get_refactor_args(m: &ArgMatches, deps: Vec<String>) -> RefactorArgs {
         file: m.value_of("file").unwrap().to_string(),
         output_replacements_as_json: m.is_present("output-replacements-as-json"),
         refactoring: m.value_of("refactoring").unwrap().to_string(),
-        selection: m.value_of("selection").unwrap().to_string(),
+        selection: SelectionType::Range(m.value_of("selection").unwrap().to_string()),
         unsafe_: m.is_present("unsafe"),
         deps
     }

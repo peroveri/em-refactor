@@ -140,9 +140,15 @@ impl RefactorOutputs {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum SelectionType {
+    Range(String),
+    Comment(String)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct RefactorArgs {
     pub refactoring: String,
-    pub selection: String,
+    pub selection: SelectionType,
     pub file: String,
     pub unsafe_: bool,
     pub output_replacements_as_json: bool,

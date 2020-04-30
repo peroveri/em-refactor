@@ -1,7 +1,7 @@
 use crate::refactoring_invocation::{AstContext, Query, QueryResult, RefactoringErrorInternal, SourceCodeRange};
 use crate::refactorings::{box_field, close_over_variables, convert_closure_to_fn, extract_block, inline_macro, introduce_closure, pull_up_item_declaration, split_conflicting_match_arms};
 use crate::refactoring_invocation::{AstDiff, TyContext};
-use refactor_lib_types::RefactorArgs;
+use refactor_lib_types::{RefactorArgs, SelectionType};
 use rustc_span::Span;
 ///
 /// converts an argument list to a refactoring definition
@@ -51,8 +51,14 @@ impl RefactorArgsParser {
             refactoring: self.args.refactoring.clone()
         })
     }
+    fn extract_from_file(_comment: &str, _file: &str) -> QueryResult<(u32, u32)> {
+        unimplemented!()
+    }
     pub fn parse_range(&self) -> Result<SourceCodeRange, RefactoringErrorInternal> {
-        let ints = Self::get_int(&self.args.selection)?;
+        let ints = match &self.args.selection {
+            SelectionType::Comment(s) => Self::extract_from_file(s, &self.args.file)?,
+            SelectionType::Range(s) => Self::get_int(s)?
+        };
 
         Ok(SourceCodeRange {
             file_name: self.args.file.to_string(),
@@ -81,7 +87,7 @@ mod test {
                 file: "main.rs".to_owned(),
                 output_replacements_as_json: false,
                 refactoring: "extract-block".to_owned(),
-                selection: "1:2".to_owned(),
+                selection: SelectionType::Range("1:2".to_owned()),
                 unsafe_: false,
                 deps: vec![]
             }
