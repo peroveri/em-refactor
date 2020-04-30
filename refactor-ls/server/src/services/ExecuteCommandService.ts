@@ -5,7 +5,7 @@ import { SettingsService } from "./SettingsService";
 import { NotificationService } from "./NotificationService";
 import { ShellService } from "./ShellService";
 import { WorkspaceService } from "./WorkspaceService";
-import { mapRefactorResultToWorkspaceEdit, RefactorOutputs } from "./mappings/workspace-mappings"
+import { mapRefactorResultToWorkspaceEdits, RefactorOutputs } from "./mappings/workspace-mappings"
 import { RefactorArgs } from "./mappings/code-action-refactoring-mappings";
 import config from "./mappings/config";
 
@@ -91,15 +91,19 @@ export class ExecuteCommandService {
                 return Promise.reject(outputs.errors[0].message);
             }
             
-            let edit = mapRefactorResultToWorkspaceEdit(arg, outputs, workspaceInfo.uri);
+            let edits = mapRefactorResultToWorkspaceEdits(arg, outputs, workspaceInfo.uri);
 
-            this.notificationService.logError(JSON.stringify(edit));
-            let editResponse = await this.workspace.applyEdit(edit);
-            
-            if(editResponse.applied) {
-                this.notificationService.sendInfoNotification(`Applied: ${arg.refactoring}`);
-            } else {
-                this.notificationService.sendErrorNotification(`Failed to apply: ${arg.refactoring}`);
+            for(const edit of edits) {
+
+                this.notificationService.logError(JSON.stringify(edit));
+                let editResponse = await this.workspace.applyEdit(edit);
+                
+                if(editResponse.applied) {
+                    this.notificationService.sendInfoNotification(`Applied: ${arg.refactoring}`);
+                } else {
+                    this.notificationService.sendErrorNotification(`Failed to apply: ${arg.refactoring}`);
+                }
+    
             }
 
 

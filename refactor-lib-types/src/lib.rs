@@ -44,7 +44,7 @@ pub struct RefactorOutputs { // Single
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct RefactorOutputs2 {
     pub candidates: Vec<CandidatePosition>,
-    pub changes: Vec<FileStringReplacement>,
+    pub changes: Vec<Vec<FileStringReplacement>>,
     pub errors: Vec<RefactoringError> // Map<Crate, Err[]>?
 }
 
@@ -78,7 +78,7 @@ impl RefactorOutputs2 {
     pub fn empty() -> Self {
         Self::new(vec![], vec![], vec![])
     }
-    pub fn new(candidates: Vec<CandidatePosition>, changes: Vec<FileStringReplacement>, errors: Vec<RefactoringError>) -> Self {
+    pub fn new(candidates: Vec<CandidatePosition>, changes: Vec<Vec<FileStringReplacement>>, errors: Vec<RefactoringError>) -> Self {
         Self {
             candidates,
             changes,
@@ -98,7 +98,7 @@ impl RefactorOutputs2 {
         Self::from_changes(vec![change])
     }
     pub fn from_changes(changes: Vec<FileStringReplacement>) -> Self {
-        Self::new(vec![], changes, vec![])
+        Self::new(vec![], vec![changes], vec![])
     }
 }
 

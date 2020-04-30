@@ -4,7 +4,7 @@ import * as path from "path";
 
 export interface RefactorOutputs {
     candidates: any[];
-    changes: Change[];
+    changes: Change[][];
     errors: RefactorError[];
 }
 interface Change {
@@ -27,27 +27,32 @@ interface RefactorError {
 const mapRange = (change: Change): Range =>
     Range.create(change.line_start, change.char_start, change.line_end, change.char_end);
 
-export const mapRefactorResultToWorkspaceEdit = (arg: RefactorArgs, outputs: RefactorOutputs, workspaceUri: string): ApplyWorkspaceEditParams => {
-    let documentChanges: TextDocumentEdit[] = [];
+export const mapRefactorResultToWorkspaceEdits = (arg: RefactorArgs, outputs: RefactorOutputs, workspaceUri: string): ApplyWorkspaceEditParams[] => {
+    let edits = [];
+    for (const changes of outputs.changes) {
+        let documentChanges: TextDocumentEdit[] = [];
 
-    for (const change of outputs.changes) {
-        let uri = path.join(workspaceUri, change.file_name);
-        let documentChange = documentChanges.find(e => e.textDocument.uri === uri);
-        if (documentChange === undefined) {
-            documentChange = TextDocumentEdit.create({
-                uri,
-                version: null
-            }, []);
-            documentChanges.push(documentChange);
+        for (const change of changes) {
+            let uri = path.join(workspaceUri, change.file_name);
+            let documentChange = documentChanges.find(e => e.textDocument.uri === uri);
+            if (documentChange === undefined) {
+                documentChange = TextDocumentEdit.create({
+                    uri,
+                    version: null
+                }, []);
+                documentChanges.push(documentChange);
+            }
+            documentChange.edits.push(TextEdit.replace(mapRange(change), change.replacement));
         }
-        documentChange.edits.push(TextEdit.replace(mapRange(change), change.replacement));
+
+        edits.push({
+            edit: {
+                documentChanges
+            },
+            label: arg.refactoring
+        } as ApplyWorkspaceEditParams)
     }
-    return {
-        edit: {
-            documentChanges
-        },
-        label: arg.refactoring
-    } as ApplyWorkspaceEditParams;
+    return edits;
 }
 
 export class WorkspaceFolderInfo {

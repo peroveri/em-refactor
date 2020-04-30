@@ -86,26 +86,25 @@ impl CmdRunner {
     }
     pub fn apply_changes(&self, output: RefactorOutputs2) -> std::io::Result<()> {
         
-        for (file_path, changes) in &output.changes.into_iter().group_by(|a| a.file_name.clone()) {
+        for changes in &output.changes {
+            for (file_path, changes) in &changes.into_iter().group_by(|a| a.file_name.clone()) {
+                let changes = changes.collect::<Vec<_>>();
 
-            let mut changes = changes.collect::<Vec<_>>();
-            changes.sort_by_key(|c| c.byte_start);
-            changes.reverse();
-
-            let path: PathBuf = [&self.crate_path, &PathBuf::from(&file_path)].iter().collect();
-            
-            let mut file = File::open(&path)?;
-            let mut content = String::new();
-            file.read_to_string(&mut content).unwrap();
-            
-            for change in &changes {
-                let s1 = &content[..(change.byte_start) as usize];
-                let s2 = &content[(change.byte_end) as usize..];
-                content = format!("{}{}{}", s1, change.replacement, s2);
+                let path: PathBuf = [&self.crate_path, &PathBuf::from(&file_path)].iter().collect();
+                
+                let mut file = File::open(&path)?;
+                let mut content = String::new();
+                file.read_to_string(&mut content).unwrap();
+                
+                for change in &changes {
+                    let s1 = &content[..(change.byte_start) as usize];
+                    let s2 = &content[(change.byte_end) as usize..];
+                    content = format!("{}{}{}", s1, change.replacement, s2);
+                }
+                info!("apply_changes: {:?}", &path);
+                let mut file = File::create(&path)?;
+                file.write_all(content.as_bytes())?;
             }
-            info!("apply_changes: {:?}", &path);
-            let mut file = File::create(&path)?;
-            file.write_all(content.as_bytes())?;
         }
 
         Ok(())

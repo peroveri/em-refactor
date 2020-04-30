@@ -183,7 +183,7 @@ fn run_refactoring(metadata: &Metadata, mut refactor_args: RefactorArgs, target_
 fn print_result(output: RefactorOutputs2, single_file: bool) -> Result<(), i32> {
     if single_file {
         if output.errors.is_empty() {
-            print!("{}", get_file_content_with_changes(output));
+            print!("{}", get_file_content_with_changes(output).unwrap());
         } else {
             eprint!("{}", output.errors.iter().map(|e| format!("{:?}\n{}\n", e.kind, e.message)).join("\n"));
             return Err(-1);
@@ -259,35 +259,44 @@ fn combine_output(s: &str) -> RefactorOutputs2 {
         .collect::<Vec<_>>();
 
     let mut output2 = RefactorOutputs2::empty();
+    let mut replacements = vec![];
 
     for o in outputs {
-        output2.candidates.extend(o.candidates.into_iter().flat_map(|c| c.candidates));    
-        output2.changes.extend(o.refactorings.iter().flat_map(|c| c.replacements.clone()));    
+        output2.candidates.extend(o.candidates.into_iter().flat_map(|c| c.candidates));
+        replacements.extend(o.refactorings.iter().flat_map(|c| c.replacements.clone()));
         output2.errors.extend(o.refactorings.into_iter().flat_map(|c| c.errors));    
     }
     output2.candidates = output2.candidates.into_iter().unique().sorted().collect::<Vec<_>>();
-    output2.changes = output2.changes.into_iter().unique().sorted().collect::<Vec<_>>();
+    let changes = replacements.into_iter()
+        .unique()
+        .sorted_by_key(|p| -(p.byte_start as i32))
+        .collect::<Vec<_>>();
+    if !changes.is_empty() {
+        output2.changes.push(changes);    
+    }
     output2.errors = output2.errors.into_iter().filter(|e| e.is_error).unique().sorted().collect::<Vec<_>>();
 
     output2
 }
 
-fn get_file_content_with_changes(refactor_output: RefactorOutputs2) -> String {
+fn get_file_content_with_changes(refactor_output: RefactorOutputs2) -> Option<String> {
     use std::fs::File;
     use std::io::prelude::*;
-    let mut changes = refactor_output.changes.to_vec();
-    changes.sort_by_key(|c| c.byte_start);
-    changes.reverse();
 
-    let mut file = File::open(&changes[0].file_name).unwrap();
     let mut content = String::new();
+    let file_name = refactor_output.changes.first()?.first()?.file_name.to_string();
+    let mut file = File::open(&file_name).unwrap();
     file.read_to_string(&mut content).unwrap();
-    
-    for change in &changes {
-        let s1 = &content[..(change.byte_start) as usize];
-        let s2 = &content[(change.byte_end) as usize..];
-        content = format!("{}{}{}", s1, change.replacement, s2);
-    }
 
-    content
+    for changes in refactor_output.changes {
+        
+        for change in &changes {
+            assert_eq!(file_name, change.file_name);
+            let s1 = &content[..(change.byte_start) as usize];
+            let s2 = &content[(change.byte_end) as usize..];
+            content = format!("{}{}{}", s1, change.replacement, s2);
+        }
+    }
+    
+    Some(content)
 }
