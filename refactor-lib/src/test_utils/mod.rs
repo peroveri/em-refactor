@@ -155,7 +155,6 @@ pub fn assert_success(prog: TokenStream, refactoring: &str, span: (u32, u32), ex
     let q = argument_list_to_refactor_def(
         &RefactorArgs {
             file: format!("{}", d.path().join("./main.rs").to_str().unwrap().to_owned()),
-            output_replacements_as_json: false,
             refactoring: format!("{}", refactoring),
             selection: SelectionType::Range(format!("{}:{}", span.0, span.1)),
             unsafe_: false,
@@ -176,7 +175,6 @@ pub fn assert_err(prog: TokenStream, refactoring: &str, span: (u32, u32), expect
     let q = argument_list_to_refactor_def(
         &RefactorArgs {
             file: format!("{}", d.path().join("./main.rs").to_str().unwrap().to_owned()),
-            output_replacements_as_json: false,
             refactoring: format!("{}", refactoring),
             selection: SelectionType::Range(format!("{}:{}", span.0, span.1)),
             unsafe_: false,

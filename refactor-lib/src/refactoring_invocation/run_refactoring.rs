@@ -3,26 +3,12 @@ use crate::refactoring_invocation::{arg_value, argument_list_to_refactor_def, As
 
 pub fn run_refactoring_and_output_result(refactor_args: &RefactorArgs, rustc_args: Vec<String>) -> Result<(), i32> {
     
-    match run_refactoring(refactor_args, &rustc_args) {
-        Err(err) => {
-            if refactor_args.output_replacements_as_json {
-                println!("{}", serialize(&from_error(&rustc_args, err)).unwrap());
-                Ok(())
-            } else {
-                eprintln!("{:?}\n{}", err.code, err.message);
-                Err(-1)
-            }
-        },
-        Ok(astdiff) => {
-            if refactor_args.output_replacements_as_json {
-                print!("{}", serialize(&from_success(&rustc_args, astdiff.0)).unwrap());
-            } else {
-                print!("{}", get_file_content(&astdiff.0).unwrap());
-            }
-            Ok(())
-        }
-    }
-
+    let output = match run_refactoring(refactor_args, &rustc_args) {
+        Err(err) => from_error(&rustc_args, err),
+        Ok(astdiff) => from_success(&rustc_args, astdiff.0)
+    };
+    print!("{}", serialize(&output).unwrap());
+    Ok(())
 }
 
 fn run_refactoring(refactor_args: &RefactorArgs, rustc_args: &Vec<String>) -> QueryResult<AstDiff> {

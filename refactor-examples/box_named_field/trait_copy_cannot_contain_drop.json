@@ -6,6 +6,6 @@
     },
     "expected": {
         "code": 2,
-        "stderr": "Error\nStructs with the Copy trait cannot contain types with the Drop trait.\n"
+        "stderr": "Internal\nStructs with the Copy trait cannot contain types with the Drop trait.\n"
     }
 }

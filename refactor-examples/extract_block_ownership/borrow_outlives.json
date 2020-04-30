@@ -6,6 +6,6 @@
 	},
 	"expected": {
 		"code": 255,
-		"stderr": "ReCompileErr\nerror[E0597]: `i` does not live long enough\n --> borrow_outlives.rs:4:13\n  |\n2 |     let k = \n  |         - borrow later stored here\n3 | {let i = 0;\n4 |     let j = &i;\n  |             ^^ borrowed value does not live long enough\n5 |     let k = j;k};\n  |                - `i` dropped here while still borrowed\n\n\nerror: aborting due to previous error\n\n\nFor more information about this error, try `rustc --explain E0597`.\n\n"
+		"stderr": "RustCError2\nerror[E0597]: `i` does not live long enough\n --> src/main.rs:4:13\n  |\n2 |     let k = \n  |         - borrow later stored here\n3 | {let i = 0;\n4 |     let j = &i;\n  |             ^^ borrowed value does not live long enough\n5 |     let k = j;k};\n  |                - `i` dropped here while still borrowed\n\n\nerror: aborting due to previous error\n\n\nFor more information about this error, try `rustc --explain E0597`.\n\n"
 	}
 }

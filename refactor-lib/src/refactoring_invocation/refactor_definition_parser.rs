@@ -85,7 +85,6 @@ mod test {
         let parser = RefactorArgsParser {
             args: RefactorArgs {
                 file: "main.rs".to_owned(),
-                output_replacements_as_json: false,
                 refactoring: "extract-block".to_owned(),
                 selection: SelectionType::Range("1:2".to_owned()),
                 unsafe_: false,

@@ -17,7 +17,8 @@ fn app<'a, 'b>() -> App<'a, 'b> {
         .long("workspace-root")
         .takes_value(true))
     .arg(Arg::with_name("single-file")
-        .long("single-file"))
+        .long("single-file")
+        .help("Output the changed file instead of the diff's. Asserts that only a single file was changed."))
      .subcommand(
          SubCommand::with_name("refactor")
             .arg(Arg::with_name("refactoring")
@@ -34,9 +35,7 @@ fn app<'a, 'b>() -> App<'a, 'b> {
                 .takes_value(true))
             .arg(Arg::with_name("unsafe")
                 .long("unsafe")
-                .help("Skips the recompile check"))
-            .arg(Arg::with_name("output-replacements-as-json")
-                .long("output-replacements-as-json")))
+                .help("Skips the recompile check")))
     .subcommand(
         SubCommand::with_name("candidates")
             .arg(Arg::with_name("refactoring")
@@ -70,7 +69,6 @@ pub fn main() {
 fn get_refactor_args(m: &ArgMatches, deps: Vec<String>) -> RefactorArgs {
     RefactorArgs {
         file: m.value_of("file").unwrap().to_string(),
-        output_replacements_as_json: m.is_present("output-replacements-as-json"),
         refactoring: m.value_of("refactoring").unwrap().to_string(),
         selection: SelectionType::Range(m.value_of("selection").unwrap().to_string()),
         unsafe_: m.is_present("unsafe"),
@@ -100,11 +98,7 @@ fn process() -> Result<(), i32> {
         }
     }
 
-    if matches.is_present("single-file") {
-        run_single(&matches, target_dir)
-    } else {
-        run_crate(&matches, target_dir)
-    }
+    run_crate(&matches, target_dir)
 }
 
 fn serialize_args(m: &ArgMatches, deps: Vec<String>) -> (String, String) {
@@ -117,40 +111,7 @@ fn serialize_args(m: &ArgMatches, deps: Vec<String>) -> (String, String) {
     }
 }
 
-fn run_single(matches: &ArgMatches, target_dir: Option<&str>) -> Result<(), i32> {
-    let refactor_args = get_refactor_args(&matches.subcommand_matches("refactor").unwrap(), vec![]);
-
-    let mut path = std::env::current_exe()
-        .expect("current executable path invalid")
-        .with_file_name(DRIVER_NAME);
-    if cfg!(windows) {
-        path.set_extension("exe");
-    }
-    let output = Command::new(path)
-        .arg(&refactor_args.file)
-        .arg(format!("--out-dir={}", target_dir.unwrap()))
-        .env("REFACTORING_ARGS", serde_json::to_string(&refactor_args).unwrap())
-        .output().unwrap();
-
-    if output.status.success() {
-        let s = std::str::from_utf8(output.stdout.as_slice()).unwrap();
-        let stdout = 
-        if refactor_args.output_replacements_as_json {
-            combine_output(s)
-        } else {
-            s.to_string()
-        };
-        print!("{}", stdout);
-        eprint!("{}", std::str::from_utf8(output.stderr.as_slice()).unwrap());
-        Ok(())
-    } else {
-        eprint!("{}", std::str::from_utf8(output.stderr.as_slice()).unwrap());
-        Err(output.status.code().unwrap_or(-1))
-    }
-}
-
 fn run_crate(matches: &ArgMatches, target_dir: Option<&str>) -> Result<(), i32> {
-    
     let mut path = std::env::current_exe()
         .expect("current executable path invalid")
         .with_file_name(DRIVER_NAME);
@@ -180,8 +141,19 @@ fn run_crate(matches: &ArgMatches, target_dir: Option<&str>) -> Result<(), i32> 
     
     if output.status.success() {
         let s = std::str::from_utf8(output.stdout.as_slice()).unwrap();
-        print!("{}", combine_output(s));
-        eprint!("{}", std::str::from_utf8(output.stderr.as_slice()).unwrap());
+        let refactor_output = combine_output(s);
+
+        if matches.is_present("single-file") {
+            if refactor_output.errors.is_empty() {
+                print!("{}", get_file_content_with_changes(refactor_output));
+            } else {
+                eprint!("{}", refactor_output.errors.iter().map(|e| format!("{:?}\n{}\n", e.kind, e.message)).join("\n"));
+                return Err(-1);
+            }
+        } else {
+            print!("{}", serde_json::to_string(&refactor_output).unwrap());
+            eprint!("{}", std::str::from_utf8(output.stderr.as_slice()).unwrap());
+        }
         Ok(())
     } else {
         let s = std::str::from_utf8(output.stderr.as_slice()).unwrap();
@@ -242,7 +214,7 @@ fn clean_local_targets(target_dir: Option<&str>) -> Result<Vec<String>, std::io:
     Ok(deps)
 }
 
-fn combine_output(s: &str) -> String {
+fn combine_output(s: &str) -> RefactorOutputs2 {
 
     let outputs = s
         .lines()
@@ -262,5 +234,30 @@ fn combine_output(s: &str) -> String {
     output2.changes = output2.changes.into_iter().unique().sorted().collect::<Vec<_>>();
     output2.errors = output2.errors.into_iter().filter(|e| e.is_error).unique().sorted().collect::<Vec<_>>();
 
-    serde_json::to_string(&output2).unwrap()
+    output2
+}
+
+fn get_file_content_with_changes(refactor_output: RefactorOutputs2) -> String {
+    get_file_content(&refactor_output.changes).unwrap()
+}
+
+
+pub fn get_file_content(changes: &[FileStringReplacement]) -> Option<String> {
+    use std::fs::File;
+    use std::io::prelude::*;
+    let mut changes = changes.to_vec();
+    changes.sort_by_key(|c| c.byte_start);
+    changes.reverse();
+
+    let mut file = File::open(&changes[0].file_name).unwrap();
+    let mut content = String::new();
+    file.read_to_string(&mut content).unwrap();
+    
+    for change in &changes {
+        let s1 = &content[..(change.byte_start) as usize];
+        let s2 = &content[(change.byte_end) as usize..];
+        content = format!("{}{}{}", s1, change.replacement, s2);
+    }
+
+    return Some(content);
 }

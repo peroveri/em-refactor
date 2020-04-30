@@ -66,6 +66,18 @@ fn read_test_file(folder: &str, file_name: &str) -> std::io::Result<String> {
     Ok(file_content)
 }
 
+fn write_test_file(file_path: &PathBuf, content: &str) -> std::io::Result<()> {
+    assert!(
+        file_path.is_file(),
+        "path should be a file, but isn't: {}",
+        file_path.to_str().unwrap_or("")
+    );
+    let mut file = File::create(file_path)?;
+    file.write_all(content.as_bytes())?;
+    file.flush()?;
+    Ok(())
+}
+
 pub fn run_testcase(folder: &str, name: &str) -> std::io::Result<()> {
     let json_content = read_test_file(folder, &format!("{}.json", name))?;
     let mut test = TestCase::from_json(&json_content)?;
@@ -77,7 +89,7 @@ pub fn run_testcase(folder: &str, name: &str) -> std::io::Result<()> {
 }
 
 fn run_tool_and_assert(test: TestCase, folder: &str) -> std::io::Result<()> {
-    let path: PathBuf = [TEST_CASE_PATH, folder].iter().collect();
+    let content = read_test_file(folder, &test.file)?;
     let tmp_dir = TempDir::new()?;
     let tmp_dir_path = tmp_dir.path();
     assert!(
@@ -85,14 +97,23 @@ fn run_tool_and_assert(test: TestCase, folder: &str) -> std::io::Result<()> {
         "failed to create tmp dir: {}",
         tmp_dir_path.to_str().unwrap_or("")
     );
+    Command::new("cargo")
+        .current_dir(tmp_dir_path)
+        .arg("init")
+        .arg("--name=test_case")
+        .assert().success();
+
+    let main_rs_path = tmp_dir_path.join("src").join("main.rs");
+    write_test_file(&main_rs_path, &content)?;
+    
     let mut assert = Command::cargo_bin("cargo-my-refactor")
         .unwrap()
-        .current_dir(path)
-        .arg(format!("--target-dir={}", tmp_dir_path.to_str().unwrap()))
+        .arg(format!("--workspace-root={}", tmp_dir_path.to_str().unwrap()))
+        .arg(format!("--target-dir={}", tmp_dir_path.join("target").join("refactorings").to_str().unwrap()))
         .arg("--single-file")
         .arg("refactor")
         .arg(&test.refactoring)
-        .arg(&test.file)
+        .arg("src/main.rs")
         .arg(&test.selection)
         .assert();
 

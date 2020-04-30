@@ -2,7 +2,6 @@ use assert_cmd::prelude::*;
 use std::process::Command;
 use tempfile::TempDir;
 
-pub const SINGLE_FILE_ARG: &str = "--workspace-root=../refactor-examples/crates/single_file";
 pub const WORKSPACE_ARG: &str = "--workspace-root=../refactor-examples/crates/hello_world";
 pub const WORKSPACE_ARG2: &str = "--workspace-root=../refactor-examples/crates/hello_world2";
 pub const WORKSPACE_ARG_MULTI_ROOT: &str = "--workspace-root=../refactor-examples/crates/multi_root";

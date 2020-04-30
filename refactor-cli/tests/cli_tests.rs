@@ -46,7 +46,6 @@ fn cli_multiroot_project_lib() {
         .arg("box-field")
         .arg("src/lib.rs")
         .arg("11:16")
-        .arg("--output-replacements-as-json")
         .assert()
         .success()
         .stdout(expected);
@@ -76,7 +75,6 @@ fn cli_multiroot_project_main() {
         .arg("box-field")
         .arg("src/main.rs")
         .arg("11:16")
-        .arg("--output-replacements-as-json")
         .assert()
         .success()
         .stdout(expected);
@@ -107,7 +105,6 @@ fn cli_output_json() {
         .arg("extract-block")
         .arg("src/main.rs")
         .arg("16:40")
-        .arg("--output-replacements-as-json")
         .assert()
         .success()
         .stdout(expected);
@@ -133,7 +130,6 @@ fn cli_output_json_rustc_codes() {
         .arg("extract-block")
         .arg("src/main.rs")
         .arg("16:42")
-        .arg("--output-replacements-as-json")
         .assert()
         .success()
         .stdout(expected);
@@ -215,10 +211,20 @@ USAGE:
 
 #[test]
 fn cli_single_file() {
-    let expected =  "fn main() {{1;}}";
+    let expected = 
+r#"fn main() {
+    let s = 
+{let s = "Hello, world!";s};
+    println!("{}", s);
+}
+
+fn foo(a: i32, b: u32) -> (i32) {1}
+
+#[test]
+fn test1() {2;}"#;
 
     cargo_my_refactor()
-        .arg(SINGLE_FILE_ARG)
+        .arg(WORKSPACE_ARG)
         .arg(format!(
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
@@ -226,8 +232,8 @@ fn cli_single_file() {
         .arg("--single-file")
         .arg("refactor")
         .arg("extract-block")
-        .arg("main.rs")
-        .arg("11:13")
+        .arg("src/main.rs")
+        .arg("16:40")
         .assert()
         .success()
         .stdout(expected);
@@ -250,6 +256,7 @@ fn cli_unknown_refactoring() {
             "--target-dir={}",
             create_tmp_dir().path().to_str().unwrap()
         ))
+        .arg("--single-file")
         .arg("refactor")
         .arg("invalid_refactoring_name")
         .arg("src/lib.rs")
@@ -257,7 +264,7 @@ fn cli_unknown_refactoring() {
         .assert()
         .failure()
         .stderr(predicate::str::starts_with(
-            "BadFormatOnInput\nUnknown refactoring: invalid_refactoring_name\n",
+            "Internal\nUnknown refactoring: invalid_refactoring_name",
         ));
 }
 

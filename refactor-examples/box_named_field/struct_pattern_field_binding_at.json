@@ -6,6 +6,6 @@
     },
     "expected": {
         "code": 255,
-        "stderr": "Error\nField: field is used in a pattern and cannot be boxed.\n"
+        "stderr": "Internal\nField: field is used in a pattern and cannot be boxed.\n"
     }
 }

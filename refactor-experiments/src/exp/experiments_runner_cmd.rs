@@ -76,7 +76,6 @@ impl CmdRunner {
             .arg(refactoring)
             .arg(&candidate.file)
             .arg(format!("{}:{}", candidate.from, candidate.to))
-            .arg("--output-replacements-as-json")
             .output().unwrap();
 
         assert!(output.status.success(), "stdout: {}\nstderr:{}", std::str::from_utf8(output.stdout.as_slice()).unwrap(), std::str::from_utf8(output.stderr.as_slice()).unwrap());

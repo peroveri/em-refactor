@@ -6,6 +6,6 @@
 	},
 	"expected": {
 		"code": 2,
-		"stderr": "Error\nInlining inside a macro definition is not supported"
+		"stderr": "Internal\nInlining inside a macro definition is not supported"
 	}
 }

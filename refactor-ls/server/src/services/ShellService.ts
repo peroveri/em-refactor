@@ -81,7 +81,7 @@ const convertToCmd = (relativeFilePath: string, refactoring: string, selection: 
     if (!isValidBinaryPath(binaryPath)) {
         return new Error(`'${binaryPath}' is not a valid binary file`);
     }
-    const refactorArgs = `--target-dir=./target/refactorings refactor ${refactoring} ${relativeFilePath} ${selection} --output-replacements-as-json` + (unsafe ? ' --unsafe' : '');
+    const refactorArgs = `--target-dir=./target/refactorings refactor ${refactoring} ${relativeFilePath} ${selection}` + (unsafe ? ' --unsafe' : '');
 
     return `${binaryPath} ${refactorArgs}`;
 }

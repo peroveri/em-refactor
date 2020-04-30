@@ -151,7 +151,6 @@ pub struct RefactorArgs {
     pub selection: SelectionType,
     pub file: String,
     pub unsafe_: bool,
-    pub output_replacements_as_json: bool,
     pub deps: Vec<String>
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
