@@ -18,6 +18,7 @@ path = "src/driver.rs"
 
 [dependencies]
 clap = "2.33.0"
+itertools = "0.9"
 refactor-lib = { path = "../refactor-lib" }
 refactor-lib-types = { path = "../refactor-lib-types" }
 serde = { version = "1.0", features = ["derive"] }

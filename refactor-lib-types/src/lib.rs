@@ -1,26 +1,26 @@
 use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct FileStringReplacement {
-    pub byte_end: u32,
-    pub byte_start: u32,
-    pub char_end: usize,
-    pub char_start: usize,
     pub file_name: String,
-    pub line_end: usize,
     pub line_start: usize,
+    pub char_start: usize,
+    pub line_end: usize,
+    pub char_end: usize,
+    pub byte_start: u32,
+    pub byte_end: u32,
     pub replacement: String
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct RefactoringError {
     pub is_error: bool,
-    pub message: String,
     pub kind: RefactorErrorType,
+    pub message: String,
     pub codes: Vec<String>
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum RefactorErrorType {
     Internal = 0,
     Refactoring = 1,
@@ -36,9 +36,16 @@ pub struct RefactorOutput {
     pub errors: Vec<RefactoringError>
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-pub struct RefactorOutputs {
+pub struct RefactorOutputs { // Single
     pub candidates: Vec<CandidateOutput>,
     pub refactorings: Vec<RefactorOutput>
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct RefactorOutputs2 {
+    pub candidates: Vec<CandidatePosition>,
+    pub changes: Vec<FileStringReplacement>,
+    pub errors: Vec<RefactoringError> // Map<Crate, Err[]>?
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -50,11 +57,49 @@ pub struct CandidateOutput {
     pub errors: Vec<RefactoringError>
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct CandidatePosition {
     pub file: String,
     pub from: u32,
     pub to: u32
+}
+
+impl CandidatePosition {
+    pub fn new(file: &str, from: u32, to: u32) -> Self {
+        Self {
+            file: file.to_string(),
+            from,
+            to
+        }
+    }
+}
+
+impl RefactorOutputs2 {
+    pub fn empty() -> Self {
+        Self::new(vec![], vec![], vec![])
+    }
+    pub fn new(candidates: Vec<CandidatePosition>, changes: Vec<FileStringReplacement>, errors: Vec<RefactoringError>) -> Self {
+        Self {
+            candidates,
+            changes,
+            errors
+        }
+    }
+    pub fn from_error(error: RefactoringError) -> Self {
+        Self::from_errors(vec![error])
+    }
+    pub fn from_errors(errors: Vec<RefactoringError>) -> Self {
+        Self::new(vec![], vec![], errors)
+    }
+    pub fn from_candidates(candidates: Vec<CandidatePosition>) -> Self {
+        Self::new(candidates, vec![], vec![])
+    }
+    pub fn from_change(change: FileStringReplacement) -> Self {
+        Self::from_changes(vec![change])
+    }
+    pub fn from_changes(changes: Vec<FileStringReplacement>) -> Self {
+        Self::new(vec![], changes, vec![])
+    }
 }
 
 impl RefactorOutputs {

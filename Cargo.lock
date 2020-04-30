@@ -304,6 +304,7 @@ version = "0.1.0"
 dependencies = [
  "assert_cmd",
  "clap",
+ "itertools",
  "predicates",
  "refactor-lib",
  "refactor-lib-types",

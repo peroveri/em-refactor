@@ -1,6 +1,7 @@
 use refactor_lib_types::*;
 use clap::{Arg, App, AppSettings, ArgMatches, SubCommand};
 use std::process::Command;
+use itertools::Itertools;
 
 static DRIVER_NAME: &str = "my-refactor-driver";
 
@@ -133,12 +134,17 @@ fn run_single(matches: &ArgMatches, target_dir: Option<&str>) -> Result<(), i32>
 
     if output.status.success() {
         let s = std::str::from_utf8(output.stdout.as_slice()).unwrap();
-        print!("{}", combine_output(s));
-        eprint!("{}", combine_output(std::str::from_utf8(output.stdout.as_slice()).unwrap()));
+        let stdout = 
+        if refactor_args.output_replacements_as_json {
+            combine_output(s)
+        } else {
+            s.to_string()
+        };
+        print!("{}", stdout);
+        eprint!("{}", std::str::from_utf8(output.stderr.as_slice()).unwrap());
         Ok(())
     } else {
-        let s = std::str::from_utf8(output.stderr.as_slice()).unwrap();
-        eprint!("{}", combine_output(s));
+        eprint!("{}", std::str::from_utf8(output.stderr.as_slice()).unwrap());
         Err(output.status.code().unwrap_or(-1))
     }
 }
@@ -237,16 +243,24 @@ fn clean_local_targets(target_dir: Option<&str>) -> Result<Vec<String>, std::io:
 }
 
 fn combine_output(s: &str) -> String {
-    if s.starts_with(r#"{"candidates":"#) {
-        let mut outputs = RefactorOutputs::new();
-        for line in s.split("\n") {
-            if line.trim().len() > 0 {
-                outputs.extend(serde_json::from_str::<RefactorOutputs>(&line).unwrap());
-            }
-        }
-        outputs.sort();
-        format!("{}", serde_json::to_string(&outputs).unwrap())
-    } else {
-        s.to_string()
+
+    let outputs = s
+        .lines()
+        .filter_map(|line|{
+            serde_json::from_str::<RefactorOutputs>(&line).ok()
+        })
+        .collect::<Vec<_>>();
+
+    let mut output2 = RefactorOutputs2::empty();
+
+    for o in outputs {
+        output2.candidates.extend(o.candidates.into_iter().flat_map(|c| c.candidates));    
+        output2.changes.extend(o.refactorings.iter().flat_map(|c| c.replacements.clone()));    
+        output2.errors.extend(o.refactorings.into_iter().flat_map(|c| c.errors));    
     }
+    output2.candidates = output2.candidates.into_iter().unique().sorted().collect::<Vec<_>>();
+    output2.changes = output2.changes.into_iter().unique().sorted().collect::<Vec<_>>();
+    output2.errors = output2.errors.into_iter().filter(|e| e.is_error).unique().sorted().collect::<Vec<_>>();
+
+    serde_json::to_string(&output2).unwrap()
 }
