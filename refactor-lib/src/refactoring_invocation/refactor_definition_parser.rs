@@ -88,7 +88,8 @@ mod test {
                 refactoring: "extract-block".to_owned(),
                 selection: SelectionType::Range("1:2".to_owned()),
                 unsafe_: false,
-                deps: vec![]
+                deps: vec![],
+                add_comment: false
             }
         };
         let expected = Ok(RefactoringArgs {

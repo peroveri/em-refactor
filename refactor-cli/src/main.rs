@@ -72,7 +72,8 @@ fn get_refactor_args(m: &ArgMatches, deps: &[String]) -> RefactorArgs {
         refactoring: m.value_of("refactoring").unwrap().to_string(),
         selection: SelectionType::Range(m.value_of("selection").unwrap().to_string()),
         unsafe_: m.is_present("unsafe"),
-        deps: deps.to_vec()
+        deps: deps.to_vec(),
+        add_comment: false
     }
 }
 fn get_candidate_args(m: &ArgMatches, deps: &[String]) -> CandidateArgs {
@@ -98,22 +99,25 @@ fn process() -> Result<(), i32> {
         }
     }
     let metadata = get_metadata().unwrap();
-    let env_args = serialize_args(&matches, &metadata.dependency_names);
+    let single_file = matches.is_present("single-file");
 
-    run_crate(&metadata, target_dir, matches.is_present("single-file"), env_args)
+    let output = match matches.subcommand() {
+        ("candidates", Some(candidate_matches)) => {
+            let env_args = ("CANDIDATE_ARGS".to_owned(), serde_json::to_string(&get_candidate_args(candidate_matches, &metadata.dependency_names)).unwrap());
+            run_crate(&metadata, target_dir, env_args)?
+        },
+        ("refactor", Some(refactor_matches)) => {
+            
+            run_refactoring(&metadata, get_refactor_args(refactor_matches, &metadata.dependency_names), target_dir)?
+        },
+        (subcommand, _) => panic!("Unexpected subcommand: {:?}", subcommand)
+    };
+
+    print_result(output, single_file)?;
+    Ok(())
 }
 
-fn serialize_args(m: &ArgMatches, deps: &[String]) -> (String, String) {
-    if let Some(subcommand_matches) = m.subcommand_matches("candidates") {
-        ("CANDIDATE_ARGS".to_owned(), serde_json::to_string(&get_candidate_args(subcommand_matches, deps)).unwrap())
-    } else if let Some(subcommand_matches) = m.subcommand_matches("refactor") {
-        ("REFACTORING_ARGS".to_owned(), serde_json::to_string(&get_refactor_args(subcommand_matches, deps)).unwrap())
-    } else {
-        panic!("Unexpected subcommand: {:?}", m.subcommand_name());
-    }
-}
-
-fn run_crate(metadata: &Metadata, target_dir: Option<&str>, single_file: bool, env_args: (String, String)) -> Result<(), i32> {
+fn run_crate(metadata: &Metadata, target_dir: Option<&str>, env_args: (String, String)) -> Result<RefactorOutputs2, i32> {
     let mut path = std::env::current_exe()
         .expect("current executable path invalid")
         .with_file_name(DRIVER_NAME);
@@ -142,11 +146,8 @@ fn run_crate(metadata: &Metadata, target_dir: Option<&str>, single_file: bool, e
     
     if output.status.success() {
         let s = std::str::from_utf8(output.stdout.as_slice()).unwrap();
-        let refactor_output = combine_output(s);
         
-        print_result(refactor_output, std::str::from_utf8(output.stderr.as_slice()).unwrap(), single_file)?;
-        
-        Ok(())
+        Ok(combine_output(s))
     } else {
         let s = std::str::from_utf8(output.stderr.as_slice()).unwrap();
         eprint!("{}", s);
@@ -154,7 +155,32 @@ fn run_crate(metadata: &Metadata, target_dir: Option<&str>, single_file: bool, e
     }
 }
 
-fn print_result(output: RefactorOutputs2, stderr: &str, single_file: bool) -> Result<(), i32> {
+fn run_refactoring(metadata: &Metadata, mut refactor_args: RefactorArgs, target_dir: Option<&str>) -> Result<RefactorOutputs2, i32> {
+    match refactor_args.refactoring.as_ref() {
+        "extract-method" => {
+            refactor_args.add_comment = true;
+            let micro_refa = &[("pull-up-item-declarations", ""), ("extract-block", "puid:stmts"), ("introduce-closure", "eb:block"), ("close-over-variables", "ic:call-expr"), ("convert-closure-to-function", "ic:call-expr")];
+            let mut out = RefactorOutputs2::empty();
+            for (refactoring, comment) in micro_refa {
+
+                refactor_args.refactoring = refactoring.to_string();
+                
+                let env_args = ("REFACTORING_ARGS".to_owned(), serde_json::to_string(&refactor_args).unwrap());
+                out = run_crate(metadata, target_dir, env_args)?;
+
+                refactor_args.selection = SelectionType::Comment(comment.to_string());
+            }
+            Ok(out)
+        },
+        _ => {
+
+            let env_args = ("REFACTORING_ARGS".to_owned(), serde_json::to_string(&refactor_args).unwrap());
+            run_crate(metadata, target_dir, env_args)
+        }
+    }
+}
+
+fn print_result(output: RefactorOutputs2, single_file: bool) -> Result<(), i32> {
     if single_file {
         if output.errors.is_empty() {
             print!("{}", get_file_content_with_changes(output));
@@ -164,7 +190,6 @@ fn print_result(output: RefactorOutputs2, stderr: &str, single_file: bool) -> Re
         }
     } else {
         print!("{}", serde_json::to_string(&output).unwrap());
-        eprint!("{}", std::str::from_utf8(stderr.as_bytes()).unwrap());
     }
     Ok(())
 }
@@ -248,14 +273,9 @@ fn combine_output(s: &str) -> RefactorOutputs2 {
 }
 
 fn get_file_content_with_changes(refactor_output: RefactorOutputs2) -> String {
-    get_file_content(&refactor_output.changes).unwrap()
-}
-
-
-pub fn get_file_content(changes: &[FileStringReplacement]) -> Option<String> {
     use std::fs::File;
     use std::io::prelude::*;
-    let mut changes = changes.to_vec();
+    let mut changes = refactor_output.changes.to_vec();
     changes.sort_by_key(|c| c.byte_start);
     changes.reverse();
 
@@ -269,5 +289,5 @@ pub fn get_file_content(changes: &[FileStringReplacement]) -> Option<String> {
         content = format!("{}{}{}", s1, change.replacement, s2);
     }
 
-    return Some(content);
+    content
 }

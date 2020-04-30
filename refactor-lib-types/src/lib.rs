@@ -151,7 +151,8 @@ pub struct RefactorArgs {
     pub selection: SelectionType,
     pub file: String,
     pub unsafe_: bool,
-    pub deps: Vec<String>
+    pub deps: Vec<String>,
+    pub add_comment: bool
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CandidateArgs {

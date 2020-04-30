@@ -158,7 +158,8 @@ pub fn assert_success(prog: TokenStream, refactoring: &str, span: (u32, u32), ex
             refactoring: format!("{}", refactoring),
             selection: SelectionType::Range(format!("{}:{}", span.0, span.1)),
             unsafe_: false,
-            deps: vec![]
+            deps: vec![],
+            add_comment: false
         }
     ).unwrap();
 
@@ -178,7 +179,8 @@ pub fn assert_err(prog: TokenStream, refactoring: &str, span: (u32, u32), expect
             refactoring: format!("{}", refactoring),
             selection: SelectionType::Range(format!("{}:{}", span.0, span.1)),
             unsafe_: false,
-            deps: vec![]
+            deps: vec![],
+            add_comment: false
         }
     ).unwrap();
 
