@@ -1,7 +1,6 @@
 use assert_cmd::prelude::*;
 use std::process::Command;
 use tempfile::TempDir;
-use refactor_lib_types::*;
 
 pub const SINGLE_FILE_ARG: &str = "--workspace-root=../refactor-examples/crates/single_file";
 pub const WORKSPACE_ARG: &str = "--workspace-root=../refactor-examples/crates/hello_world";
@@ -25,27 +24,4 @@ pub fn create_tmp_dir() -> TempDir {
         tmp_dir_path.to_str().unwrap_or("")
     );
     tmp_dir
-}
-
-pub fn create_output(crate_name: &str, is_test: bool, replacement: &FileStringReplacement) -> RefactorOutput {
-    RefactorOutput {
-        crate_name: crate_name.to_owned(),
-        is_test: is_test,
-        replacements: vec![replacement.clone()],
-        errors: vec![]
-    }
-}
-
-pub fn create_output_err(crate_name: &str, is_test: bool, is_error: bool, message: &str) -> RefactorOutput {
-    RefactorOutput {
-        crate_name: crate_name.to_owned(),
-        is_test: is_test,
-        replacements: vec![],
-        errors: vec![RefactoringError {
-            is_error,
-            message: message.to_string(),
-            kind: RefactorErrorType::Internal,
-            codes: vec![]
-        }]
-    }
 }

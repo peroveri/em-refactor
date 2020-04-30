@@ -35,30 +35,27 @@ impl ExperimentsRunner {
             error!("repo has changes");
             return Ok(());
         }
+        let refactoring = self.refactorings[0].clone();
         self.report.set_test_result(self.cmd_runner.run_unit_tests()?);
-        self.report.set_candidates(self.cmd_runner.query_candidates(&self.refactorings[0])?.candidates);
+        self.report.set_candidates(self.cmd_runner.query_candidates(&refactoring)?.candidates);
 
-        for candidates_crate in self.report.candidates.clone().iter().filter(|c| !c.is_test) {
-            for candidate in &candidates_crate.candidates {
-                self.run_candidate_refactoring(candidate, &candidates_crate.refactoring)?;
-            }
+        for candidate in self.report.candidates.clone() {
+            self.run_candidate_refactoring(candidate, &refactoring)?;
         }
         Ok(())
     }
 
-    fn run_candidate_refactoring(&mut self, candidate: &CandidatePosition, refactoring: &str) -> std::io::Result<()> {
+    fn run_candidate_refactoring(&mut self, candidate: CandidatePosition, refactoring: &str) -> std::io::Result<()> {
         let mut stopwatch = Stopwatch::start("run_candidate_refactoring".to_owned());
-        let changes = self.cmd_runner.refactor(candidate, refactoring)?;
-        let err = changes.refactorings.iter()
-            .find_map(|r| r.errors.iter().find(|e| e.is_error));
+        let changes = self.cmd_runner.refactor(&candidate, refactoring)?;
         
-        if let Some(err) = err {
+        if let Some(err) = changes.errors.first() {
             self.report.add_err(candidate.clone(), err.clone());
         } else {
             self.cmd_runner.apply_changes(changes)?;
             let next_test_result = self.cmd_runner.run_unit_tests()?;
             if !next_test_result.eq(&self.report.test_result) {
-                self.report.unit_err.push((candidate.clone(), next_test_result));
+                self.report.add_unittest_err(candidate.clone(), next_test_result);
             } else {
                 self.report.add_successful(candidate.clone());
             }

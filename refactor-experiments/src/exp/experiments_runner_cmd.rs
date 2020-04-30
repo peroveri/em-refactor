@@ -3,7 +3,7 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::process::Command;
 use tempfile::TempDir;
-use refactor_lib_types::{CandidatePosition, RefactorOutputs};
+use refactor_lib_types::{CandidatePosition, RefactorOutputs2};
 use super::TestResults;
 use itertools::Itertools;
 use log::info;
@@ -51,7 +51,7 @@ impl CmdRunner {
         assert!(out.status.success());
         Ok(())
     }
-    pub fn query_candidates(&self, refactoring: &str) -> std::io::Result<RefactorOutputs> {
+    pub fn query_candidates(&self, refactoring: &str) -> std::io::Result<RefactorOutputs2> {
         let output = 
             Command::new(&self.tool_path)
                 .current_dir(&self.crate_path)
@@ -68,7 +68,7 @@ impl CmdRunner {
 
         Ok(serde_json::from_str(s).unwrap())
     }
-    pub fn refactor(&self, candidate: &CandidatePosition, refactoring: &str) -> std::io::Result<RefactorOutputs> {
+    pub fn refactor(&self, candidate: &CandidatePosition, refactoring: &str) -> std::io::Result<RefactorOutputs2> {
         let output = Command::new(&self.tool_path)
             .current_dir(&self.crate_path)
             .arg("--target-dir=target/refactorings")
@@ -85,13 +85,9 @@ impl CmdRunner {
         let stdout = std::str::from_utf8(output.stdout.as_slice()).unwrap();
         Ok(serde_json::from_str(stdout).unwrap())
     }
-    pub fn apply_changes(&self, changes: RefactorOutputs) -> std::io::Result<()> {
+    pub fn apply_changes(&self, output: RefactorOutputs2) -> std::io::Result<()> {
         
-        let replacements = changes.refactorings.iter()
-            .flat_map(|r| &r.replacements).collect::<Vec<_>>();
-        let r = replacements.iter().unique().collect::<Vec<_>>();
-
-        for (file_path, changes) in &r.into_iter().group_by(|a| a.file_name.clone()) {
+        for (file_path, changes) in &output.changes.into_iter().group_by(|a| a.file_name.clone()) {
 
             let mut changes = changes.collect::<Vec<_>>();
             changes.sort_by_key(|c| c.byte_start);
