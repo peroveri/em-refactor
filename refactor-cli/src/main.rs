@@ -66,19 +66,19 @@ pub fn main() {
     }
 }
 
-fn get_refactor_args(m: &ArgMatches, deps: Vec<String>) -> RefactorArgs {
+fn get_refactor_args(m: &ArgMatches, deps: &[String]) -> RefactorArgs {
     RefactorArgs {
         file: m.value_of("file").unwrap().to_string(),
         refactoring: m.value_of("refactoring").unwrap().to_string(),
         selection: SelectionType::Range(m.value_of("selection").unwrap().to_string()),
         unsafe_: m.is_present("unsafe"),
-        deps
+        deps: deps.to_vec()
     }
 }
-fn get_candidate_args(m: &ArgMatches, deps: Vec<String>) -> CandidateArgs {
+fn get_candidate_args(m: &ArgMatches, deps: &[String]) -> CandidateArgs {
     CandidateArgs {
         refactoring: m.value_of("refactoring").unwrap().to_string(),
-        deps
+        deps: deps.to_vec()
     }
 }
 
@@ -97,11 +97,13 @@ fn process() -> Result<(), i32> {
             return Err(1);
         }
     }
+    let metadata = get_metadata().unwrap();
+    let env_args = serialize_args(&matches, &metadata.dependency_names);
 
-    run_crate(&matches, target_dir)
+    run_crate(&metadata, target_dir, matches.is_present("single-file"), env_args)
 }
 
-fn serialize_args(m: &ArgMatches, deps: Vec<String>) -> (String, String) {
+fn serialize_args(m: &ArgMatches, deps: &[String]) -> (String, String) {
     if let Some(subcommand_matches) = m.subcommand_matches("candidates") {
         ("CANDIDATE_ARGS".to_owned(), serde_json::to_string(&get_candidate_args(subcommand_matches, deps)).unwrap())
     } else if let Some(subcommand_matches) = m.subcommand_matches("refactor") {
@@ -111,7 +113,7 @@ fn serialize_args(m: &ArgMatches, deps: Vec<String>) -> (String, String) {
     }
 }
 
-fn run_crate(matches: &ArgMatches, target_dir: Option<&str>) -> Result<(), i32> {
+fn run_crate(metadata: &Metadata, target_dir: Option<&str>, single_file: bool, env_args: (String, String)) -> Result<(), i32> {
     let mut path = std::env::current_exe()
         .expect("current executable path invalid")
         .with_file_name(DRIVER_NAME);
@@ -129,8 +131,7 @@ fn run_crate(matches: &ArgMatches, target_dir: Option<&str>) -> Result<(), i32> 
     // might be fixed?
     // https://github.com/rust-lang/cargo/issues/7490
     //
-    let deps = clean_local_targets(target_dir).unwrap();
-    let env_args = serialize_args(matches, deps);
+    clean_local_targets(metadata, target_dir).unwrap();
 
     let output = Command::new("cargo")
         .args(&args)
@@ -142,18 +143,9 @@ fn run_crate(matches: &ArgMatches, target_dir: Option<&str>) -> Result<(), i32> 
     if output.status.success() {
         let s = std::str::from_utf8(output.stdout.as_slice()).unwrap();
         let refactor_output = combine_output(s);
-
-        if matches.is_present("single-file") {
-            if refactor_output.errors.is_empty() {
-                print!("{}", get_file_content_with_changes(refactor_output));
-            } else {
-                eprint!("{}", refactor_output.errors.iter().map(|e| format!("{:?}\n{}\n", e.kind, e.message)).join("\n"));
-                return Err(-1);
-            }
-        } else {
-            print!("{}", serde_json::to_string(&refactor_output).unwrap());
-            eprint!("{}", std::str::from_utf8(output.stderr.as_slice()).unwrap());
-        }
+        
+        print_result(refactor_output, std::str::from_utf8(output.stderr.as_slice()).unwrap(), single_file)?;
+        
         Ok(())
     } else {
         let s = std::str::from_utf8(output.stderr.as_slice()).unwrap();
@@ -162,14 +154,44 @@ fn run_crate(matches: &ArgMatches, target_dir: Option<&str>) -> Result<(), i32> 
     }
 }
 
+fn print_result(output: RefactorOutputs2, stderr: &str, single_file: bool) -> Result<(), i32> {
+    if single_file {
+        if output.errors.is_empty() {
+            print!("{}", get_file_content_with_changes(output));
+        } else {
+            eprint!("{}", output.errors.iter().map(|e| format!("{:?}\n{}\n", e.kind, e.message)).join("\n"));
+            return Err(-1);
+        }
+    } else {
+        print!("{}", serde_json::to_string(&output).unwrap());
+        eprint!("{}", std::str::from_utf8(stderr.as_bytes()).unwrap());
+    }
+    Ok(())
+}
+
 // from Rerast
 // Queries cargo to find the name of the current crate, then runs cargo clean to
 // clean up artifacts for that package (but not dependencies). This is necessary
 // in order to ensure that all the files in the current crate actually get built
 // when we run cargo check. Hopefully eventually there'll be a nicer way to
 // integrate with cargo such that we won't need to do this.
-fn clean_local_targets(target_dir: Option<&str>) -> Result<Vec<String>, std::io::Error> {
-    let mut deps = vec![];
+fn clean_local_targets(metadata: &Metadata, target_dir: Option<&str>) -> Result<(), std::io::Error> {
+    for name in &metadata.package_names {
+        let mut args = vec!["clean".to_owned(), "--package".to_owned(), name.to_string()];
+        if let Some(dir) = &target_dir {
+            args.push(format!("--target-dir={}", dir));
+        }
+        std::process::Command::new("cargo").args(args).status()?;
+    }
+    Ok(())
+}
+
+struct Metadata {
+    package_names: Vec<String>,
+    dependency_names: Vec<String>
+}
+fn get_metadata() -> Result<Metadata, std::io::Error> {
+    let mut metadata = Metadata {package_names: vec![], dependency_names: vec![]};
     let output = std::process::Command::new("cargo")
         .args(vec!["metadata", "--no-deps", "--format-version=1"])
         .stdout(std::process::Stdio::piped())
@@ -186,32 +208,20 @@ fn clean_local_targets(target_dir: Option<&str>) -> Result<Vec<String>, std::io:
     };
     for package in parsed["packages"].as_array().unwrap() {
         if let Some(name) = package["name"].as_str() {
-            // // TODO: Remove once #10 is fixed.
-            // if std::env::var("RERAST_FULL_CARGO_CLEAN") == Ok("1".to_string()) {
-            //     std::process::Command::new("cargo")
-            //         .args(vec!["clean"])
-            //         .status()?;
-            // } else {
-            let mut args = vec!["clean".to_owned(), "--package".to_owned(), name.to_string()];
-            if let Some(dir) = &target_dir {
-                args.push(format!("--target-dir={}", dir));
-            }
-            std::process::Command::new("cargo").args(args).status()?;
+            metadata.package_names.push(name.to_string());
 
             if let Some(arr) = package["dependencies"].as_array() {
                 for dep in arr {
                     if let Some(dep_name) = dep["name"].as_str().map(|s| s.to_string()) {
-                        if !deps.contains(&dep_name) {
-                            deps.push(dep_name);
+                        if !metadata.dependency_names.contains(&dep_name) {
+                            metadata.dependency_names.push(dep_name.to_string());
                         }
                     }
                 }
             }
-
-            // }
         }
     }
-    Ok(deps)
+    Ok(metadata)
 }
 
 fn combine_output(s: &str) -> RefactorOutputs2 {
