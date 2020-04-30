@@ -1,0 +1,11 @@
+{
+    "file": "example_1.rs",
+    "args": {
+        "refactoring": "extract-method",
+        "selection": "16:42"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "example_1_after.rs"
+    }
+}
