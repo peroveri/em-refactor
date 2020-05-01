@@ -143,6 +143,7 @@ fn run_crate(metadata: &Metadata, target_dir: Option<&str>, env_args: (String, S
         .env("RUSTC_WRAPPER", path)
         .env(env_args.0, env_args.1)
         .stdout(std::process::Stdio::piped())
+        // .stderr(std::process::Stdio::piped())
         .output().unwrap();
     
     if output.status.success() {
@@ -210,13 +211,21 @@ fn print_result(output: RefactorOutputs2, single_file: bool) -> Result<(), i32> 
 // in order to ensure that all the files in the current crate actually get built
 // when we run cargo check. Hopefully eventually there'll be a nicer way to
 // integrate with cargo such that we won't need to do this.
-fn clean_local_targets(metadata: &Metadata, target_dir: Option<&str>) -> Result<(), std::io::Error> {
+fn clean_local_targets(metadata: &Metadata, target_dir: Option<&str>) -> Result<(), i32> {
     for name in &metadata.package_names {
-        let mut args = vec!["clean".to_owned(), "--package".to_owned(), name.to_string()];
+        let mut args = vec!["+nightly-2020-04-15".to_owned(), "clean".to_owned(), "--package".to_owned(), name.to_string()];
         if let Some(dir) = &target_dir {
             args.push(format!("--target-dir={}", dir));
         }
-        std::process::Command::new("cargo").args(args).status()?;
+        // TODO: error handling
+        let out = std::process::Command::new("cargo")
+            .args(args)
+            // .stdout(std::process::Stdio::piped())
+            // .stderr(std::process::Stdio::piped())
+            .output().map_err(|_| -1)?;
+        if !out.status.success() {
+            return Err(-2);
+        }
     }
     Ok(())
 }
