@@ -36,7 +36,8 @@ export class ShellService {
             return result;
         }
         if (result.code === 0) {
-            this.notifications.logInfo(JSON.stringify(result));
+            this.notifications.logInfo(`\nstdout: ${result.stdout}`);
+            this.notifications.logInfo(`\nstderr: ${result.stderr}`);
         } else {
             this.notifications.logError(`Got error code: ${result.code}`);
             this.notifications.logError(result.stdout);
