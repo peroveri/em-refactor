@@ -160,8 +160,8 @@ fn run_refactoring(metadata: &Metadata, mut refactor_args: RefactorArgs, target_
         "extract-method" => {
             refactor_args.add_comment = true;
             let micro_refa = &[
-                ("pull-up-item-declarations", ""), 
-                ("extract-block", "pull-up-item-declarations.stmt")/*, 
+                ("pull-up-item-declaration", ""), 
+                ("extract-block", "pull-up-item-declaration.stmts")/*, 
                 ("introduce-closure", "extract-block.block"), 
                 ("close-over-variables", "ic:call-expr"), 
                 ("convert-closure-to-function", "ic:call-expr")*/];
@@ -178,6 +178,11 @@ fn run_refactoring(metadata: &Metadata, mut refactor_args: RefactorArgs, target_
                 let out = run_crate(metadata, target_dir, env_args)?;
                 if let Some(changes) = out.changes.first() {
                     combined.changes.push(changes.clone());
+                }
+                combined.errors.extend(out.errors);
+
+                if !combined.errors.is_empty() {
+                    break;
                 }
             }
             Ok(combined)

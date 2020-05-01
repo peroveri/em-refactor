@@ -65,7 +65,7 @@ impl RefactoringErrorInternal {
         Self::new_int(InternalErrorCodes::BadFormatOnInput, s.to_string())
     }
     pub fn compile_err() -> Self {
-        Self::new_int(InternalErrorCodes::CompileErr, "".to_string())
+        Self::new_int(InternalErrorCodes::CompileErr, "Compile err".to_string())
     }
     pub fn recompile_err(s: &str, codes: Vec<String>) -> Self {
         Self::new(InternalErrorCodes::ReCompileErr, s.to_string(), codes)
