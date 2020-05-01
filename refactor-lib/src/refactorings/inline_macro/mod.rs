@@ -3,7 +3,7 @@ use crate::refactoring_invocation::{AstContext, AstDiff, QueryResult, Refactorin
 use super::utils::map_change_from_span;
 use super::visitors::collect_inline_macro;
 
-pub fn do_refactoring(ast: &AstContext, span: Span) -> QueryResult<AstDiff>{
+pub fn do_refactoring(ast: &AstContext, span: Span, _: bool) -> QueryResult<AstDiff>{
 
     let crate_ = ast.get_crate();
 

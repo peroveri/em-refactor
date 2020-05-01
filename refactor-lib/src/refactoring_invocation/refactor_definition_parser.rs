@@ -20,11 +20,11 @@ pub fn argument_list_to_refactor_def(args: RefactorArgs) -> QueryResult<Query<As
     }
 }
 
-fn to_ast_query(args: RefactorArgs, f: Box<dyn Fn(&AstContext, Span) -> QueryResult<AstDiff> + Send>) -> Query<AstDiff> {
+fn to_ast_query(args: RefactorArgs, f: Box<dyn Fn(&AstContext, Span, bool) -> QueryResult<AstDiff> + Send>) -> Query<AstDiff> {
     let args = args.clone();
     Query::AfterExpansion(Box::new(move |ast| {
         let span = ast.source().map_selection_to_span(args.selection.clone(), args.file.clone())?;
-        f(ast, span)
+        f(ast, span, args.add_comment)
     }))
 }
 

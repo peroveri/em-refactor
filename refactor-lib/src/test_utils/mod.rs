@@ -146,6 +146,7 @@ fn set_main_rs(path: &Path, content: &str) -> std::io::Result<()> {
     file.write_all(content.as_bytes())?;
     Ok(())
 }
+#[derive(Clone)]
 pub struct TestInit {
     add_comment: bool,
     program: String,
@@ -160,6 +161,11 @@ impl TestInit {
             refactoring: refactoring.to_string(),
             selection_type: SelectionType::Comment("test-id".to_string())
         }
+    }
+    pub fn with_add_comment(&self) -> Self {
+        let mut ret = self.clone();
+        ret.add_comment = true;
+        ret
     }
 }
 pub fn run_refactoring(init: TestInit) -> QueryResult<String>  {

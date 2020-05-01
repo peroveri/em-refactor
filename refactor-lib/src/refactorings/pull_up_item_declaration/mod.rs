@@ -6,7 +6,7 @@ use rustc_span::{BytePos, Span};
 /// Given a selection within a block, contiguous statements (0..n) and an expression (0|1)
 /// It should pull up item declarations occuring at this block level
 /// These item declarations can only be found in the selection of statements (if they are item decls.)
-pub fn do_refactoring(context: &AstContext, span: Span) -> QueryResult<AstDiff> {
+pub fn do_refactoring(context: &AstContext, span: Span, add_comment: bool) -> QueryResult<AstDiff> {
     let block = collect_innermost_block(context, span)?;
 
     let items = filter_items(&block.stmts);
@@ -28,6 +28,10 @@ pub fn do_refactoring(context: &AstContext, span: Span) -> QueryResult<AstDiff> 
             "".to_owned(),
         ));
     }
+    if add_comment {
+        res.push(context.map_change(span.shrink_to_lo(), "/*refactor-tool:pull-up-item-declaration.stmts:start*/".to_owned()));
+        res.push(context.map_change(span.shrink_to_hi(), "/*refactor-tool:pull-up-item-declaration.stmts:end*/".to_owned()));
+    }
     Ok(AstDiff(res))
 }
 
@@ -48,16 +52,43 @@ mod test {
     const NAME: &str = "pull-up-item-declaration";
 
     #[test]
-    fn pull_up_item_declaration_invalid_selection() {
+    fn invalid_selection() {
+        let input = r#"fn /*refactor-tool:test-id:start*/foo()/*refactor-tool:test-id:end*/ { }"#;
         let expected = Err(RefactoringErrorInternal::invalid_selection_with_code(34, 39, "foo()"));
         
-        let actual = run_refactoring(TestInit::from_refactoring(
-            r#"fn /*refactor-tool:test-id:start*/foo()/*refactor-tool:test-id:end*/ { }"#, NAME));
+        let actual = run_refactoring(TestInit::from_refactoring(input, NAME));
         
         assert_eq!(actual, expected);
     }
+
+    #[test]
+    fn outputs_comment() {
+        let input = r#"fn foo() {
+    /*refactor-tool:test-id:start*/
+    bar();
+    fn bar() {}
+    /*refactor-tool:test-id:end*/    
+}"#;
+        let expected = Ok(r#"fn foo() {
+    /*refactor-tool:test-id:start*/fn bar() {}/*refactor-tool:pull-up-item-declaration.stmts:start*/
+    bar();
+    
+    /*refactor-tool:pull-up-item-declaration.stmts:end*//*refactor-tool:test-id:end*/    
+}"#.to_string());
+
+        let actual = run_refactoring(TestInit::from_refactoring(input, NAME).with_add_comment());
+
+        assert_eq!(actual, expected)
+    }
+
     #[test]
     fn selects_from_comment() {
+        let input = r#"fn foo() {
+    /*refactor-tool:test-id:start*/
+    bar();
+    fn bar() {}
+    /*refactor-tool:test-id:end*/    
+}"#;
         let expected = Ok(r#"fn foo() {
     /*refactor-tool:test-id:start*/fn bar() {}
     bar();
@@ -65,13 +96,7 @@ mod test {
     /*refactor-tool:test-id:end*/    
 }"#.to_string());
 
-        let actual = run_refactoring(TestInit::from_refactoring(
-r#"fn foo() {
-    /*refactor-tool:test-id:start*/
-    bar();
-    fn bar() {}
-    /*refactor-tool:test-id:end*/    
-}"#, NAME));
+        let actual = run_refactoring(TestInit::from_refactoring(input, NAME));
 
         assert_eq!(actual, expected)
     }
