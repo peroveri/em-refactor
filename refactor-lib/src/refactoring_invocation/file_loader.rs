@@ -9,7 +9,7 @@ use refactor_lib_types::FileStringReplacement;
 #[derive(Clone)]
 pub struct InMemoryFileLoader<T: FileLoader + Send + Sync> {
     inner_file_loader: T,
-    changes: Vec<FileStringReplacement>
+    changes: Vec<Vec<FileStringReplacement>>
 }
 impl<T: FileLoader + Send + Sync> InMemoryFileLoader<T> {
     pub fn new(inner: T) -> InMemoryFileLoader<T> {
@@ -19,7 +19,7 @@ impl<T: FileLoader + Send + Sync> InMemoryFileLoader<T> {
         }
     }
 
-    pub fn add_changes(&mut self, changes: Vec<FileStringReplacement>) {
+    pub fn add_changes(&mut self, changes: Vec<Vec<FileStringReplacement>>) {
         self.changes.extend(changes);
     }
 }
@@ -34,16 +34,18 @@ impl<T: FileLoader + Send + Sync> FileLoader for InMemoryFileLoader<T> {
     }
 
     fn read_file(&self, path: &Path) -> io::Result<String> {
-
         let mut content = self.inner_file_loader.read_file(path)?;
-        let mut changes =  self.changes.clone();
-        changes.sort_by_key(|c| c.byte_start);
-        changes.reverse();
-        for change in changes {
-            if change.file_name == path.file_name().unwrap().to_str().unwrap() || change.file_name == path.to_str().unwrap() {
-                let s1 = &content[..(change.byte_start) as usize];
-                let s2 = &content[(change.byte_end) as usize..];
-                content = format!("{}{}{}", s1, change.replacement, s2);
+
+        for changes in &self.changes {
+            let mut changes =  changes.clone();
+            changes.sort_by_key(|c| c.byte_start);
+            changes.reverse();
+            for change in changes {
+                if change.file_name == path.file_name().unwrap().to_str().unwrap() || change.file_name == path.to_str().unwrap() {
+                    let s1 = &content[..(change.byte_start) as usize];
+                    let s2 = &content[(change.byte_end) as usize..];
+                    content = format!("{}{}{}", s1, change.replacement, s2);
+                }
             }
         }
 

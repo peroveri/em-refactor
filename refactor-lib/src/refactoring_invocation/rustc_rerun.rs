@@ -43,13 +43,13 @@ impl rustc_driver::Callbacks for CollectRustcErrorsCallbacks {
             DiagnosticOutput::Raw(Box::new(self.0.clone()));
     }
 }
-pub fn rustc_rerun(changes: &Vec<FileStringReplacement>, rustc_args: &[String]) -> Result<(), RefactoringErrorInternal> {
+pub fn rustc_rerun(changes: Vec<Vec<FileStringReplacement>>, rustc_args: &[String]) -> Result<(), RefactoringErrorInternal> {
     let mut default = CollectRustcErrorsCallbacks(StorageDiagnosticOutput::new());
 
     let mut file_loader = Box::new(InMemoryFileLoader::new(
         rustc_span::source_map::RealFileLoader,
     ));
-    file_loader.add_changes(changes.clone());
+    file_loader.add_changes(changes);
 
     let mut rustc_args = rustc_args
         .into_iter()

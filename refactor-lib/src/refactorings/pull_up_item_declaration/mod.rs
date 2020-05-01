@@ -49,6 +49,7 @@ fn filter_stmts_in_span<'a>(stmts: &[&'a Stmt], span: Span) -> Vec<&'a Stmt> {
 mod test {
     use crate::refactoring_invocation::RefactoringErrorInternal;
     use crate::test_utils::{run_refactoring, TestInit};
+    use refactor_lib_types::FileStringReplacement;
     const NAME: &str = "pull-up-item-declaration";
 
     #[test]
@@ -97,6 +98,31 @@ mod test {
 }"#.to_string());
 
         let actual = run_refactoring(TestInit::from_refactoring(input, NAME));
+
+        assert_eq!(actual, expected)
+    }
+
+    #[test]// This test should probably be somewhere else
+    fn with_changes() {
+        let input = r#"fn foo() {}"#;
+        let expected = Ok(r#"fn foo() {
+    fn bar() {}
+    bar();
+}"#.to_string());
+        let changes = vec![vec![
+            FileStringReplacement {
+                file_name: "src/main.rs".to_owned(),
+                line_start: 0,
+                char_start: 0,
+                line_end: 0,
+                char_end: 0,
+                byte_start: 10,
+                byte_end: 10,
+                replacement: "/*refactor-tool:test-id:start*/    bar()\n    fn bar() {}/*refactor-tool:test-id:end*/".to_owned()
+            }
+        ]];
+
+        let actual = run_refactoring(TestInit::from_refactoring(input, NAME).with_changes(changes));
 
         assert_eq!(actual, expected)
     }

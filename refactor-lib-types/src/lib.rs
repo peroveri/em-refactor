@@ -152,7 +152,8 @@ pub struct RefactorArgs {
     pub file: String,
     pub unsafe_: bool,
     pub deps: Vec<String>,
-    pub add_comment: bool
+    pub add_comment: bool,
+    pub with_changes: Vec<Vec<FileStringReplacement>>
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct CandidateArgs {

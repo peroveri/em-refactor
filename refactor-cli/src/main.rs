@@ -73,7 +73,8 @@ fn get_refactor_args(m: &ArgMatches, deps: &[String]) -> RefactorArgs {
         selection: SelectionType::Range(m.value_of("selection").unwrap().to_string()),
         unsafe_: m.is_present("unsafe"),
         deps: deps.to_vec(),
-        add_comment: false
+        add_comment: false,
+        with_changes: vec![]
     }
 }
 fn get_candidate_args(m: &ArgMatches, deps: &[String]) -> CandidateArgs {
@@ -173,6 +174,7 @@ fn run_refactoring(metadata: &Metadata, mut refactor_args: RefactorArgs, target_
                 }
 
                 refactor_args.refactoring = refactoring.to_string();
+                refactor_args.with_changes = combined.changes.clone();
                 
                 let env_args = ("REFACTORING_ARGS".to_owned(), serde_json::to_string(&refactor_args).unwrap());
                 let out = run_crate(metadata, target_dir, env_args)?;

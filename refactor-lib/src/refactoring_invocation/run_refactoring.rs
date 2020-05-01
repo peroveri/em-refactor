@@ -1,5 +1,5 @@
 use refactor_lib_types::{FileStringReplacement, RefactorArgs};
-use crate::refactoring_invocation::{arg_value, argument_list_to_refactor_def, AstDiff, from_error, from_success, MyRefactorCallbacks, QueryResult, RefactoringErrorInternal, rustc_rerun, serialize};
+use crate::refactoring_invocation::{arg_value, argument_list_to_refactor_def, AstDiff, from_error, from_success, MyRefactorCallbacks, QueryResult, RefactoringErrorInternal, rustc_rerun, serialize, InMemoryFileLoader};
 
 pub fn run_refactoring_and_output_result(refactor_args: &RefactorArgs, rustc_args: Vec<String>) -> Result<(), i32> {
     
@@ -20,7 +20,9 @@ fn run_refactoring(refactor_args: &RefactorArgs, rustc_args: &Vec<String>) -> Qu
     // 2. Rerun the compiler to check if any errors were introduced
     // Runs with default callbacks
     if !refactor_args.unsafe_ && !refactor_res.0.is_empty() {
-        rustc_rerun(&refactor_res.0, &rustc_args)?;
+        let mut combined = refactor_args.with_changes.clone();
+        combined.push(refactor_res.0.clone());
+        rustc_rerun(combined, &rustc_args)?;
     }
 
     Ok(refactor_res)
@@ -36,10 +38,15 @@ fn run_refactoring_internal(rustc_args: &[String], refactor_args: &RefactorArgs)
 
     std::env::set_var("RUST_BACKTRACE", "1");
 
+    let mut file_loader = Box::new(InMemoryFileLoader::new(
+        rustc_span::source_map::RealFileLoader,
+    ));
+    file_loader.add_changes(refactor_args.with_changes.clone());
+
     let emitter = Box::new(Vec::new());
     // TODO: looks like the errors are not caught here?
     // Should set own errors on the Callbacks struct
-    let err = rustc_driver::run_compiler(&rustc_args, callbacks, None, Some(emitter));
+    let err = rustc_driver::run_compiler(&rustc_args, callbacks, Some(file_loader), Some(emitter));
     // let err = rustc_driver::catch_fatal_errors(|| {
     //     rustc_driver::run_compiler(&rustc_args, callbacks, None, Some(emitter))
     // });

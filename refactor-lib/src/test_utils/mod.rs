@@ -7,7 +7,7 @@ use quote::__private::TokenStream;
 use rustc_span::{BytePos, Span};
 use tempfile::TempDir;
 use crate::refactoring_invocation::{argument_list_to_refactor_def, AstContext, get_sys_root, MyRefactorCallbacks, Query, QueryResult, RefactoringErrorInternal, TyContext};
-use refactor_lib_types::{RefactorArgs, SelectionType};
+use refactor_lib_types::{FileStringReplacement, RefactorArgs, SelectionType};
 
 /**
  * Function that can be used to run unit tests.
@@ -152,6 +152,7 @@ pub struct TestInit {
     program: String,
     refactoring: String,
     selection_type: SelectionType,
+    with_changes: Vec<Vec<FileStringReplacement>>
 }
 impl TestInit {
     pub fn from_refactoring(program: &str, refactoring: &str) -> Self {
@@ -159,12 +160,18 @@ impl TestInit {
             add_comment: false,
             program: program.to_string(),
             refactoring: refactoring.to_string(),
-            selection_type: SelectionType::Comment("test-id".to_string())
+            selection_type: SelectionType::Comment("test-id".to_string()),
+            with_changes: vec![]
         }
     }
     pub fn with_add_comment(&self) -> Self {
         let mut ret = self.clone();
         ret.add_comment = true;
+        ret
+    }
+    pub fn with_changes(&self, changes: Vec<Vec<FileStringReplacement>>) -> Self {
+        let mut ret = self.clone();
+        ret.with_changes = changes;
         ret
     }
 }
@@ -177,7 +184,8 @@ pub fn run_refactoring(init: TestInit) -> QueryResult<String>  {
             selection: init.selection_type,
             unsafe_: false,
             deps: vec![],
-            add_comment: init.add_comment
+            add_comment: init.add_comment,
+            with_changes: init.with_changes
         }
     )?;
 
