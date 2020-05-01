@@ -1,7 +1,7 @@
 use crate::refactoring_invocation::{AstContext, AstDiff, QueryResult};
 use crate::refactorings::visitors::ast::collect_innermost_block;
 use rustc_ast::ast::Stmt;
-use rustc_span::{BytePos, Span};
+use rustc_span::Span;
 
 /// Given a selection within a block, contiguous statements (0..n) and an expression (0|1)
 /// It should pull up item declarations occuring at this block level
