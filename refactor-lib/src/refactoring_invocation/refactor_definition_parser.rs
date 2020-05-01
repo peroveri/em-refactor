@@ -1,5 +1,5 @@
 use crate::refactoring_invocation::{AstContext, Query, QueryResult, RefactoringErrorInternal};
-use crate::refactorings::{box_field, close_over_variables, convert_closure_to_fn, extract_block, inline_macro, introduce_closure, pull_up_item_declaration, split_conflicting_match_arms};
+use crate::refactorings::{box_field, close_over_variables, convert_closure_to_fn, extract_block, inline_macro, introduce_closure, pull_up_item_declaration, remove_refactoring_comments, split_conflicting_match_arms};
 use crate::refactoring_invocation::{AstDiff, TyContext};
 use refactor_lib_types::RefactorArgs;
 use rustc_span::Span;
@@ -15,6 +15,7 @@ pub fn argument_list_to_refactor_def(args: RefactorArgs) -> QueryResult<Query<As
         "introduce-closure" => Ok(to_ty_query(args, Box::new(introduce_closure::do_refactoring))),
         "inline-macro" => Ok(to_ast_query(args, Box::new(inline_macro::do_refactoring))),
         "pull-up-item-declaration" => Ok(to_ast_query(args, Box::new(pull_up_item_declaration::do_refactoring))),
+        "remove-refactoring-comments" => Ok(to_ast_query(args, Box::new(remove_refactoring_comments::do_refactoring))),
         "split-conflicting-match-arms" => Ok(to_ty_query(args, Box::new(split_conflicting_match_arms::do_refactoring))),
         s => Err(RefactoringErrorInternal::arg_def(&format!("Unknown refactoring: {}", s)))
     }

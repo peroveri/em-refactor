@@ -7,7 +7,6 @@ fn run_test(name: &str) {
 }
 
 #[test]
-#[ignore]
 fn extract_method_example_1() {
     run_test("example_1");
 }

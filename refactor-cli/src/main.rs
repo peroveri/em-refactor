@@ -165,7 +165,9 @@ fn run_refactoring(metadata: &Metadata, mut refactor_args: RefactorArgs, target_
                 ("extract-block", "pull-up-item-declaration.stmts"), 
                 ("introduce-closure", "extract-block.block"), 
                 ("close-over-variables", "introduce-closure.call-expr"), 
-                ("convert-closure-to-function", "introduce-closure.call-expr")];
+                ("convert-closure-to-function", "introduce-closure.call-expr"),
+                ("remove-refactoring-comments", ""),
+            ];
             let mut combined = RefactorOutputs2::empty();
             for (refactoring, comment) in micro_refa {
 
