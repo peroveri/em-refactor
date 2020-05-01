@@ -103,6 +103,7 @@ mod test {
     }
 
     #[test]// This test should probably be somewhere else
+    #[ignore]
     fn with_changes() {
         let input = r#"fn foo() {}"#;
         let expected = Ok(r#"fn foo() {
