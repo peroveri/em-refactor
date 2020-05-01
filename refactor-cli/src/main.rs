@@ -1,4 +1,4 @@
-use refactor_lib_types::*;
+use refactor_lib_types::{*, defs::*};
 use clap::{Arg, App, AppSettings, ArgMatches, SubCommand};
 use std::process::Command;
 use itertools::Itertools;
@@ -104,7 +104,7 @@ fn process() -> Result<(), i32> {
 
     let output = match matches.subcommand() {
         ("candidates", Some(candidate_matches)) => {
-            let env_args = ("CANDIDATE_ARGS".to_owned(), serde_json::to_string(&get_candidate_args(candidate_matches, &metadata.dependency_names)).unwrap());
+            let env_args = (ENV_CANDIDATE_ARGS.to_owned(), serde_json::to_string(&get_candidate_args(candidate_matches, &metadata.dependency_names)).unwrap());
             run_crate(&metadata, target_dir, env_args)?
         },
         ("refactor", Some(refactor_matches)) => {
@@ -171,7 +171,7 @@ fn run_refactoring(metadata: &Metadata, mut refactor_args: RefactorArgs, target_
                 refactor_args.refactoring = refactoring.to_string();
                 refactor_args.with_changes = combined.changes.clone();
                 
-                let env_args = ("REFACTORING_ARGS".to_owned(), serde_json::to_string(&refactor_args).unwrap());
+                let env_args = (ENV_REFACTORING_ARGS.to_owned(), serde_json::to_string(&refactor_args).unwrap());
                 let out = run_crate(metadata, target_dir, env_args)?;
                 combined.changes.extend(out.changes);
                 combined.errors.extend(out.errors);
@@ -184,7 +184,7 @@ fn run_refactoring(metadata: &Metadata, mut refactor_args: RefactorArgs, target_
         },
         _ => {
 
-            let env_args = ("REFACTORING_ARGS".to_owned(), serde_json::to_string(&refactor_args).unwrap());
+            let env_args = (ENV_REFACTORING_ARGS.to_owned(), serde_json::to_string(&refactor_args).unwrap());
             run_crate(metadata, target_dir, env_args)
         }
     }

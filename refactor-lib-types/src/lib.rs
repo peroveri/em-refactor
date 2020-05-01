@@ -178,6 +178,8 @@ pub mod defs {
     pub const PULL_UP_ITEM_DECLARATIONS_STMTS: &str = "pull-up-item-declaration.stmts";
     pub const REMOVE_REFACTORING_COMMENTS: &str = "remove-refactoring-comments";
     pub const REFACTOR_TOOL_MARKER: &str = "refactor-tool";
+    pub const ENV_REFACTORING_ARGS: &str = "REFACTORING_ARGS";
+    pub const ENV_CANDIDATE_ARGS: &str = "CANDIDATE_ARGS";
 
     pub fn extract_method_def() -> Vec<(&'static str, &'static str)> {
         vec![
