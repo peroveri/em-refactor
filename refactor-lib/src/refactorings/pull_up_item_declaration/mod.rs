@@ -44,7 +44,7 @@ fn filter_stmts_in_span<'a>(stmts: &[&'a Stmt], span: Span) -> Vec<&'a Stmt> {
 #[cfg(test)]
 mod test {
     use crate::refactoring_invocation::RefactoringErrorInternal;
-    use crate::test_utils::{assert_success, assert_err};
+    use crate::test_utils::{assert_success, assert_err, run_refactoring, TestInit};
     use quote::quote;
     const NAME: &str = "pull-up-item-declaration";
     #[test]
@@ -88,5 +88,24 @@ mod test {
             fn f ( ) { 0 ; 1 ; }
         }, NAME, (0, 4),  
         RefactoringErrorInternal::invalid_selection_with_code(0, 4, "fn f"));
+    }
+    #[test]
+    fn selects_from_comment() {
+        let expected = Ok(r#"fn foo() {
+    /*refactor-tool:test-id:start*/fn bar() {}
+    bar();
+    
+    /*refactor-tool:test-id:end*/    
+}"#.to_string());
+
+        let actual = run_refactoring(TestInit::from_refactoring(
+r#"fn foo() {
+    /*refactor-tool:test-id:start*/
+    bar();
+    fn bar() {}
+    /*refactor-tool:test-id:end*/    
+}"#, NAME));
+
+        assert_eq!(actual, expected)
     }
 }

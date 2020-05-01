@@ -169,6 +169,40 @@ pub fn assert_success(prog: TokenStream, refactoring: &str, span: (u32, u32), ex
 
     assert_eq!(crate::refactoring_invocation::get_file_content(&c.result.unwrap().0).unwrap(), expected);
 }
+pub struct TestInit {
+    add_comment: bool,
+    program: String,
+    refactoring: String,
+    selection_type: SelectionType,
+}
+impl TestInit {
+    pub fn from_refactoring(program: &str, refactoring: &str) -> Self {
+        Self {
+            add_comment: false,
+            program: program.to_string(),
+            refactoring: refactoring.to_string(),
+            selection_type: SelectionType::Comment("test-id".to_string())
+        }
+    }
+}
+pub fn run_refactoring(init: TestInit) -> QueryResult<String>  {
+    let (rustc_args, d) = init_main_rs_and_get_args(&init.program);
+    let q = argument_list_to_refactor_def(
+        &RefactorArgs {
+            file: format!("{}", d.path().join("./main.rs").to_str().unwrap().to_owned()),
+            refactoring: init.refactoring.to_string(),
+            selection: init.selection_type,
+            unsafe_: false,
+            deps: vec![],
+            add_comment: init.add_comment
+        }
+    )?;
+
+    let mut c = MyRefactorCallbacks::from_arg(q, false);
+    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
+    err.unwrap();
+    Ok(crate::refactoring_invocation::get_file_content(&c.result?.0).unwrap())
+}
 pub fn assert_err(prog: TokenStream, refactoring: &str, span: (u32, u32), expected: RefactoringErrorInternal)  {
     let program = &format!("{}", prog);
     

@@ -5,7 +5,7 @@ use rustc_span::Span;
 use rustc_span::source_map::SourceMap;
 use crate::refactorings::utils::{map_range_to_span, map_change_from_span};
 use refactor_lib_types::FileStringReplacement;
-use super::{RefactoringErrorInternal, SourceCodeRange};
+use super::{QueryResult, RefactoringErrorInternal, SourceCodeRange};
 
 pub struct AstContext<'a, 'b> {
     pub compiler: &'a Compiler,
@@ -14,7 +14,7 @@ pub struct AstContext<'a, 'b> {
 }
 
 impl<'a, 'b> AstContext<'a, 'b> {
-    pub fn map_range_to_span(&self, range: &SourceCodeRange) -> Result<Span, RefactoringErrorInternal> {
+    pub fn map_range_to_span(&self, range: &SourceCodeRange) -> QueryResult<Span> {
         map_range_to_span(self.compiler.session().source_map(), range)
     }
     pub fn get_source_map(&self) -> &SourceMap {
