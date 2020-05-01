@@ -111,6 +111,37 @@ fn cli_output_json() {
 }
 
 #[test]
+#[ignore]
+fn cli_output_json_extract_method() {
+    let expected = serde_json::to_string(
+        &RefactorOutputs2::from_change(FileStringReplacement {
+            byte_end: 101,
+            byte_start: 100,
+            char_end: 28,
+            char_start: 6,
+            file_name: "src/main.rs".to_owned(),
+            line_end: 6,
+            line_start: 6,
+            replacement: "let s = \n{let s = \"Hello, world!\";s};".to_owned(),
+    })).unwrap();
+
+    
+    cargo_my_refactor()
+        .arg(WORKSPACE_ARG)
+        .arg(format!(
+            "--target-dir={}",
+            create_tmp_dir().path().to_str().unwrap()
+        ))
+        .arg("refactor")
+        .arg("extract-method")
+        .arg("src/main.rs")
+        .arg("100:101")
+        .assert()
+        .success()
+        .stdout(expected);
+}
+
+#[test]
 fn cli_output_json_rustc_codes() {
     let expected = serde_json::to_string(&RefactorOutputs2::from_error(
         RefactoringError {
