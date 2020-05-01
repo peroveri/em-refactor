@@ -49,22 +49,19 @@ pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
 
 #[cfg(test)]
 mod test {
-    use crate::test_utils::{assert_success/*, assert_err*/};
-    use quote::quote;
+    use crate::test_utils::{run_refactoring, TestInit};
     const NAME: &str = "extract-block";
 
     #[test]
-    fn extract_block_single_expr() {
-        assert_success(quote! {
-            fn f ( ) -> i32 { 0 }
-        }, NAME,  (17, 20),
-        r#"fn f ( ) -> i32 {{ 0 }}"#);
-    }
-    #[test]
-    fn extract_block_single_stmt() {
-        assert_success(quote! {
-            fn f ( ) { 0 ; }
-        }, NAME, (10, 15),
-        r#"fn f ( ) {{ 0 ; }}"#);
+    fn extract_block_single_stmt2() {
+        let input = r#"fn foo() {
+    /*refactor-tool:test-id:start*/let i = 0;/*refactor-tool:test-id:end*/   
+}"#;
+        let expected = Ok(r#"fn foo() {
+    /*refactor-tool:test-id:start*/{let i = 0;}/*refactor-tool:test-id:end*/   
+}"#.to_owned());
+
+        let actual = run_refactoring(TestInit::from_refactoring(input, NAME));
+        assert_eq!(actual, expected);
     }
 }

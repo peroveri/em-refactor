@@ -28,7 +28,7 @@ fn run_refactoring(refactor_args: &RefactorArgs, rustc_args: &Vec<String>) -> Qu
 
 fn run_refactoring_internal(rustc_args: &[String], refactor_args: &RefactorArgs) -> QueryResult<AstDiff> {
     
-    let refactor_def = argument_list_to_refactor_def(refactor_args)?;
+    let refactor_def = argument_list_to_refactor_def(refactor_args.clone())?;
 
     let mut my_refactor = MyRefactorCallbacks::from_arg(refactor_def, is_dep(&refactor_args.deps, rustc_args));
 

@@ -1,17 +1,17 @@
 use rustc_span::{BytePos, Span};
-use crate::refactoring_invocation::{AstContext, QueryResult, RefactoringErrorInternal};
+use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal, SourceMapContext};
 
 /**
  * Used for composite refactorings where one micro-refactoring
  * inserts a special tag to mark one or more elements in the AST.
  */
-pub fn collect_comments<'v>(context: &'v AstContext) -> QueryResult<Vec<Span>> {
+pub fn collect_comments(context: &SourceMapContext) -> QueryResult<Vec<Span>> {
     let tool_id = "refactor-tool";
     let target = format!("/*{}:", tool_id);
     let end_target = "*/";
     let mut result = vec![];
 
-    for file in context.get_source_map().files().iter() {
+    for file in context.source_map.files().iter() {
 
         match &file.name {
             rustc_span::FileName::Real(_path) => {
@@ -45,12 +45,12 @@ pub fn collect_comments<'v>(context: &'v AstContext) -> QueryResult<Vec<Span>> {
  * Used for composite refactorings where one micro-refactoring
  * inserts a special tag to mark one or more elements in the AST.
  */
- pub fn collect_comments_with_id<'v>(context: &'v AstContext, range_id: &str) -> QueryResult<Span> {
+ pub fn collect_comments_with_id(context: &SourceMapContext, range_id: &str) -> QueryResult<Span> {
     let tool_id = "refactor-tool";
     let start_target = format!("/*{}:{}:start*/", tool_id, range_id);
     let end_target = format!("/*{}:{}:end*/", tool_id, range_id);
 
-    for file in context.get_source_map().files().iter() {
+    for file in context.source_map.files().iter() {
 
         match &file.name {
             rustc_span::FileName::Real(_path) => {
@@ -81,16 +81,17 @@ pub fn collect_comments<'v>(context: &'v AstContext) -> QueryResult<Vec<Span>> {
 mod test {
     use super::*;
     use crate::test_utils::{assert_success5, TestContext};
+    use crate::refactoring_invocation::AstContext;
 
     fn map_with_id(range_id: &'static str) -> Box<dyn Fn(&TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<String> + Send>> { 
         Box::new(move |_| Box::new(move |ast| {
-            let block_span = collect_comments_with_id(ast, range_id)?;
+            let block_span = collect_comments_with_id(&ast.source(), range_id)?;
             Ok(ast.get_source(block_span))
         }))
     }
     fn map() -> Box<dyn Fn(&TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send>> { 
         Box::new(move |_| Box::new(move |ast| {
-            let spans = collect_comments(ast)?;
+            let spans = collect_comments(&ast.source())?;
             Ok(spans.iter().map(|e| ast.get_source(*e)).collect())
         }))
     }

@@ -4,12 +4,17 @@ use rustc_span::Span;
 use rustc_span::source_map::SourceMap;
 use refactor_lib_types::FileStringReplacement;
 use crate::refactorings::utils::map_change_from_span;
-use super::{RefactoringErrorInternal, SourceCodeRange};
+use super::{RefactoringErrorInternal, SourceCodeRange, SourceMapContext};
 pub struct TyContext<'a>(pub TyCtxt<'a>);
 
 impl<'a> TyContext<'a> {
     pub fn new(ty: TyCtxt<'a>) -> Self {
         Self(ty)
+    }
+    pub fn source(&self) -> SourceMapContext<'a> {
+        SourceMapContext {
+            source_map: self.0.sess.source_map()
+        }
     }
     pub fn get_source(&self, span: Span) -> String {
         self.0.sess.source_map().span_to_snippet(span).unwrap()

@@ -52,23 +52,19 @@ pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
 
 #[cfg(test)]
 mod test {
-    use crate::test_utils::{assert_success/*, assert_err*/};
-    use quote::quote;
-    // use super::RefactoringErrorInternal;
+    use crate::test_utils::{run_refactoring, TestInit};
     const NAME: &str = "introduce-closure";
 
     #[test]
     fn introduce_closure_single_expr1() {
-        assert_success(quote! {
-            fn f ( ) { let _ : i32 = { 1 } ; }
-        }, NAME, (11, 32),
-        "fn f ( ) { let _ : i32 = (|| { 1 })() ; }");
-    }
-    #[test]
-    fn introduce_closure_single_stmt() {
-        assert_success(quote! {
-            fn f ( ) { { 1 ; } }
-        }, NAME, (11, 11),
-        "fn f ( ) { (|| { 1 ; })() }");
+        let input = r#"fn foo() {
+    /*refactor-tool:test-id:start*/let _ : i32 = { 1 };/*refactor-tool:test-id:end*/   
+}"#;
+        let expected = Ok(r#"fn foo() {
+    /*refactor-tool:test-id:start*/let _ : i32 = (|| { 1 })();/*refactor-tool:test-id:end*/   
+}"#.to_owned());
+
+        let actual = run_refactoring(TestInit::from_refactoring(input, NAME));
+        assert_eq!(actual, expected);
     }
 }

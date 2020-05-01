@@ -9,6 +9,7 @@ mod refactor_definition_parser;
 mod rustc_pass;
 mod rustc_rerun;
 mod rustc_utils;
+mod source_map_context;
 mod ty_context;
 mod types;
 
@@ -23,5 +24,6 @@ pub use run_refactoring::*;
 pub use rustc_pass::{pass_to_rustc, should_pass_to_rustc};
 pub use rustc_rerun::rustc_rerun;
 pub use rustc_utils::get_sys_root;
+pub use source_map_context::*;
 pub use ty_context::*;
 pub use types::*;
