@@ -215,6 +215,25 @@ pub fn assert_err2(prog: TokenStream, init: Box<dyn Fn(String) -> Box<dyn Fn(&As
 
     assert_eq!(c.result.unwrap_err(), expected);
 }
+pub struct TestContext {
+    pub main_path: String
+}
+pub fn assert_success5<T>(prog: &str, init: Box<dyn Fn(&TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<T> + Send>>, expected: QueryResult<T>) 
+    where T: std::fmt::Debug + PartialEq + Send {
+
+    let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", prog));
+    let test_context = TestContext {
+        main_path: d.path().join("./main.rs").to_str().unwrap().to_owned()
+    };
+    let q = init(&test_context);
+
+    let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q), false);
+    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
+    d.close().unwrap();
+    err.unwrap();
+
+    assert_eq!(c.result, expected);
+}
 pub fn assert_success3<T, F>(program: &str, init: F, expected: T) 
     where
         F: Fn(String, u32, u32) -> Box<dyn Fn(&TyContext) -> QueryResult<T> + Send>,
