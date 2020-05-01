@@ -44,50 +44,17 @@ fn filter_stmts_in_span<'a>(stmts: &[&'a Stmt], span: Span) -> Vec<&'a Stmt> {
 #[cfg(test)]
 mod test {
     use crate::refactoring_invocation::RefactoringErrorInternal;
-    use crate::test_utils::{assert_success, assert_err, run_refactoring, TestInit};
-    use quote::quote;
+    use crate::test_utils::{run_refactoring, TestInit};
     const NAME: &str = "pull-up-item-declaration";
-    #[test]
-    fn pull_up_item_declaration_fn_decl() {
-        assert_success(quote! {
-            fn f ( ) { 0 ; fn g ( ) { } g ( ) ; }
-        }, NAME, (10, 36),  
-        "fn f ( ) {fn g ( ) { } 0 ;  g ( ) ; }");
-    }
-    #[test]
-    fn pull_up_item_declaration_2_fn_decl() {
-        assert_success(quote! {
-            fn f ( ) { 0 ; fn g ( ) { } fn h ( ) { } g ( ) ; }
-        }, NAME, (10, 49),
-        "fn f ( ) {fn g ( ) { }fn h ( ) { } 0 ;   g ( ) ; }");
-    }
-    #[test]
-    fn pull_up_item_declaration_no_items() {
-        assert_success(quote! {
-            fn f ( ) { 0 ; 1 ; }
-        }, NAME, (10, 19),
-        "fn f ( ) { 0 ; 1 ; }");
-    }
-    #[test]
-    fn pull_up_item_declaration_macro_inv() {
-        assert_success(quote! {
-            fn f ( ) { print ! ( "{}" , 1 ) ; fn g ( ) { } print ! ( "{}" , 2 ) ; }
-        }, NAME, (10, 70),
-        r#"fn f ( ) {fn g ( ) { } print ! ( "{}" , 1 ) ;  print ! ( "{}" , 2 ) ; }"#);
-    }
-    #[test]
-    fn pull_up_item_declaration_macro_declaring_item() {
-        assert_err(quote! {
-            macro_rules ! foo { ( ) => { fn bar ( ) { } } } fn f ( ) { foo ! ( ) ; }
-        }, NAME, (58, 71),  
-        RefactoringErrorInternal::invalid_selection_with_code(58, 71, " foo ! ( ) ; "));
-    }
+
     #[test]
     fn pull_up_item_declaration_invalid_selection() {
-        assert_err(quote! {
-            fn f ( ) { 0 ; 1 ; }
-        }, NAME, (0, 4),  
-        RefactoringErrorInternal::invalid_selection_with_code(0, 4, "fn f"));
+        let expected = Err(RefactoringErrorInternal::invalid_selection_with_code(34, 39, "foo()"));
+        
+        let actual = run_refactoring(TestInit::from_refactoring(
+            r#"fn /*refactor-tool:test-id:start*/foo()/*refactor-tool:test-id:end*/ { }"#, NAME));
+        
+        assert_eq!(actual, expected);
     }
     #[test]
     fn selects_from_comment() {

@@ -1,0 +1,11 @@
+{
+	"file": "macro_no_decl.rs",
+	"args": {
+		"refactoring": "pull-up-item-declaration",
+		"selection": "16:68"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "macro_no_decl_after.rs"
+	}
+}

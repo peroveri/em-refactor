@@ -1,0 +1,11 @@
+{
+	"file": "macro_with_decl.rs",
+	"args": {
+		"refactoring": "pull-up-item-declaration",
+		"selection": "77:84"
+	},
+	"expected": {
+		"code": 255,
+		"stderr": "Internal\n77:84 is not a valid selection! `foo!();`\n"
+	}
+}

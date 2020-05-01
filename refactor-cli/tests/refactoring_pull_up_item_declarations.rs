@@ -7,6 +7,18 @@ fn run_test(name: &str) {
 }
 
 #[test]
-fn pull_up_item_declarations_example() {
-    run_test("example");
+fn pull_up_item_declarations_fn_decl() {
+    run_test("fn_decl");
+}
+#[test]
+fn pull_up_item_declarations_macro_no_decl() {
+    run_test("macro_no_decl");
+}
+#[test]
+fn pull_up_item_declarations_macro_with_decl() {
+    run_test("macro_with_decl");
+}
+#[test]
+fn pull_up_item_declarations_use_decl() {
+    run_test("use_decl");
 }

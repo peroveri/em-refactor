@@ -146,29 +146,6 @@ fn set_main_rs(path: &Path, content: &str) -> std::io::Result<()> {
     file.write_all(content.as_bytes())?;
     Ok(())
 }
-pub fn assert_success(prog: TokenStream, refactoring: &str, span: (u32, u32), expected: &str)  {
-
-    let program = &format!("{}", prog);
-    
-    let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
-
-    let q = argument_list_to_refactor_def(
-        RefactorArgs {
-            file: format!("{}", d.path().join("./main.rs").to_str().unwrap().to_owned()),
-            refactoring: format!("{}", refactoring),
-            selection: SelectionType::Range(format!("{}:{}", span.0, span.1)),
-            unsafe_: false,
-            deps: vec![],
-            add_comment: false
-        }
-    ).unwrap();
-
-    let mut c = MyRefactorCallbacks::from_arg(q, false);
-    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
-    err.unwrap();
-
-    assert_eq!(crate::refactoring_invocation::get_file_content(&c.result.unwrap().0).unwrap(), expected);
-}
 pub struct TestInit {
     add_comment: bool,
     program: String,
@@ -202,26 +179,6 @@ pub fn run_refactoring(init: TestInit) -> QueryResult<String>  {
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
     err.unwrap();
     Ok(crate::refactoring_invocation::get_file_content(&c.result?.0).unwrap())
-}
-pub fn assert_err(prog: TokenStream, refactoring: &str, span: (u32, u32), expected: RefactoringErrorInternal)  {
-    let program = &format!("{}", prog);
-    
-    let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
-    let q = argument_list_to_refactor_def(
-        RefactorArgs {
-            file: format!("{}", d.path().join("./main.rs").to_str().unwrap().to_owned()),
-            refactoring: format!("{}", refactoring),
-            selection: SelectionType::Range(format!("{}:{}", span.0, span.1)),
-            unsafe_: false,
-            deps: vec![],
-            add_comment: false
-        }
-    ).unwrap();
-
-    let mut c = MyRefactorCallbacks::from_arg(q, false);
-    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
-    err.unwrap();
-    assert_eq!(c.result.unwrap_err(), expected);
 }
 pub fn assert_success2(prog: TokenStream, init: Box<dyn Fn(String) -> Box<dyn Fn(&AstContext) -> QueryResult<String> + Send>>, expected: &str)  {
 
