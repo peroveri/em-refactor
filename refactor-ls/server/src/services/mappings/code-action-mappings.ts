@@ -8,6 +8,7 @@ const refactorings = [
     "close-over-variables",
     "convert-closure-to-function",
     "extract-block",
+    "extract-method",
     "inline-macro",
     "introduce-closure",
     "pull-up-item-declaration"

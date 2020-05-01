@@ -5,10 +5,24 @@ use crate::refactorings::visitors::hir::{collect_cfs, collect_innermost_containe
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 
-fn get_call(tcx: TyCtxt, span: Span) -> FileStringReplacement {
-    map_change_from_span(tcx.sess.source_map(), span, format!("(|| {})()", get_source(tcx, span)))
+fn get_call(tcx: TyCtxt, span: Span, add_comment: bool) -> FileStringReplacement {
+    map_change_from_span(tcx.sess.source_map(), span, format!("{}(|| {})(){}", get_start_comment(add_comment), get_source(tcx, span), get_end_comment(add_comment)))
 }
 
+fn get_end_comment(add_comment: bool) -> String {
+    if add_comment {
+        "/*refactor-tool:introduce-closure.call-expr:end*/"
+    } else {
+        "str"
+    }.to_owned()
+}
+fn get_start_comment(add_comment: bool) -> String {
+    if add_comment {
+        "/*refactor-tool:introduce-closure.call-expr:start*/"
+    } else {
+        "str"
+    }.to_owned()
+}
 /// 
 /// ## Algorithm
 /// 
@@ -21,7 +35,7 @@ fn get_call(tcx: TyCtxt, span: Span) -> FileStringReplacement {
 /// Preconditions
 /// - Break, continue, return, `?` are not currently handled, so they must be preventet
 /// 
-pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryResult<AstDiff> {
+pub fn do_refactoring(tcx: &TyContext, span: Span, add_comment: bool) -> QueryResult<AstDiff> {
     if let Some(result) = collect_innermost_contained_block(tcx.0, span) {
         // option 1: the selection is just a block
         // option 2: the selection is an assignment where the rhs is a block
@@ -38,7 +52,7 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryR
 
             map_change_from_span(tcx.0.sess.source_map(), span, anon_inv)
         } else {
-            get_call(tcx.0, result.0.span)
+            get_call(tcx.0, result.0.span, add_comment)
         };
 
         Ok(AstDiff(vec![
@@ -67,4 +81,6 @@ mod test {
         let actual = run_refactoring(TestInit::from_refactoring(input, NAME));
         assert_eq!(actual, expected);
     }
+
+    // TODO: test add_comment for call expression and match-expression
 }
