@@ -13,14 +13,14 @@ fn get_end_comment(add_comment: bool) -> String {
     if add_comment {
         "/*refactor-tool:introduce-closure.call-expr:end*/"
     } else {
-        "str"
+        ""
     }.to_owned()
 }
 fn get_start_comment(add_comment: bool) -> String {
     if add_comment {
         "/*refactor-tool:introduce-closure.call-expr:start*/"
     } else {
-        "str"
+        ""
     }.to_owned()
 }
 /// 
