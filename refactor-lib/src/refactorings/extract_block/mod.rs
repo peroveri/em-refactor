@@ -1,6 +1,7 @@
 use super::visitors::hir::collect_innermost_block;
 use crate::refactoring_invocation::{AstDiff, QueryResult, TyContext};
 use rustc_span::Span;
+use refactor_lib_types::{create_refactor_tool_marker, defs::EXTRACT_BLOCK_BLOCK};
 
 mod expr_use_visit;
 mod push_stmt_into_block;
@@ -50,17 +51,17 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, add_comment: bool) -> QueryRe
 
 fn get_block_start(add_comment: bool) -> String {
     if add_comment {
-        "/*refactor-tool:extract-block.block:start*/{"
+        format!("{}{{", create_refactor_tool_marker(EXTRACT_BLOCK_BLOCK, false))
     } else {
-        "{"
-    }.to_owned()
+        "{".to_owned()
+    }
 }
 fn get_block_end(add_comment: bool) -> String {
     if add_comment {
-        "}/*refactor-tool:extract-block.block:end*/"
+        format!("}}{}", create_refactor_tool_marker(EXTRACT_BLOCK_BLOCK, true))
     } else {
-        "}"
-    }.to_owned()
+        "}".to_owned()
+    }
 }
 
 #[cfg(test)]

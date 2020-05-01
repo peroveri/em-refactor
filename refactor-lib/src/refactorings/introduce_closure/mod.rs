@@ -1,5 +1,5 @@
 use super::utils::{map_change_from_span, get_source};
-use refactor_lib_types::FileStringReplacement;
+use refactor_lib_types::{create_refactor_tool_marker, FileStringReplacement, defs::INTRODUCE_CLOSURE_CALL_EXPR};
 use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal, TyContext};
 use crate::refactorings::visitors::hir::{collect_cfs, collect_innermost_contained_block};
 use rustc_middle::ty::TyCtxt;
@@ -11,17 +11,17 @@ fn get_call(tcx: TyCtxt, span: Span, add_comment: bool) -> FileStringReplacement
 
 fn get_end_comment(add_comment: bool) -> String {
     if add_comment {
-        "/*refactor-tool:introduce-closure.call-expr:end*/"
+        create_refactor_tool_marker(INTRODUCE_CLOSURE_CALL_EXPR, true)
     } else {
-        ""
-    }.to_owned()
+        "".to_owned()
+    }
 }
 fn get_start_comment(add_comment: bool) -> String {
     if add_comment {
-        "/*refactor-tool:introduce-closure.call-expr:start*/"
+        create_refactor_tool_marker(INTRODUCE_CLOSURE_CALL_EXPR, false)
     } else {
-        ""
-    }.to_owned()
+        "".to_owned()
+    }
 }
 /// 
 /// ## Algorithm

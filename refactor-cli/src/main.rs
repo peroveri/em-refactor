@@ -158,18 +158,11 @@ fn run_crate(metadata: &Metadata, target_dir: Option<&str>, env_args: (String, S
 
 fn run_refactoring(metadata: &Metadata, mut refactor_args: RefactorArgs, target_dir: Option<&str>) -> Result<RefactorOutputs2, i32> {
     match refactor_args.refactoring.as_ref() {
-        "extract-method" => {
+        defs::EXTRACT_METHOD => {
             refactor_args.add_comment = true;
-            let micro_refa = &[
-                ("pull-up-item-declaration", ""), 
-                ("extract-block", "pull-up-item-declaration.stmts"), 
-                ("introduce-closure", "extract-block.block"), 
-                ("close-over-variables", "introduce-closure.call-expr"), 
-                ("convert-closure-to-function", "introduce-closure.call-expr"),
-                ("remove-refactoring-comments", ""),
-            ];
+
             let mut combined = RefactorOutputs2::empty();
-            for (refactoring, comment) in micro_refa {
+            for (refactoring, comment) in defs::extract_method_def() {
 
                 if comment.len() > 0 {
                     refactor_args.selection = SelectionType::Comment(comment.to_string());

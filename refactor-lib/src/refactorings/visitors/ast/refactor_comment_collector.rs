@@ -1,4 +1,5 @@
 use rustc_span::{BytePos, Span};
+use refactor_lib_types::create_refactor_tool_marker;
 use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal, SourceMapContext};
 
 /**
@@ -46,9 +47,10 @@ pub fn collect_comments(context: &SourceMapContext) -> QueryResult<Vec<Span>> {
  * inserts a special tag to mark one or more elements in the AST.
  */
  pub fn collect_comments_with_id(context: &SourceMapContext, range_id: &str) -> QueryResult<Span> {
-    let tool_id = "refactor-tool";
-    let start_target = format!("/*{}:{}:start*/", tool_id, range_id);
-    let end_target = format!("/*{}:{}:end*/", tool_id, range_id);
+    let start_target = create_refactor_tool_marker(range_id, false);
+    let end_target = create_refactor_tool_marker(range_id, true);
+
+    let mut indexes = None;
 
     for file in context.source_map.files().iter() {
 
@@ -58,13 +60,8 @@ pub fn collect_comments(context: &SourceMapContext) -> QueryResult<Vec<Span>> {
                     if let Some(start0) = src.find(&start_target) {
                         
                         let start1 = start0 + start_target.len();
-
                         if let Some(end0) = src[start1..].find(&end_target) {
-    
-                            return Ok(Span::with_root_ctxt(
-                                BytePos(start1 as u32 + file.start_pos.0),
-                                BytePos((end0 + start1) as u32 + file.start_pos.0),
-                            ));
+                            indexes = Some((start1 as u32, (end0 + start1) as u32, file.start_pos.0));
                         } else {
                             return Err(RefactoringErrorInternal::int(&format!("Couldn't find string: {}", end_target)));
                         }
@@ -74,7 +71,14 @@ pub fn collect_comments(context: &SourceMapContext) -> QueryResult<Vec<Span>> {
             _ => {}
         };
     }
-    Err(RefactoringErrorInternal::int(&format!("Couldn't find string: {}", start_target)))
+    if let Some((i0, i1, f0)) = indexes {
+        Ok(Span::with_root_ctxt(
+            BytePos(i0 + f0),
+            BytePos(i1 + f0),
+        ))
+    } else {
+        Err(RefactoringErrorInternal::int(&format!("Couldn't find string: {}", start_target)))
+    }
 }
 
 #[cfg(test)]

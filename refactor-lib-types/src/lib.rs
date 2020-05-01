@@ -160,3 +160,33 @@ pub struct CandidateArgs {
     pub refactoring: String,
     pub deps: Vec<String>
 }
+
+pub fn create_refactor_tool_marker(item: &str, end: bool) -> String {
+    format!("/*{}:{}:{}*/", defs::REFACTOR_TOOL_MARKER, item, if end {"end"} else {"start"})
+}
+
+pub mod defs {
+    pub const BOX_FIELD: &str = "box-field";
+    pub const CLOSE_OVER_VARIABLES: &str = "close-over-variables";
+    pub const CONVERT_CLOSURE_TO_FUNCTION: &str = "convert-closure-to-function";
+    pub const EXTRACT_BLOCK: &str = "extract-block";
+    pub const EXTRACT_BLOCK_BLOCK: &str = "extract-block.block";
+    pub const EXTRACT_METHOD: &str = "extract-method";
+    pub const INTRODUCE_CLOSURE: &str = "introduce-closure";
+    pub const INTRODUCE_CLOSURE_CALL_EXPR: &str = "introduce-closure.call-expr";
+    pub const PULL_UP_ITEM_DECLARATIONS: &str = "pull-up-item-declaration";
+    pub const PULL_UP_ITEM_DECLARATIONS_STMTS: &str = "pull-up-item-declaration.stmts";
+    pub const REMOVE_REFACTORING_COMMENTS: &str = "remove-refactoring-comments";
+    pub const REFACTOR_TOOL_MARKER: &str = "refactor-tool";
+
+    pub fn extract_method_def() -> Vec<(&'static str, &'static str)> {
+        vec![
+            (PULL_UP_ITEM_DECLARATIONS, ""),
+            (EXTRACT_BLOCK, PULL_UP_ITEM_DECLARATIONS_STMTS),
+            (INTRODUCE_CLOSURE, EXTRACT_BLOCK_BLOCK),
+            (CLOSE_OVER_VARIABLES, INTRODUCE_CLOSURE_CALL_EXPR),
+            (CONVERT_CLOSURE_TO_FUNCTION, INTRODUCE_CLOSURE_CALL_EXPR),
+            (REMOVE_REFACTORING_COMMENTS, ""),
+        ]
+    }
+}

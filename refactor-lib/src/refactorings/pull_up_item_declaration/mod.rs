@@ -1,5 +1,6 @@
 use crate::refactoring_invocation::{AstContext, AstDiff, QueryResult};
 use crate::refactorings::visitors::ast::collect_innermost_block;
+use refactor_lib_types::{create_refactor_tool_marker, defs::PULL_UP_ITEM_DECLARATIONS_STMTS}; 
 use rustc_ast::ast::Stmt;
 use rustc_span::Span;
 
@@ -29,8 +30,8 @@ pub fn do_refactoring(context: &AstContext, span: Span, add_comment: bool) -> Qu
         ));
     }
     if add_comment {
-        res.push(context.map_change(span.shrink_to_lo(), "/*refactor-tool:pull-up-item-declaration.stmts:start*/".to_owned()));
-        res.push(context.map_change(span.shrink_to_hi(), "/*refactor-tool:pull-up-item-declaration.stmts:end*/".to_owned()));
+        res.push(context.map_change(span.shrink_to_lo(), create_refactor_tool_marker(PULL_UP_ITEM_DECLARATIONS_STMTS, false)));
+        res.push(context.map_change(span.shrink_to_hi(), create_refactor_tool_marker(PULL_UP_ITEM_DECLARATIONS_STMTS, true)));
     }
     Ok(AstDiff(res))
 }
