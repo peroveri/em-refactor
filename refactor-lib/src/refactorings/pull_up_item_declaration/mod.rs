@@ -19,7 +19,7 @@ pub fn do_refactoring(context: &AstContext, span: Span, add_comment: bool) -> Qu
 
     let mut res = vec![];
     res.push(context.map_change(
-        span.with_lo(span.lo() - BytePos(0)).shrink_to_lo(),
+        span.shrink_to_lo(),
         spans.iter().map(|s| context.get_source(*s)).collect::<Vec<_>>().join("")
     ));
     for delete_span in spans {
