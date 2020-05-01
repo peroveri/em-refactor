@@ -32,7 +32,7 @@ pub struct StructPatternCollection {
 /// - for F' in Fs
 ///   - Add * around F'
 
-pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
+pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryResult<AstDiff> {
     if let Some((field, index)) = collect_field(tcx.0, span) {
         let struct_hir_id = get_struct_hir_id(tcx.0, &field);
 

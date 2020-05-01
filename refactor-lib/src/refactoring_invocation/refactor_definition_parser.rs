@@ -28,9 +28,9 @@ fn to_ast_query(args: RefactorArgs, f: Box<dyn Fn(&AstContext, Span, bool) -> Qu
     }))
 }
 
-fn to_ty_query(args: RefactorArgs, f: Box<dyn Fn(&TyContext, Span) -> QueryResult<AstDiff> + Send>) -> Query<AstDiff> {
+fn to_ty_query(args: RefactorArgs, f: Box<dyn Fn(&TyContext, Span, bool) -> QueryResult<AstDiff> + Send>) -> Query<AstDiff> {
     Query::AfterParsing(Box::new(move |ast| {
         let span = ast.source().map_selection_to_span(args.selection.clone(), args.file.clone())?;
-        f(ast, span)
+        f(ast, span, args.add_comment)
     }))
 }

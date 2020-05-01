@@ -21,7 +21,7 @@ fn get_call(tcx: TyCtxt, span: Span) -> FileStringReplacement {
 /// Preconditions
 /// - Break, continue, return, `?` are not currently handled, so they must be preventet
 /// 
-pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
+pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryResult<AstDiff> {
     if let Some(result) = collect_innermost_contained_block(tcx.0, span) {
         // option 1: the selection is just a block
         // option 2: the selection is an assignment where the rhs is a block

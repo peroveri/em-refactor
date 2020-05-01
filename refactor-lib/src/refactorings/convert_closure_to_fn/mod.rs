@@ -17,7 +17,7 @@ use crate::refactorings::visitors::hir::collect_anonymous_closure;
 ///     Run inference on where?
 /// 
 /// Change Closure Expr to block return fn
-pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
+pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryResult<AstDiff> {
     let closure = collect_anonymous_closure(tcx, span)?;
 
     let mut changes = vec![];

@@ -12,7 +12,7 @@ mod split_conflicting_match_arms_named;
 /// These item declarations can only be found in the selection of statements (if they are item decls.)
 /// 
 /// (Maybe?) Only if the item declarations are used outside the selection (before or after)
-pub fn do_refactoring(tcx: &TyContext, span: Span) -> QueryResult<AstDiff> {
+pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryResult<AstDiff> {
     if let Some((field, _index)) = collect_field(tcx.0, span) {
         let struct_hir_id = get_struct_hir_id(tcx.0, &field);
         if field.is_positional() {

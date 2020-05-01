@@ -159,18 +159,28 @@ fn run_refactoring(metadata: &Metadata, mut refactor_args: RefactorArgs, target_
     match refactor_args.refactoring.as_ref() {
         "extract-method" => {
             refactor_args.add_comment = true;
-            let micro_refa = &[("pull-up-item-declarations", ""), ("extract-block", "puid:stmts"), ("introduce-closure", "eb:block"), ("close-over-variables", "ic:call-expr"), ("convert-closure-to-function", "ic:call-expr")];
-            let mut out = RefactorOutputs2::empty();
+            let micro_refa = &[
+                ("pull-up-item-declarations", ""), 
+                ("extract-block", "pull-up-item-declarations.stmt")/*, 
+                ("introduce-closure", "extract-block.block"), 
+                ("close-over-variables", "ic:call-expr"), 
+                ("convert-closure-to-function", "ic:call-expr")*/];
+            let mut combined = RefactorOutputs2::empty();
             for (refactoring, comment) in micro_refa {
+
+                if comment.len() > 0 {
+                    refactor_args.selection = SelectionType::Comment(comment.to_string());
+                }
 
                 refactor_args.refactoring = refactoring.to_string();
                 
                 let env_args = ("REFACTORING_ARGS".to_owned(), serde_json::to_string(&refactor_args).unwrap());
-                out = run_crate(metadata, target_dir, env_args)?;
-
-                refactor_args.selection = SelectionType::Comment(comment.to_string());
+                let out = run_crate(metadata, target_dir, env_args)?;
+                if let Some(changes) = out.changes.first() {
+                    combined.changes.push(changes.clone());
+                }
             }
-            Ok(out)
+            Ok(combined)
         },
         _ => {
 
