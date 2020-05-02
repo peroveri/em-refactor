@@ -59,7 +59,7 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
                 let parent_expr = self.tcx.hir().expect_expr(parent);
                 match parent_expr.kind {
                     ExprKind::AddrOf(..) => { parent_expr},
-                    _ => {panic!()}
+                    _ => {  panic!()}
                 }
              }
         };

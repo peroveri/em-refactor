@@ -8,6 +8,5 @@ pub mod inline_macro;
 pub mod introduce_closure;
 pub mod pull_up_item_declaration;
 pub mod remove_refactoring_comments;
-pub mod split_conflicting_match_arms;
 pub mod utils;
 pub mod visitors;
