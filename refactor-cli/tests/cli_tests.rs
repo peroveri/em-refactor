@@ -20,9 +20,9 @@ mod cli_tests {
             .assert()
             .failure()
             .stderr(predicate::str::starts_with(r#"error: The following required arguments were not provided:
-        <refactoring>
-        <file>
-        <selection>"#));
+    <refactoring>
+    <file>
+    <selection>"#));
     }
 
     #[test]
@@ -237,26 +237,26 @@ mod cli_tests {
             .assert()
             .success()
             .stdout(predicate::str::starts_with(
-                r#"Refactoring tool 0.0.1
-    Per Ove Ringdal <peroveri@gmail.com>
+            r#"Refactoring tool 0.0.1
+Per Ove Ringdal <peroveri@gmail.com>
 
-    USAGE:
-        cargo-my-refactor [FLAGS] [OPTIONS] <SUBCOMMAND>"#));
+USAGE:
+    cargo-my-refactor [FLAGS] [OPTIONS] <SUBCOMMAND>"#));
     }
 
     #[test]
     fn single_file() {
         let expected = 
-    r#"fn main() {
-        let s = 
-    {let s = "Hello, world!";s};
-        println!("{}", s);
-    }
+r#"fn main() {
+    let s = 
+{let s = "Hello, world!";s};
+    println!("{}", s);
+}
 
-    fn foo(a: i32, b: u32) -> (i32) {1}
+fn foo(a: i32, b: u32) -> (i32) {1}
 
-    #[test]
-    fn test1() {2;}"#;
+#[test]
+fn test1() {2;}"#;
 
         cargo_my_refactor()
             .arg(WORKSPACE_ARG)
