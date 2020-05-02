@@ -77,7 +77,7 @@ pub fn collect_comments(context: &SourceMapContext) -> QueryResult<Vec<Span>> {
             BytePos(i1 + f0),
         ))
     } else {
-        Err(RefactoringErrorInternal::int(&format!("Couldn't find string: {}", start_target)))
+        Err(RefactoringErrorInternal::comment_not_found(&start_target))
     }
 }
 
@@ -120,7 +120,7 @@ r#"fn foo() {
         assert_success5(
 r#"fn foo() {
     /*refactor-tool:other:start*/let baz = 0;/*refactor-tool:not-found:end*/
-}"#, map_with_id("not-found"), Err(RefactoringErrorInternal::int("Couldn't find string: /*refactor-tool:not-found:start*/")));
+}"#, map_with_id("not-found"), Err(RefactoringErrorInternal::comment_not_found("/*refactor-tool:not-found:start*/")));
     }
     #[test]
     fn should_fail_when_end_not_found() {

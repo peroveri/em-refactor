@@ -36,6 +36,12 @@ impl RefactoringErrorInternal {
                 "Field: {} is used in a pattern and cannot be boxed.",
                 ident))
     }
+    pub fn comment_not_found(name: &str) -> Self {
+        Self::new_int(InternalErrorCodes::FileNotFound,
+            format!(
+                "Couldn't find comment: {}",
+                name))
+    }
     pub fn file_not_found(name: &str) -> Self {
         Self::new_int(InternalErrorCodes::FileNotFound,
             format!(
