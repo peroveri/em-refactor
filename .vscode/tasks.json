@@ -103,6 +103,15 @@
             "group": "test"
         },
         {
+            "label": "test lib",
+            "type": "shell",
+            "command": "cargo test --package refactor-lib",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "test"
+        },
+        {
             "label": "build binary",
             "type": "shell",
             "command": "cargo build --bins --lib --release",
