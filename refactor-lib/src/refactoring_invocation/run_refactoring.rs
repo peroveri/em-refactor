@@ -4,7 +4,7 @@ use crate::refactoring_invocation::{arg_value, argument_list_to_refactor_def, As
 pub fn run_refactoring_and_output_result(refactor_args: &RefactorArgs, rustc_args: Vec<String>) -> Result<(), i32> {
     
     let output = match run_refactoring(refactor_args, &rustc_args) {
-        Err(err) => from_error(&rustc_args, err),
+        Err(err) => from_error(&rustc_args, err, &refactor_args.refactoring),
         Ok(astdiff) => from_success(&rustc_args, astdiff.0)
     };
     print!("{}", serialize(&output).unwrap());

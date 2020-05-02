@@ -12,7 +12,7 @@ pub fn from_success(rustc_args: &[String], replacements: Vec<FileStringReplaceme
     ])
 }
     
-pub fn from_error(rustc_args: &[String], error: RefactoringErrorInternal) -> RefactorOutputs {
+pub fn from_error(rustc_args: &[String], error: RefactoringErrorInternal, refactoring: &str) -> RefactorOutputs {
     RefactorOutputs::from_refactorings(vec![
         RefactorOutput {
             crate_name: arg_value(rustc_args, "--crate-name", |_| true).unwrap_or("").to_owned(),
@@ -25,7 +25,8 @@ pub fn from_error(rustc_args: &[String], error: RefactoringErrorInternal) -> Ref
                     InternalErrorCodes::ReCompileErr => RefactorErrorType::RustCError2,
                     _ => RefactorErrorType::Internal
                 },
-                codes: error.external_codes
+                codes: error.external_codes,
+                at_refactoring: refactoring.to_string()
             }]
         }
     ])

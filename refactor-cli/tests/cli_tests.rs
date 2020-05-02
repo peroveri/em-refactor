@@ -148,7 +148,8 @@ fn cli_output_json_rustc_codes() {
             is_error: true,
             message: "error[E0597]: `i` does not live long enough\n --> src/main.rs:4:13\n  |\n2 |     let j = \n  |         - borrow later stored here\n3 | {let i = 0;\n4 |     let j = &i;j};\n  |             ^^  - `i` dropped here while still borrowed\n  |             |\n  |             borrowed value does not live long enough\n\n\nerror: aborting due to previous error\n\n\nFor more information about this error, try `rustc --explain E0597`.\n".to_owned(),
             kind: RefactorErrorType::RustCError2,
-            codes: vec!["E0597".to_owned()]
+            codes: vec!["E0597".to_owned()],
+            at_refactoring: "extract-block".to_owned()
         })).unwrap();
         
     cargo_my_refactor()

@@ -62,7 +62,7 @@ impl CandidateQueryArgs {
 pub fn list_candidates_and_print_result(candidate: &CandidateArgs, rustc_args: &[String]) {
     let output = 
         list_candidates(candidate, &rustc_args)
-        .unwrap_or_else(|x| from_error(&rustc_args, x));
+        .unwrap_or_else(|x| from_error(&rustc_args, x, &candidate.refactoring));
     print!("{}", serialize(&output).unwrap());
 }
 
@@ -117,7 +117,8 @@ fn map_err_to_output(args: CandidateQueryArgs, err: RefactoringErrorInternal) ->
             is_error: true,
             message: err.message,
             kind: RefactorErrorType::Internal,
-            codes: vec![]
+            codes: vec![],
+            at_refactoring: args.refactoring.to_string()
         }]
     }
 }

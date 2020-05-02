@@ -17,7 +17,8 @@ pub struct RefactoringError {
     pub is_error: bool,
     pub kind: RefactorErrorType,
     pub message: String,
-    pub codes: Vec<String>
+    pub codes: Vec<String>,
+    pub at_refactoring: String
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
