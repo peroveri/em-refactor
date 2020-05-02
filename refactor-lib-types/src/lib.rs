@@ -167,11 +167,13 @@ pub fn create_refactor_tool_marker(item: &str, end: bool) -> String {
 
 pub mod defs {
     pub const BOX_FIELD: &str = "box-field";
+    pub const BOX_FIELD_CANDIDATES: &str = BOX_FIELD;
     pub const CLOSE_OVER_VARIABLES: &str = "close-over-variables";
     pub const CONVERT_CLOSURE_TO_FUNCTION: &str = "convert-closure-to-function";
     pub const EXTRACT_BLOCK: &str = "extract-block";
     pub const EXTRACT_BLOCK_BLOCK: &str = "extract-block.block";
     pub const EXTRACT_METHOD: &str = "extract-method";
+    pub const EXTRACT_METHOD_CANDIDATES: &str = EXTRACT_METHOD;
     pub const INTRODUCE_CLOSURE: &str = "introduce-closure";
     pub const INTRODUCE_CLOSURE_CALL_EXPR: &str = "introduce-closure.call-expr";
     pub const PULL_UP_ITEM_DECLARATIONS: &str = "pull-up-item-declaration";

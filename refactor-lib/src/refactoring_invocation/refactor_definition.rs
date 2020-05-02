@@ -42,6 +42,10 @@ impl RefactoringErrorInternal {
                 "Couldn't find file: {}",
                 name))
     }
+    pub fn invalid_argument(msg: String) -> Self {
+        Self::new_int(InternalErrorCodes::Error,
+            msg)
+    }
     pub fn invalid_selection(from: u32, to: u32) -> Self {
         Self::new_int(InternalErrorCodes::Error,
             format!(

@@ -184,14 +184,14 @@ fn cli_query_candidates_1() {
             create_tmp_dir().path().to_str().unwrap()
         ))
         .arg("candidates")
-        .arg("extract-block")
+        .arg("extract-method")
         .assert()
         .success()
         .stdout(expected);
 }
 
 #[test]
-fn cli_query_candidates_2() {
+fn cli_query_candidates_on_invalid_crate() {
     cargo_my_refactor()
         .arg(WORKSPACE_ARG_INVALID_CRATE)
         .arg(format!(
@@ -199,7 +199,7 @@ fn cli_query_candidates_2() {
             create_tmp_dir().path().to_str().unwrap()
         ))
         .arg("candidates")
-        .arg("extract-block")
+        .arg("extract-method")
         .assert()
         .failure()
         .stderr(predicate::str::starts_with("error: expected one of `("));
@@ -220,7 +220,7 @@ fn cli_query_candidates_multi_root_overlap() {
             create_tmp_dir().path().to_str().unwrap()
         ))
         .arg("candidates")
-        .arg("extract-block")
+        .arg("extract-method")
         .assert()
         .success()
         .stdout(expected);
@@ -308,7 +308,7 @@ fn cli_workspace_deps() {
             create_tmp_dir().path().to_str().unwrap()
         ))
         .arg("candidates")
-        .arg("extract-block")
+        .arg("extract-method")
         .assert()
         .success();
 }
@@ -322,7 +322,7 @@ fn cli_workspace_no_deps() {
             create_tmp_dir().path().to_str().unwrap()
         ))
         .arg("candidates")
-        .arg("extract-block")
+        .arg("extract-method")
         .assert()
         .success();
 }
