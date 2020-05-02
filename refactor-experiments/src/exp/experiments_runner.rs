@@ -16,16 +16,16 @@ use log::{error, info};
 ///     else err() = ..:
 ///         Log err, cand
 struct ExperimentsRunner {
-    refactorings: Vec<String>,
+    refactoring: String,
     cmd_runner: CmdRunner,
     report: Report
 }
 
 impl ExperimentsRunner {
-    pub fn new(refactorings: Vec<String>, cmd_runner: CmdRunner) -> Self {
+    pub fn new(refactoring: String, cmd_runner: CmdRunner) -> Self {
         Self {
-            report: Report::new(&refactorings[0]),
-            refactorings,
+            report: Report::new(refactoring.clone()),
+            refactoring,
             cmd_runner
         }
     }
@@ -35,19 +35,18 @@ impl ExperimentsRunner {
             error!("repo has changes");
             return Ok(());
         }
-        let refactoring = self.refactorings[0].clone();
         self.report.set_test_result(self.cmd_runner.run_unit_tests()?);
-        self.report.set_candidates(self.cmd_runner.query_candidates(&refactoring)?.candidates);
+        self.report.set_candidates(self.cmd_runner.query_candidates(&self.refactoring)?.candidates);
 
         for candidate in self.report.candidates.clone() {
-            self.run_candidate_refactoring(candidate, &refactoring)?;
+            self.run_candidate_refactoring(candidate)?;
         }
         Ok(())
     }
 
-    fn run_candidate_refactoring(&mut self, candidate: CandidatePosition, refactoring: &str) -> std::io::Result<()> {
+    fn run_candidate_refactoring(&mut self, candidate: CandidatePosition) -> std::io::Result<()> {
         let mut stopwatch = Stopwatch::start("run_candidate_refactoring".to_owned());
-        let changes = self.cmd_runner.refactor(&candidate, refactoring)?;
+        let changes = self.cmd_runner.refactor(&candidate, &self.refactoring)?;
         
         if let Some(err) = changes.errors.first() {
             self.report.add_err(candidate.clone(), err.clone());
@@ -76,14 +75,8 @@ pub fn run_all_exp(refactoring: &str, crate_path: &str) -> std::io::Result<()> {
     if cfg!(windows) {
         tool_path.set_extension("exe");
     }
-    let refactorings = 
-        if refactoring == "extract-method" {
-            vec!["extract-block".to_owned()]
-        } else {
-            panic!("Unexpected refactoring: {}", refactoring)
-        };
     let cmd_runner = CmdRunner::new_default_tmp_dir(&PathBuf::from(crate_path), tool_path);
-    let mut experiments_runner = ExperimentsRunner::new(refactorings, cmd_runner);
+    let mut experiments_runner = ExperimentsRunner::new(refactoring.to_string(), cmd_runner);
     experiments_runner.run_exp_on_project()?;
     println!("{}", serde_json::to_string(&experiments_runner.report).unwrap());
     println!("{}", serde_json::to_string(&ShortReport::from(&experiments_runner.report)).unwrap());

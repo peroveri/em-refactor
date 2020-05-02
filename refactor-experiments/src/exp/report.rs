@@ -17,9 +17,9 @@ pub enum RefactorResult {
     Success()
 }
 impl Report {
-    pub fn new(refactoring: &str) -> Self {
+    pub fn new(refactoring: String) -> Self {
         Self {
-            refactoring: refactoring.to_string(),
+            refactoring,
             candidates: vec![],
             result: vec![],
             test_result: TestResults::new(),
