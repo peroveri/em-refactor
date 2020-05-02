@@ -6,20 +6,24 @@ fn run_test(name: &str) {
     run_testcase("introduce_closure_cf", name).unwrap();
 }
 
-#[test]
-fn introduce_closure_cf_all() {
-    run_test("all");
-}
-#[test]
-#[ignore]
-fn introduce_closure_cf_break() {
-    run_test("break");
-}
-#[test]
-fn introduce_closure_loop_all() {
-    run_test("loop_all");
-}
-#[test]
-fn introduce_closure_cf_return_and_expr() {
-    run_test("return_and_expr");
+mod introduce_closure {
+    use super::*;
+    
+    #[test]
+    fn all() {
+        run_test("all");
+    }
+    #[test]
+    #[ignore]
+    fn r#break() {
+        run_test("break");
+    }
+    #[test]
+    fn loop_all() {
+        run_test("loop_all");
+    }
+    #[test]
+    fn return_and_expr() {
+        run_test("return_and_expr");
+    }
 }

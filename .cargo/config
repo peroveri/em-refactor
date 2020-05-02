@@ -1,3 +1,2 @@
 [alias]
-test1 = "test -- --test-threads=1"
-testi = "test --no-fail-fast -- --test-threads=1 --ignored"
+testi = "test --no-fail-fast -- --ignored"

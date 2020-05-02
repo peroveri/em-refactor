@@ -15,7 +15,7 @@
         {
             "label": "test",
             "type": "shell",
-            "command": "cargo test1",
+            "command": "cargo test",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -33,7 +33,7 @@
         {
             "label": "test cli",
             "type": "shell",
-            "command": "cargo test1 cli",
+            "command": "cargo test --package refactor-cli --test cli_tests",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -42,7 +42,7 @@
         {
             "label": "test box field",
             "type": "shell",
-            "command": "cargo test1 box_",
+            "command": "cargo test --package refactor-cli --test refactoring_box_named_field --test refactoring_box_tuple_field",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -51,7 +51,7 @@
         {
             "label": "test close-over-variables",
             "type": "shell",
-            "command": "cargo test1 close_over_variables",
+            "command": "cargo test --package refactor-cli --test refactoring_close_over_variables",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -60,7 +60,7 @@
         {
             "label": "test extract-block",
             "type": "shell",
-            "command": "cargo test1 extract_block",
+            "command": "cargo test --package refactor-cli --test refactoring_extract_block_items --test refactoring_extract_block_ownership --test refactoring_extract_block_vars",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -69,7 +69,7 @@
         {
             "label": "test inline-macro",
             "type": "shell",
-            "command": "cargo test1 inline_macro",
+            "command": "cargo test --package refactor-cli --test refactoring_inline_macro",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -78,7 +78,16 @@
         {
             "label": "test introduce-closure",
             "type": "shell",
-            "command": "cargo test1 introduce_closure",
+            "command": "cargo test --package refactor-cli --test refactoring_introduce_closure",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "test"
+        },
+        {
+            "label": "test pull-up-item-declarations",
+            "type": "shell",
+            "command": "cargo test --package refactor-cli --test refactoring_pull_up_item_declarations",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -87,7 +96,7 @@
         {
             "label": "test split-conflicting-match-arms",
             "type": "shell",
-            "command": "cargo test1 split_conflicting_match_arms",
+            "command": "cargo test --package refactor-cli --test refactoring_split_conflicting_match_arms",
             "problemMatcher": [
                 "$rustc"
             ],

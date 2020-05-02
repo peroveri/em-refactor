@@ -6,7 +6,11 @@ fn run_test(name: &str) {
     run_testcase("extract_method", name).unwrap();
 }
 
-#[test]
-fn extract_method_example_1() {
-    run_test("example_1");
+mod extract_method {
+    use super::*;
+    
+    #[test]
+    fn eexample_1() {
+        run_test("example_1");
+    }
 }
