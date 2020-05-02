@@ -1,9 +1,9 @@
 fn main() {
     let mut i = S;
     let j = S;
-    (|i: &mut _, j: _| {
+    (|i: &mut _, j: &_| {
         (*i) = S;
-        (*&j);
+        &(*j);
     })(&mut i, &j);
 }
 struct S;

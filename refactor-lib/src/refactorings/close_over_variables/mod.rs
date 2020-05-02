@@ -19,7 +19,7 @@ mod variable_use_collection;
 ///    c. If V' is a borrow, add deref to all occurences of V' in C'
 pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryResult<AstDiff> {
     let closure = collect_anonymous_closure(tcx, span)?;
-    let vars = collect_vars(tcx.0, closure.body_id, tcx.get_body_span(closure.body_id));
+    let vars = collect_vars(tcx.0, closure.body_id, tcx.get_body_span(closure.body_id))?;
 
     let mut changes = vec![];
 

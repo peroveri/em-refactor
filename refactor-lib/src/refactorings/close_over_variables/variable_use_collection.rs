@@ -115,9 +115,9 @@ impl VariableUseCollection {
         ids.iter()
             .map(|id| {
                 let mut v = map.get(id).unwrap().clone();
-                if v.is_borrow && !v.is_mut {
-                    v.is_borrow = false;
-                }
+                // if v.is_borrow && !v.is_mut {
+                //     v.is_borrow = false;
+                // }
                 v
             })
             .collect::<Vec<_>>()

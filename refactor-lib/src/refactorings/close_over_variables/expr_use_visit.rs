@@ -1,33 +1,39 @@
-use rustc_hir::{BodyId, ExprKind, Node};
+use rustc_hir::{BodyId, Node};
 use rustc_infer::infer::{TyCtxtInferExt};
 use rustc_middle::ty::{self, TyCtxt};
 use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Place, PlaceBase};
 use rustc_span::Span;
 use super::variable_use_collection::VariableUseCollection;
 use crate::refactorings::visitors::hir::ExpressionUseKind;
+use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal};
 
 struct VariableCollectorDelegate<'tcx> {
     tcx: TyCtxt<'tcx>,
     extract_span: Span,
     usages: VariableUseCollection,
+    err: QueryResult<()>
 }
 
 impl<'tcx> VariableCollectorDelegate<'tcx> {
-    fn get_ident_and_decl_span(&self, place: &Place) -> Option<(String, Span)> {
+    fn get_ident_and_decl_span(&self, place: &Place) -> QueryResult<Option<String>> {
         match place.base {
-            PlaceBase::Local(lid) => {
-                let decl_span = self.tcx.hir().span(lid);
-                let node = self.tcx.hir().get(lid);
+            PlaceBase::Local(local_id) => {
+                let decl_span = self.tcx.hir().span(local_id);
+                if self.extract_span.contains(decl_span) {
+                    return Ok(None);
+                }
+                let node = self.tcx.hir().get(local_id);
                 if let Node::Binding(pat) = node {
-                    Some((format!("{}", pat.simple_ident().unwrap()), decl_span))
+                    let ident = pat.simple_ident().ok_or_else(|| RefactoringErrorInternal::int(&format!("ident missing: {:?}", pat)))?;
+                    Ok(Some(format!("{}", ident)))
                 } else {
-                    panic!("unhandled type"); // TODO: check which types node can be here
+                    Err(RefactoringErrorInternal::int(&format!("unhandled type: {:?}", place)))
                 }
             },
             // PlaceBase::Interior(cmt, ..) => {
             //     self.get_ident_and_decl_span(&cmt.cat)
             // },
-            _ => None,
+            _ => Ok(None),
         }
     }
     fn var_used(
@@ -36,12 +42,15 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
         place: &Place,
         bk: ExpressionUseKind
     ) {
-        if let Some((ident, decl_span)) = self.get_ident_and_decl_span(place) {
-            if self.extract_span.contains(used_span) && !self.extract_span.contains(decl_span) {
-                // should be ret val
-                self.usages.add_return_value(ident, bk, used_span);
-            }
+        if !self.extract_span.contains(used_span) {
+            return;
         }
+        match self.get_ident_and_decl_span(place) {
+            Ok(None) => {},
+            Ok(Some(ident)) => 
+                self.usages.add_return_value(ident, bk, used_span),
+            Err(err) => self.err = Err(err)
+        };
     }
 }
 
@@ -51,19 +60,19 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
     }
 
     fn borrow(&mut self, place: &Place<'tcx>, bk: ty::BorrowKind) {
-        let expr = self.tcx.hir().expect_expr(place.hir_id);
-        let borrow_expr = match expr.kind {
-            ExprKind::AddrOf(..) => {expr},
-            _ => {
-                let parent = self.tcx.hir().get_parent_node(expr.hir_id);
-                let parent_expr = self.tcx.hir().expect_expr(parent);
-                match parent_expr.kind {
-                    ExprKind::AddrOf(..) => { parent_expr},
-                    _ => {  panic!()}
-                }
-             }
-        };
-        self.var_used(borrow_expr.span, &place, ExpressionUseKind::from_borrow_kind(bk));
+        // let expr = self.tcx.hir().expect_expr(place.hir_id);
+        // let borrow_expr = match expr.kind {
+        //     ExprKind::AddrOf(..) => {expr},
+        //     _ => {
+        //         let parent = self.tcx.hir().get_parent_node(expr.hir_id);
+        //         let parent_expr = self.tcx.hir().expect_expr(parent);
+        //         match parent_expr.kind {
+        //             ExprKind::AddrOf(..) => { parent_expr},
+        //             _ => {  panic!()} // TODO: remove panic!()
+        //         }
+        //      }
+        // };
+        self.var_used(place.span, &place, ExpressionUseKind::from_borrow_kind(bk));
     }
 
     fn mutate(&mut self, place: &Place<'tcx>) {
@@ -74,13 +83,14 @@ impl<'a, 'tcx> Delegate<'tcx> for VariableCollectorDelegate<'tcx> {
     }
 }
 
-pub fn collect_vars(tcx: TyCtxt<'_>, body_id: BodyId, span: Span) -> VariableUseCollection {
+pub fn collect_vars(tcx: TyCtxt<'_>, body_id: BodyId, span: Span) -> QueryResult<VariableUseCollection> {
     let def_id = body_id.hir_id.owner.to_def_id();
     tcx.infer_ctxt().enter(|inf| {
         let mut v = VariableCollectorDelegate {
             tcx,
             extract_span: span,
             usages: VariableUseCollection::new(),
+            err: Ok(())
         };
         ExprUseVisitor::new(
             &mut v,
@@ -91,7 +101,8 @@ pub fn collect_vars(tcx: TyCtxt<'_>, body_id: BodyId, span: Span) -> VariableUse
         )
         .consume_body(tcx.hir().body(body_id));
 
-        v.usages
+        v.err?;
+        Ok(v.usages)
     })
 }
 
@@ -105,7 +116,7 @@ mod test {
     fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(ExpressionUseKind, String, (u32, u32))>> + Send> {
         Box::new(move |ty| {
             let closure = collect_anonymous_closure(ty, ty.get_span(&file_name, from, to)?).unwrap();
-            let vars = collect_vars(ty.0, closure.body_id, ty.get_body_span(closure.body_id));
+            let vars = collect_vars(ty.0, closure.body_id, ty.get_body_span(closure.body_id))?;
 
             Ok(vars.to_cmp())
         })
@@ -131,7 +142,7 @@ r#"fn foo () {
 }"#,
         map,
         vec![
-            (ExpressionUseKind::ImmBorrow, "i".to_string(), (55, 57))
+            (ExpressionUseKind::ImmBorrow, "i".to_string(), (56, 57))
         ]);
     }
     #[test]
@@ -206,6 +217,43 @@ r#"fn foo () {
 struct S;"#, 
         map,
         vec![(ExpressionUseKind::Move, "i".to_string(), (63, 64))]);
+    }
+    #[test]
+    fn closure_expr_use_visit_should_collect_h() {
+        assert_success3(
+        r#"fn foo() {
+    let j = 0;
+    /*START*/(|| {
+        let &(ref x) = &(&j);
+    })()/*END*/;
+}"#,
+            map,
+            vec![(ExpressionUseKind::ImmBorrow, "j".to_string(), (71, 72))]);
+    }
+    #[test]
+    fn closure_expr_use_visit_should_collect_j() {
+        assert_success3(
+        r#"fn foo(s: &Box<i32>) {
+    /*START*/(|| {
+        b(s);
+    })()/*END*/;
+}
+fn b(s: &i32) {}"#,
+            map,
+            vec![(ExpressionUseKind::ImmBorrow, "s".to_string(), (52, 53))]);
+    }
+    #[test]
+    fn closure_expr_use_visit_should_collect_k() {
+        assert_success3(
+        r#"fn foo() {
+    let i = S;
+    /*START*/(|| {
+        let _: &S = &i;
+    })()/*END*/;
+}
+struct S;"#,
+            map,
+            vec![(ExpressionUseKind::ImmBorrow, "i".to_string(), (66, 67))]);
     }
     // TODO: check patterns, e.g. let _ = i;
 }
