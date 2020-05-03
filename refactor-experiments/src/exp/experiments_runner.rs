@@ -1,4 +1,4 @@
-use super::{CmdRunner, Report, ShortReport, Stopwatch};
+use super::{CmdRunner, ReportData, ShortReport, Stopwatch};
 use refactor_lib_types::CandidatePosition;
 use std::path::PathBuf;
 use log::{error, info};
@@ -18,13 +18,13 @@ use log::{error, info};
 struct ExperimentsRunner {
     refactoring: String,
     cmd_runner: CmdRunner,
-    report: Report
+    report: ReportData
 }
 
 impl ExperimentsRunner {
     pub fn new(refactoring: String, cmd_runner: CmdRunner) -> Self {
         Self {
-            report: Report::new(refactoring.clone()),
+            report: ReportData::new(refactoring.clone()),
             refactoring,
             cmd_runner
         }
@@ -37,7 +37,6 @@ impl ExperimentsRunner {
         }
         self.report.set_test_result(self.cmd_runner.run_unit_tests()?);
         self.report.set_candidates(self.cmd_runner.query_candidates(&self.refactoring)?.candidates);
-
         for candidate in self.report.candidates.clone() {
             self.run_candidate_refactoring(candidate)?;
         }
@@ -80,5 +79,6 @@ pub fn run_all_exp(refactoring: &str, crate_path: &str) -> std::io::Result<()> {
     experiments_runner.run_exp_on_project()?;
     println!("{}", serde_json::to_string(&experiments_runner.report).unwrap());
     println!("{}", serde_json::to_string(&ShortReport::from(&experiments_runner.report)).unwrap());
+    println!("{}", serde_json::to_string(&experiments_runner.report.to_report()).unwrap());
     Ok(())
 }

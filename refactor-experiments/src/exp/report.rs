@@ -1,10 +1,11 @@
-use refactor_lib_types::{CandidatePosition, RefactoringError};
+use refactor_lib_types::{CandidatePosition, RefactoringError, RefactorErrorType};
 use serde::Serialize;
 use super::{TestResult, TestResults};
 use log::info;
+use itertools::Itertools;
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
-pub struct Report {
+pub struct ReportData {
     pub refactoring: String,
     pub test_result: TestResults,
     pub candidates: Vec<CandidatePosition>,
@@ -16,7 +17,7 @@ pub enum RefactorResult {
     UnitErr(TestResults),
     Success()
 }
-impl Report {
+impl ReportData {
     pub fn new(refactoring: String) -> Self {
         Self {
             refactoring,
@@ -46,6 +47,61 @@ impl Report {
         info!("Report::set_test_result: {}", test_result.to_single_line());
         self.test_result = test_result;
     }
+    pub fn to_report(&self) -> Report {
+        Report {
+            candidates_found: self.candidates.len(),
+            successful: self.result.iter().filter(|e| match e.1 {
+                RefactorResult::Success() => true, _ => false }).count(),
+            internal_errs: self.result.iter().filter(|e| match e.1 {
+                RefactorResult::Err(RefactoringError { kind: RefactorErrorType::Internal, .. }) => true,
+                RefactorResult::Err(RefactoringError { kind: RefactorErrorType::Refactoring, .. }) => true,
+                RefactorResult::Err(RefactoringError { kind: RefactorErrorType::RustCError1, .. }) => true,
+                _ => false }).count(),
+            recompile_errs: self.result.iter().filter(|e| match e.1 {
+                RefactorResult::Err(RefactoringError { kind: RefactorErrorType::RustCError2, .. }) => true, _ => false }).count(),
+            unit_errs: self.result.iter().filter(|e| match e.1 {
+                RefactorResult::UnitErr(..) => true, _ => false }).count(),
+            errs_by_micro_refactoring: self.map_errs_by_micro_refactoring()
+        }
+    }
+    fn map_errs_by_micro_refactoring(&self) -> RefaGroup {
+        let errs = &self.result.iter().filter_map(|e| match &e.1 {
+            RefactorResult::Err(err) => Some(err.clone()),
+            _ => None
+        }).collect::<Vec<_>>();
+        let mut ret = vec![];
+
+        for (refactoring, b) in &errs.into_iter()
+            .group_by(|x| x.at_refactoring.to_string()) {
+            
+            ret.push((refactoring, Self::group_by(&b.collect::<Vec<_>>())));
+        }
+
+        ret
+    }
+
+    fn group_by(errs: &Vec<&RefactoringError>) -> ErrorsGrouped {
+        let mut res = vec![];
+            
+        let x = &errs.into_iter()
+            .group_by(|k| (k.kind.clone(), k.codes.first().unwrap_or(&"".to_string()).to_string()));
+        for (y1, y2) in x {
+            res.push((y1.0, y1.1, y2.count()));
+        }
+            
+        res
+    }
+}
+type RefaGroup = Vec<(String, ErrorsGrouped)>;
+type ErrorsGrouped = Vec<(RefactorErrorType, String, usize)>;
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct Report {
+    pub candidates_found: usize,
+    pub successful: usize,
+    pub internal_errs: usize,
+    pub recompile_errs: usize,
+    pub unit_errs: usize,
+    pub errs_by_micro_refactoring: RefaGroup
 }
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub struct ShortReport {
@@ -58,7 +114,7 @@ pub struct ShortReport {
 }
 
 impl ShortReport {
-    pub fn from(report: &Report) -> Self {
+    pub fn from(report: &ReportData) -> Self {
         Self {
             refactoring: report.refactoring.clone(),
             candidates: report.candidates.len(),
