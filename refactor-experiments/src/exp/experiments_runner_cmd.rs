@@ -87,7 +87,9 @@ impl CmdRunner {
     pub fn apply_changes(&self, output: RefactorOutputs2) -> std::io::Result<()> {
         
         for changes in &output.changes {
-            for (file_path, changes) in &changes.into_iter().group_by(|a| a.file_name.clone()) {
+            for (file_path, changes) in &changes.into_iter()
+                .sorted_by_key(|a| a.file_name.clone())
+                .group_by(|a| a.file_name.clone()) {
                 let changes = changes.collect::<Vec<_>>();
 
                 let path: PathBuf = [&self.crate_path, &PathBuf::from(&file_path)].iter().collect();

@@ -72,6 +72,7 @@ impl ReportData {
         let mut ret = vec![];
 
         for (refactoring, b) in &errs.into_iter()
+            .sorted_by_key(|x| x.at_refactoring.to_string())
             .group_by(|x| x.at_refactoring.to_string()) {
             
             ret.push((refactoring, Self::group_by(&b.collect::<Vec<_>>())));
@@ -84,6 +85,7 @@ impl ReportData {
         let mut res = vec![];
             
         let x = &errs.into_iter()
+            .sorted_by_key(|k| (k.kind.clone(), k.codes.first().unwrap_or(&"".to_string()).to_string()))
             .group_by(|k| (k.kind.clone(), k.codes.first().unwrap_or(&"".to_string()).to_string()));
         for (y1, y2) in x {
             res.push((y1.0, y1.1, y2.count()));
@@ -123,5 +125,63 @@ impl ShortReport {
             test_result: report.test_result.sum.clone(),
             unit_err: report.result.iter().filter(|e| if let RefactorResult::UnitErr(..) = e.1 {true} else {false}).count(),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn test_to_report() {
+        let cand = || CandidatePosition::new("", 0, 0);
+        let report = ReportData {
+            candidates: vec![],
+            refactoring: "foo".to_owned(),
+            result: vec![
+                (cand(), RefactorResult::Err(RefactoringError{
+                    at_refactoring: "intro-closure".to_owned(),
+                    codes: vec!["E124".to_owned()],
+                    is_error: true,
+                    kind: RefactorErrorType::RustCError2,
+                    message: "foo".to_owned()
+                })),
+                (cand(), RefactorResult::Err(RefactoringError{
+                    at_refactoring: "extract-block".to_owned(),
+                    codes: vec!["E123".to_owned()],
+                    is_error: true,
+                    kind: RefactorErrorType::RustCError2,
+                    message: "foo".to_owned()
+                })),
+                (cand(), RefactorResult::Success()),
+                (cand(), RefactorResult::Err(RefactoringError{
+                    at_refactoring: "intro-closure".to_owned(),
+                    codes: vec!["E124".to_owned()],
+                    is_error: true,
+                    kind: RefactorErrorType::RustCError2,
+                    message: "foo".to_owned()
+                }))
+            ],
+            test_result: TestResults::new()
+        };
+
+        let expected = Report {
+            candidates_found: 0,
+            errs_by_micro_refactoring: vec![
+                ("extract-block".to_owned(), vec![
+                    (RefactorErrorType::RustCError2, "E123".to_owned(), 1)
+                ]),
+                ("intro-closure".to_owned(), vec![
+                    (RefactorErrorType::RustCError2, "E124".to_owned(), 2)
+                ])
+            ],
+            internal_errs: 0,
+            recompile_errs: 3,
+            successful: 1,
+            unit_errs: 0
+        };
+
+        let actual = report.to_report();
+
+        assert_eq!(expected, actual);
     }
 }
