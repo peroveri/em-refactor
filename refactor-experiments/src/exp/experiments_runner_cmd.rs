@@ -78,7 +78,7 @@ impl CmdRunner {
             .arg(format!("{}:{}", candidate.from, candidate.to))
             .output().unwrap();
 
-        assert!(output.status.success(), "stdout: {}\nstderr:{}", std::str::from_utf8(output.stdout.as_slice()).unwrap(), std::str::from_utf8(output.stderr.as_slice()).unwrap());
+        assert!(output.status.success(), "stdout: {}\nstderr:{}\ncandidate: {:?}", std::str::from_utf8(output.stdout.as_slice()).unwrap(), std::str::from_utf8(output.stderr.as_slice()).unwrap(), candidate);
         
     
         let stdout = std::str::from_utf8(output.stdout.as_slice()).unwrap();
