@@ -62,7 +62,18 @@ impl<'ast> Visitor<'ast> for ExtractBlockCandidateVisitor {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::test_utils::assert_ast_success3;
+    use crate::test_utils::run_ast_query;
+    
+    fn map(mode: CollectFieldMode) -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> {
+        Box::new(move |ast| {
+            Ok(
+                collect_box_field_candidates(ast, mode)?
+                .iter()
+                .map(|span| ast.get_source(*span))
+                .collect::<Vec<_>>()
+            )
+        })
+    }
     fn map_all() -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
         map(CollectFieldMode::All)
     }
@@ -73,49 +84,61 @@ mod test {
         map(CollectFieldMode::Tuple)
     }
 
-    fn map(mode: CollectFieldMode) -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
-        Box::new(
-            move |ast| 
-            Ok(
-                collect_box_field_candidates(ast, mode)?
-                .iter()
-                .map(|span| ast.get_source(*span))
-                .collect::<Vec<_>>()
-            )
-        )
+    #[test]
+    fn should_collect_named() {
+        let input = "struct G {field: i32}";
+        let expected = Ok(vec!["field".to_string()]);
+
+        let actual = run_ast_query(input, map_named);
+        
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn box_named_field_candidate_collector_should_collect_named() {
-        assert_ast_success3(
-            "struct G {field: i32}",
-            map_named,
-            vec!["field".to_string()]
-        );
+    fn should_collect_tuple() {
+        let input = "struct H(u32);";
+        let expected = Ok(vec!["u32".to_string()]);
+
+        let actual = run_ast_query(input, map_tuple);
+        
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn box_named_field_candidate_collector_should_collect_tuple() {
-        assert_ast_success3(
-            "struct H(u32);",
-            map_tuple,
-            vec!["u32".to_string()]
-        );
+    fn should_collect_all() {
+        let input = r#"struct H(u32);
+struct G {field: i32}"#;
+        let expected = Ok(vec!["u32".to_string(), "field".to_string()]);
+
+        let actual = run_ast_query(input, map_all);
+        
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn box_named_field_candidate_collector_should_collect_all() {
-        assert_ast_success3(
-            r#"struct H(u32);
-            struct G {field: i32}"#,
-            map_all,
-            vec!["u32".to_string(), "field".to_string()]
-        );
+    fn should_collect_derive() {
+        let input = r#"#[derive(Clone)]
+struct G {field: i32}"#;
+        let expected = Ok(vec!["field".to_string()]);
+
+        let actual = run_ast_query(input, map_all);
+        
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn box_named_field_candidate_collector_should_collect_derive() {
-        assert_ast_success3(
-            r#"#[derive(Clone)]
-            struct G {field: i32}"#,
-            map_all,
-            vec!["field".to_string()]
-        );
+    #[ignore]
+    fn shouldnt_collect_nonstructs() {
+        let input = r#"
+enum Enum {
+    EnumItem1,
+    EnumTup1(u32),
+    EnumStruct1{struct1: u32},
+}
+union Union {
+    union_field1: u32,
+}
+"#;
+        let expected = Ok(vec![]);
+
+        let actual = run_ast_query(input, map_all);
+        
+        assert_eq!(actual, expected);
     }
 }
