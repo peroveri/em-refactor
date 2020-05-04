@@ -2,9 +2,8 @@ use rustc_hir::{HirId, Item, ItemKind};
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 
-use refactor_lib_types::FileStringReplacement;
 use crate::refactorings::utils::{get_source, map_change_from_span};
-use crate::refactoring_invocation::RefactoringErrorInternal;
+use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal};
 use super::visitors::{collect_local_variable_use, collect_struct_field_access_expressions};
 use struct_expression_collector::collect_struct_expressions;
 use struct_named_pattern_collector::collect_struct_named_patterns;
@@ -12,7 +11,7 @@ use struct_named_pattern_collector::collect_struct_named_patterns;
 mod struct_expression_collector;
 pub mod struct_named_pattern_collector;
 
-pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_ident: &str, field_ty_span: Span) -> Result<Vec<FileStringReplacement>, RefactoringErrorInternal> {
+pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_ident: &str, field_ty_span: Span) -> QueryResult<AstDiff> {
 
     let struct_patterns = collect_struct_named_patterns(tcx, struct_hir_id, field_ident);
 
@@ -27,7 +26,7 @@ pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_ident: &str, fiel
         format!("Box<{}>", get_source(tcx, field_ty_span)),
     )];
 
-    let (struct_expressions, struct_expression_shorthands) = collect_struct_expressions(tcx, struct_hir_id, field_ident);
+    let (struct_expressions, struct_expression_shorthands) = collect_struct_expressions(tcx, struct_hir_id, field_ident)?;
 
     for struct_expression in struct_expressions {
         let replacement = format!("Box::new({})", get_source(tcx, struct_expression));
@@ -51,7 +50,7 @@ pub fn do_refactoring(tcx: TyCtxt, struct_hir_id: HirId, field_ident: &str, fiel
         }
     }
 
-    Ok(changes)
+    Ok(AstDiff(changes))
 }
 
 /// Used to skip visiting derived std implementations

@@ -3,6 +3,7 @@ use rustc_hir::intravisit::{FnKind, walk_expr, walk_fn, walk_item, walk_crate, N
 use rustc_middle::hir::map::Map;
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
+use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal};
 
 ///
 /// Collect all places where a given struct occurs in a struct expression where also `field_ident` occurs.
@@ -29,7 +30,7 @@ pub fn collect_struct_expressions(
     tcx: TyCtxt,
     struct_hir_id: HirId,
     field_ident: &str,
-) -> (Vec<Span>, Vec<(Span, String)>) {
+) -> QueryResult<(Vec<Span>, Vec<(Span, String)>)> {
     let mut v = StructExpressionCollector {
         tcx,
         struct_hir_id,
@@ -37,11 +38,13 @@ pub fn collect_struct_expressions(
         shorthands: vec![],
         field_ident: field_ident.to_string(),
         body_id: None,
+        err: Ok(())
     };
     
     walk_crate(&mut v, tcx.hir().krate());
+    v.err?;
 
-    (v.field, v.shorthands)
+    Ok((v.field, v.shorthands))
 }
 
 struct StructExpressionCollector<'v> {
@@ -51,12 +54,19 @@ struct StructExpressionCollector<'v> {
     shorthands: Vec<(Span, String)>,
     field_ident: String,
     body_id: Option<BodyId>,
+    err: QueryResult<()>
 }
 
 impl StructExpressionCollector<'_> {
-    fn expr_resolves_to_struct(&self, expr: &Expr) -> bool {
-    let def_id = self.tcx.hir().body_owner_def_id(self.body_id.unwrap());
-    let typecheck_table = self.tcx.typeck_tables_of(def_id);
+    fn expr_resolves_to_struct(&mut self, expr: &Expr) -> bool {
+        let body_id = if let Some(b) = self.body_id {
+            b
+        } else {
+            self.err = Err(RefactoringErrorInternal::int("expected body id"));
+            return false;
+        };
+        let def_id = self.tcx.hir().body_owner_def_id(body_id);
+        let typecheck_table = self.tcx.typeck_tables_of(def_id);
         if let Some(expr_type) = typecheck_table.expr_ty_adjusted_opt(expr) {
             if let Some(adt_def) = expr_type.ty_adt_def() {
                 return adt_def.did == self.struct_hir_id.owner.to_def_id();
@@ -183,7 +193,7 @@ mod test {
     fn struct_expression_collector_should_collect_1() {
         run_after_analysis(create_program_match_1(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo");
+            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo").unwrap();
 
             assert_eq!(fields.len(), 1);
             assert_eq!(get_source(tcx, fields[0]), "0");
@@ -193,7 +203,7 @@ mod test {
     fn struct_expression_collector_should_collect_2() {
         run_after_analysis(create_program_match_2(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo");
+            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo").unwrap();
 
             assert_eq!(fields.len(), 1);
         });
@@ -202,7 +212,7 @@ mod test {
     fn struct_expression_collector_should_collect_3() {
         run_after_analysis(create_program_match_3(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo");
+            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo").unwrap();
 
             assert_eq!(fields.len(), 2);
             assert_eq!(get_source(tcx, fields[0]), "0");
@@ -213,7 +223,7 @@ mod test {
     fn struct_expression_collector_should_collect_4() {
         run_after_analysis(create_program_match_4(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo");
+            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo").unwrap();
 
             assert_eq!(fields.len(), 1);
             assert_eq!(get_source(tcx, fields[0]), "0");
@@ -223,7 +233,7 @@ mod test {
     fn struct_expression_collector_should_collect_5() {
         run_after_analysis(create_program_match_5(), |tcx| {
             let hir_id = get_struct_hir_id(tcx);
-            let (fields, shorthands) = collect_struct_expressions(tcx, hir_id, "foo");
+            let (fields, shorthands) = collect_struct_expressions(tcx, hir_id, "foo").unwrap();
 
             assert_eq!(fields.len(), 0);
             assert_eq!(shorthands.len(), 1);
@@ -235,7 +245,7 @@ mod test {
     fn struct_expression_collector_should_collect_6() {
         run_after_analysis(create_program_match_6(), |tcx| {
             let hir_id = get_struct_hir_id6(tcx);
-            let (fields, shorthands) = collect_struct_expressions(tcx, hir_id, "foo");
+            let (fields, shorthands) = collect_struct_expressions(tcx, hir_id, "foo").unwrap();
             assert_eq!(fields.len(), 0);
             assert_eq!(shorthands.len(), 0);
             // assert_eq!("", get_source(tcx, create_test_span(0, 40)));
