@@ -27,12 +27,12 @@ use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal, TyCon
 /// # Grammar
 /// [Struct expression grammar](https://doc.rust-lang.org/stable/reference/expressions/struct-expr.html)
 pub fn collect_struct_expressions(
-    tcx: TyCtxt,
+    tcx: &TyContext,
     struct_hir_id: HirId,
     field_ident: &str,
 ) -> QueryResult<(Vec<Span>, Vec<(Span, String)>)> {
     let mut v = StructExpressionCollector {
-        tcx,
+        tcx: tcx.0,
         struct_hir_id,
         field: vec![],
         shorthands: vec![],
@@ -41,7 +41,7 @@ pub fn collect_struct_expressions(
         err: Ok(())
     };
     
-    walk_crate(&mut v, tcx.hir().krate());
+    walk_crate(&mut v, tcx.0.hir().krate());
     v.err?;
 
     Ok((v.field, v.shorthands))
@@ -128,7 +128,7 @@ mod test {
         Box::new(move |ty| {
             let span = ty.get_span(&file_name, from, to)?;
             let (field, _) = collect_field(ty.0, span).unwrap();
-            let (span1, span2) = collect_struct_expressions(ty.0, field.hir_id, &ty.get_source(span)).unwrap();
+            let (span1, span2) = collect_struct_expressions(&ty, field.hir_id, &ty.get_source(span)).unwrap();
 
             Ok((
                 span1.iter().map(|s| ty.get_source(*s)).collect::<Vec<_>>(),
