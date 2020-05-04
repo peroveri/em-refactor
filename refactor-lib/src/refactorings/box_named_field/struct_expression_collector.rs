@@ -3,7 +3,7 @@ use rustc_hir::intravisit::{FnKind, walk_expr, walk_fn, walk_item, walk_crate, N
 use rustc_middle::hir::map::Map;
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
-use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal};
+use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal, TyContext};
 
 ///
 /// Collect all places where a given struct occurs in a struct expression where also `field_ident` occurs.
@@ -121,134 +121,112 @@ impl<'v> Visitor<'v> for StructExpressionCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{create_test_span, run_after_analysis};
+    use crate::test_utils::run_ty_query;
     use crate::refactorings::visitors::collect_field;
-    use super::super::super::utils::get_source;
-    use quote::quote;
-    use quote::__private::TokenStream;
 
-    fn create_program_match_1() -> TokenStream {
-        quote! {
-            struct S { foo: u32 }
-            fn foo() {
-                let _ = S { foo: 0 };
-            }
-        }
-    }
-    fn create_program_match_2() -> TokenStream {
-        quote! {
-            struct S { foo: u32 }
-            fn foo() {
-                let s = S { foo: 0 };
-                let _ = S { ..s };
-            }
-        }
-    }
-    fn create_program_match_3() -> TokenStream {
-        quote! {
-            struct S { foo: u32 }
-            fn foo() {
-                let _ = S { foo: 0 };
-                let _ = S { foo: 1 };
-            }
-        }
-    }
-    fn create_program_match_4() -> TokenStream {
-        quote! {
-            struct S { foo: u32 }
-            impl S {
-                fn foo() {
-                    let _ = Self { foo: 0 };
-                }
-            }
-        }
-    }
-    fn create_program_match_5() -> TokenStream {
-        quote! {
-            struct S { foo: u32 }
-            fn bar() {
-                let foo = 0;
-                S { foo };
-            }
-        }
-    }
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<(Vec<String>, Vec<String>)> + Send> {
+        Box::new(move |ty| {
+            let span = ty.get_span(&file_name, from, to)?;
+            let (field, _) = collect_field(ty.0, span).unwrap();
+            let (span1, span2) = collect_struct_expressions(ty.0, field.hir_id, &ty.get_source(span)).unwrap();
 
-    fn create_program_match_6() -> TokenStream {
-        quote! {
-            # [ derive ( Eq , PartialEq , Ord , PartialOrd , Clone , Hash , Default , Debug ) ] struct S { foo : u32 }
-        }
-    }
-    fn get_struct_hir_id(tcx: TyCtxt<'_>) -> HirId {
-        let (field, _) = collect_field(tcx, create_test_span(11, 14)).unwrap();
-        let struct_def_id = field.hir_id.owner.to_def_id();
-        tcx.hir().as_local_hir_id(struct_def_id).unwrap()
-    }
-    fn get_struct_hir_id6(tcx: TyCtxt<'_>) -> HirId {
-        let (field, _) = collect_field(tcx, create_test_span(95, 98)).unwrap();
-        let struct_def_id = field.hir_id.owner.to_def_id();
-        tcx.hir().as_local_hir_id(struct_def_id).unwrap()
+            Ok((
+                span1.iter().map(|s| ty.get_source(*s)).collect::<Vec<_>>(),
+                span2.iter().map(|s| ty.get_source(s.0)).collect::<Vec<_>>()))
+        })
     }
 
     #[test]
-    fn struct_expression_collector_should_collect_1() {
-        run_after_analysis(create_program_match_1(), |tcx| {
-            let hir_id = get_struct_hir_id(tcx);
-            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo").unwrap();
+    fn should_collect_field() {
+        let input = r#"
+struct S { /*START*/foo/*END*/: u32 }
+fn foo() {
+    let _ = S { foo: 123 };
+}"#;
+        let expected = Ok((
+            vec!["123".to_owned()],
+            vec![]));
 
-            assert_eq!(fields.len(), 1);
-            assert_eq!(get_source(tcx, fields[0]), "0");
-        });
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn struct_expression_collector_should_collect_2() {
-        run_after_analysis(create_program_match_2(), |tcx| {
-            let hir_id = get_struct_hir_id(tcx);
-            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo").unwrap();
+    fn should_not_collect_when_field_doesnt_occur() {
+        let input = r#"
+struct S { /*START*/foo/*END*/: u32 }
+fn foo() {
+    let s = S { foo: 123 };
+    let _ = S { ..s };
+}"#;
+        let expected = Ok((
+            vec!["123".to_owned()],
+            vec![]));
 
-            assert_eq!(fields.len(), 1);
-        });
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn struct_expression_collector_should_collect_3() {
-        run_after_analysis(create_program_match_3(), |tcx| {
-            let hir_id = get_struct_hir_id(tcx);
-            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo").unwrap();
+    fn should_collect_two_occurrences() {
+        let input = r#"
+struct S { /*START*/foo/*END*/: u32 }
+fn foo() {
+    let s = S { foo: 123 };
+    let _ = S { foo: 4 };
+}"#;
+        let expected = Ok((
+            vec!["123".to_owned(), "4".to_owned()],
+            vec![]));
 
-            assert_eq!(fields.len(), 2);
-            assert_eq!(get_source(tcx, fields[0]), "0");
-            assert_eq!(get_source(tcx, fields[1]), "1");
-        });
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn struct_expression_collector_should_collect_4() {
-        run_after_analysis(create_program_match_4(), |tcx| {
-            let hir_id = get_struct_hir_id(tcx);
-            let (fields, _) = collect_struct_expressions(tcx, hir_id, "foo").unwrap();
+    fn should_collect_self() {
+        let input = r#"
+struct S { /*START*/foo/*END*/: u32 }
+impl S {
+    fn foo() {
+        let _ = Self { foo: 0 };
+    }
+}"#;
+        let expected = Ok((
+            vec!["0".to_owned()],
+            vec![]));
 
-            assert_eq!(fields.len(), 1);
-            assert_eq!(get_source(tcx, fields[0]), "0");
-        });
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn struct_expression_collector_should_collect_5() {
-        run_after_analysis(create_program_match_5(), |tcx| {
-            let hir_id = get_struct_hir_id(tcx);
-            let (fields, shorthands) = collect_struct_expressions(tcx, hir_id, "foo").unwrap();
+    fn should_collect_field_init_shorthand() {
+        let input = r#"
+struct S { /*START*/foo/*END*/: u32 }
+fn foo() {
+    let foo = 0;
+    S { foo };
+}"#;
+        let expected = Ok((
+            vec![],
+            vec!["foo".to_owned()]));
 
-            assert_eq!(fields.len(), 0);
-            assert_eq!(shorthands.len(), 1);
-            assert_eq!(get_source(tcx, shorthands[0].0), "foo");
-            assert_eq!(shorthands[0].1, "foo");
-        });
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn struct_expression_collector_should_collect_6() {
-        run_after_analysis(create_program_match_6(), |tcx| {
-            let hir_id = get_struct_hir_id6(tcx);
-            let (fields, shorthands) = collect_struct_expressions(tcx, hir_id, "foo").unwrap();
-            assert_eq!(fields.len(), 0);
-            assert_eq!(shorthands.len(), 0);
-            // assert_eq!("", get_source(tcx, create_test_span(0, 40)));
-        });
+    fn shouldnt_collect_builtin_derives() {
+        let input = r#"
+# [derive(Eq, PartialEq, Ord, PartialOrd, Clone, Hash, Default, Debug)] 
+struct S { /*START*/foo/*END*/: u32 }"#;
+        let expected = Ok((
+            vec![],
+            vec![]));
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
 }

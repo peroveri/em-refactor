@@ -239,6 +239,25 @@ pub fn assert_success5<T>(prog: &str, init: Box<dyn Fn(&TestContext) -> Box<dyn 
 
     assert_eq!(c.result, expected);
 }
+pub fn run_ty_query<T, F>(program: &str, init: F) -> QueryResult<T>
+    where
+        F: Fn(String, u32, u32) -> Box<dyn Fn(&TyContext) -> QueryResult<T> + Send>,
+        T: std::fmt::Debug + PartialEq + Send {
+    const S0_STR: &str = "/*START*/";
+    const S1_STR: &str = "/*END*/";
+    let s0 = (program.find(S0_STR).unwrap() + S0_STR.len()) as u32;
+    let s1 = program.find(S1_STR).unwrap() as u32;
+    
+    let (rustc_args, d) = init_main_rs_and_get_args(program);
+    let main_path = d.path().join("./main.rs").to_str().unwrap().to_owned();
+    let q = init(main_path, s0, s1);
+
+    let mut c = MyRefactorCallbacks::from_arg(Query::AfterParsing(q), false);
+    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
+    err.unwrap();
+
+    c.result
+}
 pub fn assert_success3<T, F>(program: &str, init: F, expected: T) 
     where
         F: Fn(String, u32, u32) -> Box<dyn Fn(&TyContext) -> QueryResult<T> + Send>,
