@@ -11,6 +11,16 @@ pub fn get_file_offset(source_map: &SourceMap, file_name: &str) -> QueryResult<u
     let source_file = source_map.get_source_file(&file_name_real).ok_or_else(|| RefactoringErrorInternal::int(&format!("Couldn't find file: {}", file_name)))?;
     Ok(source_file.start_pos.0 as u32)
 }
+fn get_local_filename(source_map: &SourceMap, span: Span) -> QueryResult<String> {
+    let filename = source_map.span_to_filename(span);
+    if let FileName::Real(pathbuf) = &filename {
+        if let Some(s) = pathbuf.to_str() {
+            return Ok(s.to_string());
+        }
+    }
+    Err(RefactoringErrorInternal::int(&format!("unexpected file type: {:?}", filename)))
+}
+
 fn get_filename(source_map: &SourceMap, span: Span) -> QueryResult<String> {
     let filename = source_map.span_to_filename(span);
     if let FileName::Real(pathbuf) = &filename {
@@ -33,13 +43,13 @@ pub fn map_range_to_span(source_map: &SourceMap, range: &SourceCodeRange) -> Res
     }
 }
 
-pub fn map_change_from_span(source_map: &SourceMap, span: Span, replacement: String) -> FileStringReplacement {
-    let filename = get_filename(source_map, span).unwrap();
-    let file_offset = get_file_offset(source_map, &filename).unwrap();
+pub fn map_change_from_span(source_map: &SourceMap, span: Span, replacement: String) -> QueryResult<FileStringReplacement> {
+    let filename = get_local_filename(source_map, span)?;
+    let file_offset = get_file_offset(source_map, &filename)?;
     let lines = source_map.span_to_lines(span).unwrap().lines;
     let line_start = lines.first().unwrap();
     let line_end = lines.last().unwrap();
-    FileStringReplacement {
+    Ok(FileStringReplacement {
         file_name: filename,
         byte_start: span.lo().0 - file_offset,
         byte_end: span.hi().0 - file_offset,
@@ -48,7 +58,7 @@ pub fn map_change_from_span(source_map: &SourceMap, span: Span, replacement: Str
         line_end: line_end.line_index,
         line_start: line_start.line_index,
         replacement,
-    }
+    })
 }
 
 pub fn get_source(tcx: TyCtxt, span: Span) -> String {

@@ -5,7 +5,7 @@ use crate::refactorings::visitors::hir::{collect_cfs, collect_innermost_containe
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 
-fn get_call(tcx: TyCtxt, span: Span, add_comment: bool) -> FileStringReplacement {
+fn get_call(tcx: TyCtxt, span: Span, add_comment: bool) -> QueryResult<FileStringReplacement> {
     map_change_from_span(tcx.sess.source_map(), span, format!("{}(|| {})(){}", get_start_comment(add_comment), get_source(tcx, span), get_end_comment(add_comment)))
 }
 
@@ -50,9 +50,9 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, add_comment: bool) -> QueryRe
             let repl = cf_expr.replace_cfs(tcx.0, block_src, span.lo().0);
             let anon_inv = format!("match (|| {})() {{{}}}", repl, cf_expr.get_cf_arms());
 
-            map_change_from_span(tcx.0.sess.source_map(), span, anon_inv)
+            map_change_from_span(tcx.0.sess.source_map(), span, anon_inv)?
         } else {
-            get_call(tcx.0, result.0.span, add_comment)
+            get_call(tcx.0, result.0.span, add_comment)?
         };
 
         Ok(AstDiff(vec![

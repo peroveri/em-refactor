@@ -50,7 +50,7 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryR
         new_fn.output = Some(format_ty(out));
     }
 
-    changes.push(tcx.map_change(closure.call_fn_expr.span, format!("({{{}\n{}}})", new_fn.formatted(), new_fn.ident)));
+    changes.push(tcx.map_change(closure.call_fn_expr.span, format!("({{{}\n{}}})", new_fn.formatted(), new_fn.ident))?);
 
 
     Ok(AstDiff(changes))

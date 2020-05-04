@@ -29,7 +29,7 @@ impl<'a, 'b> AstContext<'a, 'b> {
         self.compiler.source_map().span_to_snippet(span).unwrap()
     }
 
-    pub fn map_change(&self, span: Span, replacement: String) -> FileStringReplacement {
+    pub fn map_change(&self, span: Span, replacement: String) -> QueryResult<FileStringReplacement> {
         map_change_from_span(self.compiler.source_map(), span, replacement)
     }
     pub fn load_crate(&mut self) {

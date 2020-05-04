@@ -46,7 +46,7 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, add_comment: bool) -> QueryRe
     Ok(AstDiff(vec![tcx.map_change(
         span,
         new_block_source,
-    )]))
+    )?]))
 }
 
 fn get_block_start(add_comment: bool) -> String {

@@ -7,7 +7,7 @@ pub fn do_refactoring(context: &AstContext, _span: Span, _add_comment: bool) -> 
     
     let mut changes = vec![];
     for span in collect_comments(&context.source())? {
-        changes.push(context.map_change(span, "".to_owned()));
+        changes.push(context.map_change(span, "".to_owned())?);
     }
     Ok(AstDiff(changes))
 }

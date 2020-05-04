@@ -32,7 +32,7 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryR
             params
         };
         changes.push(
-            map_change_from_span(tcx.get_source_map(), closure.get_next_param_pos(), params));
+            map_change_from_span(tcx.get_source_map(), closure.get_next_param_pos(), params)?);
     }
 
     let args = vars.get_args_formatted();
@@ -42,11 +42,11 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryR
         } else {
             args
         };
-        changes.push(map_change_from_span(tcx.get_source_map(), closure.get_next_arg_pos(), args.to_string()));
+        changes.push(map_change_from_span(tcx.get_source_map(), closure.get_next_arg_pos(), args.to_string())?);
     }
 
     for v in vars.get_borrows() {
-        changes.push(map_change_from_span(tcx.get_source_map(), v, format!("(*{})", get_source(tcx.0, v))));
+        changes.push(map_change_from_span(tcx.get_source_map(), v, format!("(*{})", get_source(tcx.0, v)))?);
     }
 
     Ok(AstDiff(changes))

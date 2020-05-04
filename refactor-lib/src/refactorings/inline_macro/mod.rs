@@ -8,7 +8,7 @@ pub fn do_refactoring(ast: &AstContext, span: Span, _: bool) -> QueryResult<AstD
     let crate_ = ast.get_crate();
 
     if let Some((replacement, repl_span)) = collect_inline_macro(span, crate_) {
-        Ok(AstDiff(vec![map_change_from_span(ast.get_source_map(), repl_span, replacement)]))
+        Ok(AstDiff(vec![map_change_from_span(ast.get_source_map(), repl_span, replacement)?]))
     } else {
         Err(RefactoringErrorInternal::invalid_selection(span.lo().0, span.hi().0))
     }

@@ -22,16 +22,16 @@ pub fn do_refactoring(context: &AstContext, span: Span, add_comment: bool) -> Qu
     res.push(context.map_change(
         span.shrink_to_lo(),
         spans.iter().map(|s| context.get_source(*s)).collect::<Vec<_>>().join("")
-    ));
+    )?);
     for delete_span in spans {
         res.push(context.map_change(
             delete_span,
             "".to_owned(),
-        ));
+        )?);
     }
     if add_comment {
-        res.push(context.map_change(span.shrink_to_lo(), create_refactor_tool_marker(PULL_UP_ITEM_DECLARATIONS_STMTS, false)));
-        res.push(context.map_change(span.shrink_to_hi(), create_refactor_tool_marker(PULL_UP_ITEM_DECLARATIONS_STMTS, true)));
+        res.push(context.map_change(span.shrink_to_lo(), create_refactor_tool_marker(PULL_UP_ITEM_DECLARATIONS_STMTS, false))?);
+        res.push(context.map_change(span.shrink_to_hi(), create_refactor_tool_marker(PULL_UP_ITEM_DECLARATIONS_STMTS, true))?);
     }
     Ok(AstDiff(res))
 }
