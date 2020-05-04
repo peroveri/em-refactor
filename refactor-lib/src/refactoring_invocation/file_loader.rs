@@ -38,10 +38,9 @@ impl<T: FileLoader + Send + Sync> FileLoader for InMemoryFileLoader<T> {
 
         for changes in &self.changes {
             let mut changes =  changes.clone();
-            changes.sort_by_key(|c| c.byte_start);
-            changes.reverse();
+            changes.sort_by_key(|c| -(c.byte_start as i32));
             for change in changes {
-                if change.file_name == path.file_name().unwrap().to_str().unwrap() || change.file_name == path.to_str().unwrap() {
+                if Path::new(&change.file_name).eq(path) {
                     let s1 = &content[..(change.byte_start) as usize];
                     let s2 = &content[(change.byte_end) as usize..];
                     content = format!("{}{}{}", s1, change.replacement, s2);

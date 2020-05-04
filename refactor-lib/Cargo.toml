@@ -11,6 +11,7 @@ test = true
 
 [dependencies]
 if_chain = "1.0.0"
+itertools = "0.9"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 refactor-lib-types = { path = "../refactor-lib-types" }

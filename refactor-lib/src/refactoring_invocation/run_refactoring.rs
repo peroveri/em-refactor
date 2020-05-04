@@ -1,5 +1,6 @@
 use refactor_lib_types::{FileStringReplacement, RefactorArgs};
 use crate::refactoring_invocation::{arg_value, argument_list_to_refactor_def, AstDiff, from_error, from_success, MyRefactorCallbacks, QueryResult, RefactoringErrorInternal, rustc_rerun, serialize, InMemoryFileLoader};
+use itertools::Itertools;
 
 pub fn run_refactoring_and_output_result(refactor_args: &RefactorArgs, rustc_args: Vec<String>) -> Result<(), i32> {
     
@@ -53,7 +54,36 @@ fn run_refactoring_internal(rustc_args: &[String], refactor_args: &RefactorArgs)
     if err.is_err() {
         return Err(RefactoringErrorInternal::compile_err());
     }
+
+    check_no_overlapping_changes(&my_refactor.result)?;
+
     my_refactor.result
+}
+
+fn check_no_overlapping_changes(res: &QueryResult<AstDiff>) -> QueryResult<()> {
+
+    if let Ok(diff) = res {
+        for (_, group) in &diff.0.iter()
+            .sorted_by_key(|e| e.file_name.to_string())
+            .group_by(|e| e.file_name.to_string()) {
+            
+            let items = group.collect::<Vec<_>>();
+
+            for i in 0..items.len() - 1 {
+                for j in i + 1..items.len() - 1 {
+                    
+                    let (itemi, itemj) = (items[i], items[j]);
+                    let range_i = itemi.byte_start..itemi.byte_end;
+                    if range_i.contains(&itemj.byte_start) || range_i.contains(&itemj.byte_end) {
+                        return Err(RefactoringErrorInternal::int("overlapping range"));
+                    }
+                }   
+            }
+        }
+
+    }
+
+    Ok(())
 }
 
 
