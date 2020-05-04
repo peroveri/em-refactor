@@ -1,5 +1,5 @@
-use rustc_ast::ast::StructField;
-use rustc_ast::visit::{Visitor, walk_crate};
+use rustc_ast::ast::{Item, ItemKind, StructField};
+use rustc_ast::visit::{Visitor, walk_crate, walk_item};
 use rustc_span::Span;
 use crate::refactoring_invocation::{AstContext, QueryResult};
 
@@ -43,6 +43,13 @@ impl ExtractBlockCandidateVisitor {
 }
 
 impl<'ast> Visitor<'ast> for ExtractBlockCandidateVisitor {
+    fn visit_item(&mut self, i: &'ast Item) {
+        match i.kind {
+            ItemKind::Union(..)
+            | ItemKind::Enum(..) => {},
+            _ => walk_item(self, i)
+        }
+    }
     fn visit_struct_field(&mut self, b: &'ast StructField) {
         if b.span.from_expansion() {
             return;
@@ -123,7 +130,6 @@ struct G {field: i32}"#;
         assert_eq!(actual, expected);
     }
     #[test]
-    #[ignore]
     fn shouldnt_collect_nonstructs() {
         let input = r#"
 enum Enum {
