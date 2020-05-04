@@ -1,3 +1,4 @@
+use refactor_lib_types::RefactorErrorType;
 
 // refactoring result pr crate
 // - crash (bad format on input, didnt compile, unhandled error, ++) => stop execution
@@ -18,17 +19,21 @@ pub struct SourceCodeRange {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RefactoringErrorInternal {
-    pub code: InternalErrorCodes,
+    pub error_type: RefactorErrorType,
+    pub is_error: bool,
     pub message: String,
     pub external_codes: Vec<String>
 }
 
 impl RefactoringErrorInternal {
-    pub fn new(code: InternalErrorCodes, message: String, external_codes: Vec<String>) -> Self {
-        Self { code, message, external_codes }
+    fn new(error_type: RefactorErrorType, is_error: bool, message: String, external_codes: Vec<String>) -> Self {
+        Self { error_type, is_error, message, external_codes }
+    }
+    fn new_int_soft(code: InternalErrorCodes, message: String) -> Self {
+        Self::new(RefactorErrorType::Internal, false, message, vec![format!("{:?}", code)])
     }
     fn new_int(code: InternalErrorCodes, message: String) -> Self {
-        Self::new(code, message, vec![])
+        Self::new(RefactorErrorType::Internal, true, message, vec![format!("{:?}", code)])
     }
     pub fn used_in_pattern(ident: &str) -> Self {
         Self::new_int(InternalErrorCodes::Error,
@@ -37,13 +42,13 @@ impl RefactoringErrorInternal {
                 ident))
     }
     pub fn comment_not_found(name: &str) -> Self {
-        Self::new_int(InternalErrorCodes::FileNotFound,
+        Self::new_int_soft(InternalErrorCodes::FileNotFound,
             format!(
                 "Couldn't find comment: {}",
                 name))
     }
     pub fn file_not_found(name: &str) -> Self {
-        Self::new_int(InternalErrorCodes::FileNotFound,
+        Self::new_int_soft(InternalErrorCodes::FileNotFound,
             format!(
                 "Couldn't find file: {}",
                 name))
@@ -53,13 +58,13 @@ impl RefactoringErrorInternal {
             msg)
     }
     pub fn invalid_selection(from: u32, to: u32) -> Self {
-        Self::new_int(InternalErrorCodes::Error,
+        Self::new_int(InternalErrorCodes::InvalidSelection,
             format!(
                 "{}:{} is not a valid selection!",
                 from, to))
     }
     pub fn invalid_selection_with_code(from: u32, to: u32, selection: &str) -> Self {
-        Self::new_int(InternalErrorCodes::Error,
+        Self::new_int(InternalErrorCodes::InvalidSelection,
             format!(
                 "{}:{} is not a valid selection! `{}`",
                 from, to, selection))
@@ -75,19 +80,18 @@ impl RefactoringErrorInternal {
         Self::new_int(InternalErrorCodes::BadFormatOnInput, s.to_string())
     }
     pub fn compile_err() -> Self {
-        Self::new_int(InternalErrorCodes::CompileErr, "Compile err".to_string())
+        Self::new(RefactorErrorType::RustCError1, true, "Compile err".to_owned(), vec![])
     }
     pub fn recompile_err(s: &str, codes: Vec<String>) -> Self {
-        Self::new(InternalErrorCodes::ReCompileErr, s.to_string(), codes)
+        Self::new(RefactorErrorType::RustCError2, true, s.to_string(), codes)
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum InternalErrorCodes {
     Error = 0,
     FileNotFound = 1,
     Internal = 2,
     BadFormatOnInput = 3,
-    CompileErr = 4,
-    ReCompileErr = 5
+    InvalidSelection = 4,
 }

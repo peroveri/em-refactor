@@ -78,7 +78,26 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
 mod test {
     use quote::quote;
     use super::test_util::{assert_fail, assert_success};
+    use super::*;
+    use crate::test_utils::run_ty_query;
+    use crate::refactoring_invocation::RefactoringErrorInternal;
     
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<String> + Send> {
+        Box::new(move |ty| {
+            collect_innermost_block(ty, ty.get_span(&file_name, from, to)?)
+                .map(|(block, _)| ty.get_source(block.span))
+        })
+    }
+
+    #[test]
+    fn invalid_selection() {
+        let input = "/*START*//*END*/fn foo() { }";
+        let expected = Err(RefactoringErrorInternal::invalid_selection_with_code(9, 9, ""));
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
+    }    
     #[test]
     fn innermost_block_collector_fn_with_single_block() {
         assert_success(quote! {

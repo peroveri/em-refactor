@@ -24,9 +24,10 @@ pub struct RefactoringError {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum RefactorErrorType {
     Internal = 0,
-    Refactoring = 1,
-    RustCError1 = 2,
-    RustCError2 = 3,
+    /// The initial compilation failed
+    RustCError1 = 1,
+    /// The compile check after refactoring failed
+    RustCError2 = 2,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

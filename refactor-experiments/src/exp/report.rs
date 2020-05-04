@@ -54,7 +54,6 @@ impl ReportData {
                 RefactorResult::Success() => true, _ => false }).count(),
             internal_errs: self.result.iter().filter(|e| match e.1 {
                 RefactorResult::Err(RefactoringError { kind: RefactorErrorType::Internal, .. }) => true,
-                RefactorResult::Err(RefactoringError { kind: RefactorErrorType::Refactoring, .. }) => true,
                 RefactorResult::Err(RefactoringError { kind: RefactorErrorType::RustCError1, .. }) => true,
                 _ => false }).count(),
             recompile_errs: self.result.iter().filter(|e| match e.1 {
