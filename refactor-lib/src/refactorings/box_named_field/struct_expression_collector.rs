@@ -1,9 +1,9 @@
-use rustc_hir::{BodyId, Expr, ExprKind, Field, FnDecl, HirId, Item};
-use rustc_hir::intravisit::{FnKind, walk_expr, walk_fn, walk_item, walk_crate, NestedVisitorMap, Visitor};
+use rustc_hir::{BodyId, Expr, ExprKind, Field, HirId, ImplItem, ImplItemKind, Item, ItemKind};
+use rustc_hir::intravisit::{NestedVisitorMap, Visitor, walk_expr, walk_impl_item, walk_item, walk_crate};
 use rustc_middle::hir::map::Map;
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
-use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal, TyContext};
+use crate::refactoring_invocation::{QueryResult, TyContext};
 
 ///
 /// Collect all places where a given struct occurs in a struct expression where also `field_ident` occurs.
@@ -37,7 +37,7 @@ pub fn collect_struct_expressions(
         field: vec![],
         shorthands: vec![],
         field_ident: field_ident.to_string(),
-        body_id: None,
+        body_ids: vec![],
         err: Ok(())
     };
     
@@ -53,18 +53,16 @@ struct StructExpressionCollector<'v> {
     field: Vec<Span>,
     shorthands: Vec<(Span, String)>,
     field_ident: String,
-    body_id: Option<BodyId>,
+    body_ids: Vec<BodyId>,
     err: QueryResult<()>
 }
 
 impl StructExpressionCollector<'_> {
     fn expr_resolves_to_struct(&mut self, expr: &Expr) -> bool {
-        let body_id = if let Some(b) = self.body_id {
-            b
-        } else {
-            self.err = Err(RefactoringErrorInternal::int("expected body id"));
+        if self.body_ids.is_empty() {
             return false;
-        };
+        }
+        let body_id = *self.body_ids.last().unwrap();
         let def_id = self.tcx.hir().body_owner_def_id(body_id);
         let typecheck_table = self.tcx.typeck_tables_of(def_id);
         if let Some(expr_type) = typecheck_table.expr_ty_adjusted_opt(expr) {
@@ -94,27 +92,48 @@ impl<'v> Visitor<'v> for StructExpressionCollector<'v> {
     fn nested_visit_map(&mut self) -> NestedVisitorMap<Self::Map> {
         NestedVisitorMap::All(self.tcx.hir())
     }
-    fn visit_fn(
-        &mut self,
-        fk: FnKind<'v>,
-        fd: &'v FnDecl,
-        body_id: BodyId,
-        s: Span,
-        h: HirId,
-    ) {
-        self.body_id = Some(body_id);
-        walk_fn(self, fk, fd, body_id, s, h);
-    }
     fn visit_expr(&mut self, expr: &'v Expr) {
         if let ExprKind::Struct(_, fields, _) = &expr.kind {
             self.handle_expr(expr, fields);
         }
         walk_expr(self, expr);
     }
-    fn visit_item(&mut self, i: &'v Item<'v>) {
-        if !super::is_impl_from_std_derive_expansion(&i) {
-            walk_item(self, i);
+    fn visit_impl_item(
+        &mut self,
+        i: &'v ImplItem<'v>
+    ) {
+        match i.kind {
+            | ImplItemKind::Const(.., body_id)
+            | ImplItemKind::Fn(.., body_id) => {
+                self.body_ids.push(body_id);
+                walk_impl_item(self, i);
+                self.body_ids.pop();
+            },
+            _ => {
+                walk_impl_item(self, i);
+            }
+        };
+    }
+    fn visit_item(
+        &mut self,
+        i: &'v Item<'v>
+    ) {
+        if super::is_impl_from_std_derive_expansion(&i) {
+            return;
         }
+
+        match i.kind {
+            ItemKind::Static(.., body_id)
+            | ItemKind::Const(.., body_id)
+            | ItemKind::Fn(.., body_id) => {
+                self.body_ids.push(body_id);
+                walk_item(self, i);
+                self.body_ids.pop();
+            },
+            _ => {
+                walk_item(self, i);
+            }
+        };
     }
 }
 
@@ -223,6 +242,22 @@ fn foo() {
 struct S { /*START*/foo/*END*/: u32 }"#;
         let expected = Ok((
             vec![],
+            vec![]));
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
+    }
+    #[test]
+    fn should_collect_static_blocks() {
+        let input = r#"
+struct S { /*START*/foo/*END*/: u32 }
+
+static TMP: u32 = {
+    S {foo: 0}.foo
+};"#;
+        let expected = Ok((
+            vec!["0".to_owned()],
             vec![]));
 
         let actual = run_ty_query(input, map);
