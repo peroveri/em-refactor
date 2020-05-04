@@ -13,6 +13,10 @@ pub fn get_file_offset(source_map: &SourceMap, file_name: &str) -> QueryResult<u
 }
 fn get_local_filename(source_map: &SourceMap, span: Span) -> QueryResult<String> {
     let filename = source_map.span_to_filename(span);
+    let sourcefile = source_map.get_source_file(&filename).unwrap();
+    if sourcefile.is_imported() {
+        return Err(RefactoringErrorInternal::int(&format!("File: {:?} is not a local file", filename)));
+    }
     if let FileName::Real(pathbuf) = &filename {
         if let Some(s) = pathbuf.to_str() {
             return Ok(s.to_string());
