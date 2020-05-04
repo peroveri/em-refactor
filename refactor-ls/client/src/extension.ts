@@ -80,7 +80,7 @@ export function activate(context: vscode.ExtensionContext) {
 function listCustomCommands() {
 	return [
 		"cargo check --target-dir=./target/refactorings",
-		"candidates extract block",
+		"candidates extract method",
 		"candidates box field"
 	];
 }
@@ -91,8 +91,8 @@ function executeCommand(cmd: string) {
 		case 'cargo check --target-dir=./target/refactorings': {
 			return vscode.commands.executeCommand("mrefactor.cargo_check");
 		}
-		case 'candidates extract block': {
-			return vscode.commands.executeCommand("mrefactor.candidates", "extract-block");
+		case 'candidates extract method': {
+			return vscode.commands.executeCommand("mrefactor.candidates", "extract-method");
 		}
 		case 'candidates box field': {
 			return vscode.commands.executeCommand("mrefactor.candidates", "box-field");
