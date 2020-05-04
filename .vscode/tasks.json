@@ -121,9 +121,18 @@
             "group": {"isDefault": true, "kind": "build"}
         },
         {
-            "label": "run experiment",
+            "label": "run experiment - box field",
             "type": "shell",
-            "command": "cargo build --bins --lib && cargo run --bin refactor-experiments -- extract-method --workspace-root \"../../local/exp-dir/RustyXML\"",
+            "command": "cargo build --bins --lib --release && cargo run --release --bin refactor-experiments -- box-field --workspace-root \"../../local/exp-dir/RustyXML\"",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "test"
+        },
+        {
+            "label": "run experiment - extract method",
+            "type": "shell",
+            "command": "cargo build --bins --lib --release && cargo run --release --bin refactor-experiments -- extract-method --workspace-root \"../../local/exp-dir/RustyXML\"",
             "problemMatcher": [
                 "$rustc"
             ],
