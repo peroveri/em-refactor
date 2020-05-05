@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use refactor_lib_types::{RefactorOutputs, RefactorOutputs2};
 use std::process::Command;
+use super::{InvocationError, InvocationResult};
 
 static DRIVER_NAME: &str = "my-refactor-driver";
 
@@ -10,20 +11,21 @@ static DRIVER_NAME: &str = "my-refactor-driver";
 // in order to ensure that all the files in the current crate actually get built
 // when we run cargo check. Hopefully eventually there'll be a nicer way to
 // integrate with cargo such that we won't need to do this.
-pub(crate) fn clean_local_targets(metadata: &Metadata, target_dir: Option<&str>) -> Result<(), i32> {
+pub(crate) fn clean_local_targets(metadata: &Metadata, target_dir: Option<&str>) -> InvocationResult<()> {
     for name in &metadata.package_names {
         let mut args = vec!["+nightly-2020-04-15".to_owned(), "clean".to_owned(), "--package".to_owned(), name.to_string()];
         if let Some(dir) = &target_dir {
             args.push(format!("--target-dir={}", dir));
         }
         // TODO: error handling
-        let out = std::process::Command::new("cargo")
-            .args(args)
+        let mut cmd = Command::new("cargo");
+        cmd.args(args);
+            // .args(args)
             // .stdout(std::process::Stdio::piped())
             // .stderr(std::process::Stdio::piped())
-            .output().map_err(|_| -1)?;
+        let out = cmd.output()?;
         if !out.status.success() {
-            return Err(-2);
+            return Err(InvocationError::from_output(&cmd, &out));
         }
     }
     Ok(())
@@ -33,22 +35,19 @@ pub(crate) struct Metadata {
     pub package_names: Vec<String>,
     pub dependency_names: Vec<String>
 }
-pub(crate) fn get_metadata() -> Result<Metadata, std::io::Error> {
+pub(crate) fn get_metadata() -> InvocationResult<Metadata> {
     let mut metadata = Metadata {package_names: vec![], dependency_names: vec![]};
-    let output = std::process::Command::new("cargo")
-        .args(vec!["metadata", "--no-deps", "--format-version=1"])
-        .stdout(std::process::Stdio::piped())
+    let mut cmd = Command::new("cargo");
+    cmd.args(vec!["metadata", "--no-deps", "--format-version=1"]);
+
+    let output = cmd.stdout(std::process::Stdio::piped())
         .output()?;
-    assert!(
-        output.status.success(),
-        "cargo metadata failed:\n{}",
-        std::str::from_utf8(output.stderr.as_slice()).unwrap()
-    );
+    
+    if !output.status.success() {
+        return Err(InvocationError::from_output(&cmd, &output));
+    }
     let metadata_str = std::str::from_utf8(output.stdout.as_slice()).unwrap();
-    let parsed: serde_json::Value = match serde_json::from_str(metadata_str) {
-        Ok(v) => v,
-        Err(e) => panic!("Error parsing metadata JSON: {:?}", e),
-    };
+    let parsed: serde_json::Value = serde_json::from_str(metadata_str).map_err(|e| InvocationError::new(e.to_string()))?;
     for package in parsed["packages"].as_array().unwrap() {
         if let Some(name) = package["name"].as_str() {
             metadata.package_names.push(name.to_string());
@@ -67,7 +66,7 @@ pub(crate) fn get_metadata() -> Result<Metadata, std::io::Error> {
     Ok(metadata)
 }
 
-pub(crate) fn run_refactoring_cmd(target_dir: Option<&str>, env_args: (String, String)) -> Result<RefactorOutputs2, i32> {
+pub(crate) fn run_refactoring_cmd(target_dir: Option<&str>, env_args: (String, String)) -> InvocationResult<RefactorOutputs2> {
     
     let mut path = std::env::current_exe()
         .expect("current executable path invalid")
@@ -87,16 +86,14 @@ pub(crate) fn run_refactoring_cmd(target_dir: Option<&str>, env_args: (String, S
         .env(env_args.0, env_args.1)
         .stdout(std::process::Stdio::piped())
         // .stderr(std::process::Stdio::piped())
-        .output().unwrap();
+        .output()?;
     
     if output.status.success() {
         let s = std::str::from_utf8(output.stdout.as_slice()).unwrap();
         
         Ok(combine_output(s))
     } else {
-        let s = std::str::from_utf8(output.stderr.as_slice()).unwrap();
-        eprint!("{}", s);
-        Err(output.status.code().unwrap_or(-1))
+        Err(InvocationError::new(std::str::from_utf8(output.stderr.as_slice()).unwrap().to_string()))
     }
 }
 

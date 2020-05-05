@@ -1,11 +1,13 @@
 use arg_mappings::*;
 use clap::{Arg, App, AppSettings, SubCommand};
 use cmd_executer::*;
+use invocation_error::*;
 use itertools::Itertools;
 use refactor_lib_types::{*, defs::*};
 
 mod arg_mappings;
 mod cmd_executer;
+mod invocation_error;
 
 fn app<'a, 'b>() -> App<'a, 'b> {
     App::new("Refactoring tool")
@@ -50,6 +52,7 @@ fn app<'a, 'b>() -> App<'a, 'b> {
 }
 
 
+
 ///
 /// Wrapper binary which invokes cargo check with the RUSTC_WRAPPER env var set to the binary produced by driver.rs
 /// This will cause cargo to invoke the driver.rs binary with the same arguments as if the driver.rs binary was rustc.
@@ -63,32 +66,30 @@ fn app<'a, 'b>() -> App<'a, 'b> {
 ///
 ///
 pub fn main() {
-    if let Err(code) = process() {
-        std::process::exit(code);
+    if let Err(err) = process() {
+        eprint!("{}", err.message);
+        std::process::exit(-1);
     }
 }
 
-fn process() -> Result<(), i32> {
+fn serialize<T>(t: &T) -> InvocationResult<String> 
+    where T: serde::Serialize {
+    serde_json::to_string(t).map_err(|e| InvocationError::new(e.to_string()))
+}
+
+fn process() -> InvocationResult<()> {
     let matches = app().get_matches();
     let target_dir = matches.value_of("target-dir");
 
     if let Some(workspace_path) = matches.value_of("workspace-root") {
-        let res = std::env::set_current_dir(&workspace_path);
-        if res.is_err() {
-            eprintln!(
-                "Couldn't set current directory to: {}. Current dir is: {:?}",
-                workspace_path,
-                std::env::current_dir()
-            );
-            return Err(1);
-        }
+        std::env::set_current_dir(&workspace_path)?;
     }
-    let metadata = get_metadata().unwrap();
+    let metadata = get_metadata()?;
     let single_file = matches.is_present("single-file");
 
     let output = match matches.subcommand() {
         ("candidates", Some(candidate_matches)) => {
-            let env_args = (ENV_CANDIDATE_ARGS.to_owned(), serde_json::to_string(&get_candidate_args(candidate_matches, &metadata.dependency_names)).unwrap());
+            let env_args = (ENV_CANDIDATE_ARGS.to_owned(), serialize(&get_candidate_args(candidate_matches, &metadata.dependency_names))?);
             run_crate(&metadata, target_dir, env_args)?
         },
         ("refactor", Some(refactor_matches)) => {
@@ -102,18 +103,18 @@ fn process() -> Result<(), i32> {
     Ok(())
 }
 
-fn run_crate(metadata: &Metadata, target_dir: Option<&str>, env_args: (String, String)) -> Result<RefactorOutputs2, i32> {
+fn run_crate(metadata: &Metadata, target_dir: Option<&str>, env_args: (String, String)) -> InvocationResult<RefactorOutputs2> {
     // Clean local targets
     // This might cause the local cargo index to be locked, so we cannot run multiple tests on the same project in parallell.
     // might be fixed?
     // https://github.com/rust-lang/cargo/issues/7490
     //
-    clean_local_targets(metadata, target_dir).unwrap();
+    clean_local_targets(metadata, target_dir)?;
 
     run_refactoring_cmd(target_dir, env_args)
 }
 
-fn run_refactoring(metadata: &Metadata, mut refactor_args: RefactorArgs, target_dir: Option<&str>) -> Result<RefactorOutputs2, i32> {
+fn run_refactoring(metadata: &Metadata, mut refactor_args: RefactorArgs, target_dir: Option<&str>) -> InvocationResult<RefactorOutputs2> {
     match refactor_args.refactoring.as_ref() {
         defs::EXTRACT_METHOD => {
             refactor_args.add_comment = true;
@@ -147,13 +148,14 @@ fn run_refactoring(metadata: &Metadata, mut refactor_args: RefactorArgs, target_
     }
 }
 
-fn print_result(output: RefactorOutputs2, single_file: bool) -> Result<(), i32> {
+fn print_result(output: RefactorOutputs2, single_file: bool) -> InvocationResult<()> {
     if single_file {
         if output.errors.is_empty() {
             print!("{}", get_file_content_with_changes(output).unwrap());
         } else {
-            eprint!("{}", output.errors.iter().map(|e| format!("{:?}\n{}\n", e.kind, e.message)).join("\n"));
-            return Err(-1);
+            return Err(
+                InvocationError::new(output.errors.iter().map(|e| format!("{:?}\n{}\n", e.kind, e.message)).join("\n"))
+            );
         }
     } else {
         print!("{}", serde_json::to_string(&output).unwrap());

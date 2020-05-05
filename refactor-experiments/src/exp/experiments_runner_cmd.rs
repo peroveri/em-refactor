@@ -62,7 +62,7 @@ impl CmdRunner {
                 .arg(refactoring)
                 .output()?;
         
-        assert_eq!(output.status.code(), Some(0), "stdout: {}\nstderr:{}", std::str::from_utf8(output.stdout.as_slice()).unwrap(), std::str::from_utf8(output.stderr.as_slice()).unwrap());
+        assert!(output.status.success(), "stdout: {}\nstderr:{}", std::str::from_utf8(output.stdout.as_slice()).unwrap(), std::str::from_utf8(output.stderr.as_slice()).unwrap());
         
         let s = std::str::from_utf8(output.stdout.as_slice()).unwrap();
 
