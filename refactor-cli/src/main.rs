@@ -1,8 +1,10 @@
-use clap::{Arg, App, AppSettings, ArgMatches, SubCommand};
+use arg_mappings::*;
+use clap::{Arg, App, AppSettings, SubCommand};
 use cmd_executer::*;
 use itertools::Itertools;
 use refactor_lib_types::{*, defs::*};
 
+mod arg_mappings;
 mod cmd_executer;
 
 fn app<'a, 'b>() -> App<'a, 'b> {
@@ -63,24 +65,6 @@ fn app<'a, 'b>() -> App<'a, 'b> {
 pub fn main() {
     if let Err(code) = process() {
         std::process::exit(code);
-    }
-}
-
-fn get_refactor_args(m: &ArgMatches, deps: &[String]) -> RefactorArgs {
-    RefactorArgs {
-        file: m.value_of("file").unwrap().to_string(),
-        refactoring: m.value_of("refactoring").unwrap().to_string(),
-        selection: SelectionType::Range(m.value_of("selection").unwrap().to_string()),
-        unsafe_: m.is_present("unsafe"),
-        deps: deps.to_vec(),
-        add_comment: false,
-        with_changes: vec![]
-    }
-}
-fn get_candidate_args(m: &ArgMatches, deps: &[String]) -> CandidateArgs {
-    CandidateArgs {
-        refactoring: m.value_of("refactoring").unwrap().to_string(),
-        deps: deps.to_vec()
     }
 }
 
