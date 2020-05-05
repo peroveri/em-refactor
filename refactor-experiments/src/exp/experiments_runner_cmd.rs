@@ -3,7 +3,7 @@ use std::io::prelude::*;
 use std::path::PathBuf;
 use std::process::Command;
 use tempfile::TempDir;
-use refactor_lib_types::{CandidatePosition, RefactorOutputs2};
+use refactor_lib_types::{CandidatePosition, RefactorOutputs2, RefactoringError, RefactorErrorType};
 use super::TestResults;
 use itertools::Itertools;
 use log::info;
@@ -78,8 +78,15 @@ impl CmdRunner {
             .arg(format!("{}:{}", candidate.from, candidate.to))
             .output().unwrap();
 
-        assert!(output.status.success(), "stdout: {}\nstderr:{}\ncandidate: {:?}", std::str::from_utf8(output.stdout.as_slice()).unwrap(), std::str::from_utf8(output.stderr.as_slice()).unwrap(), candidate);
-        
+        if !output.status.success() {
+            return Ok(RefactorOutputs2::from_error(RefactoringError {
+                at_refactoring: refactoring.to_string(),
+                codes: vec!["ToolFailed".to_owned()],
+                is_error: true,
+                kind: RefactorErrorType::Internal,
+                message: std::str::from_utf8(output.stdout.as_slice()).unwrap().to_string()
+            }));
+        }
     
         let stdout = std::str::from_utf8(output.stdout.as_slice()).unwrap();
         Ok(serde_json::from_str(stdout).unwrap())
