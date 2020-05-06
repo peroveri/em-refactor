@@ -200,11 +200,11 @@ mod cli_tests {
     fn query_candidates_1() {
         let expected = serde_json::to_string(
             &RefactorOutputs2::from_candidates(vec![
-                CandidatePosition::new("src/main.rs", 16, 40),
-                CandidatePosition::new("src/main.rs", 16, 63),
-                CandidatePosition::new("src/main.rs", 45, 63),
-                CandidatePosition::new("src/main.rs", 100, 101),
-                CandidatePosition::new("src/main.rs", 124, 126),
+                CandidatePosition::new("src/main.rs", 16, 40, Some(1)),
+                CandidatePosition::new("src/main.rs", 16, 63, Some(2)),
+                CandidatePosition::new("src/main.rs", 45, 63, Some(1)),
+                CandidatePosition::new("src/main.rs", 100, 101, Some(1)),
+                CandidatePosition::new("src/main.rs", 124, 126, Some(1)),
         ])).unwrap();
 
         cargo_my_refactor()
@@ -238,9 +238,9 @@ mod cli_tests {
     #[test]
     fn query_candidates_multi_root_overlap() {
         let expected = serde_json::to_string(&RefactorOutputs2::from_candidates(vec![
-            CandidatePosition::new("src/lib.rs", 28, 41),
-            CandidatePosition::new("src/main.rs", 29, 42),
-            CandidatePosition::new("src/submod.rs", 47, 52),
+            CandidatePosition::new("src/lib.rs", 28, 41, Some(1)),
+            CandidatePosition::new("src/main.rs", 29, 42, Some(1)),
+            CandidatePosition::new("src/submod.rs", 47, 52, Some(1)),
         ])).unwrap();
 
         cargo_my_refactor()

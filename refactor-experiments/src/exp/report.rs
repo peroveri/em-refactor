@@ -132,7 +132,7 @@ mod test {
     use super::*;
     #[test]
     fn test_to_report() {
-        let cand = || CandidatePosition::new("", 0, 0);
+        let cand = || CandidatePosition::new("", 0, 0, Some(0));
         let report = ReportData {
             candidates: vec![],
             refactoring: "foo".to_owned(),
@@ -183,4 +183,27 @@ mod test {
 
         assert_eq!(expected, actual);
     }
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq)]
+pub struct ExperimentsOutput<'a> {
+    pub data: &'a ReportData,
+    pub short_report: ShortReport,
+    pub report: Report,
+    pub candidate_summary: Vec<(CandidatePosition, bool)>
+}
+
+impl<'a> ExperimentsOutput<'a> {
+    pub fn create(data: &'a ReportData) -> Self {
+        Self {
+            data,
+            short_report: ShortReport::from(data),
+            report: data.to_report(),
+            candidate_summary: create_candidate_summary(data)
+        }
+    }
+}
+
+fn create_candidate_summary(data: &ReportData) -> Vec<(CandidatePosition, bool)> {
+    data.result.iter().map(|(candidate, result)| (candidate.clone(), match result { RefactorResult::Success() => true, _ => false})).collect()
 }

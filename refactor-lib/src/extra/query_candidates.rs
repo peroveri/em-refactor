@@ -17,12 +17,13 @@ fn map_to_pos_query(args: CandidateQueryArgs, f: Box<dyn Fn(&AstContext) -> Quer
                 let mut candidates = vec![];
                 for span in res.into_iter() {
                     let (file, range) = map_span_to_index(ast.get_source_map(), span)?;
+                    let lines = ast.get_source(span).lines().count() as u32;
                     candidates.push(
-                        CandidatePosition {
-                            file,
-                            from: range.from.byte,
-                            to: range.to.byte
-                        }
+                        CandidatePosition::new(&file,
+                            range.from.byte,
+                            range.to.byte,
+                            Some(lines)
+                        )
                     );
                 }
 

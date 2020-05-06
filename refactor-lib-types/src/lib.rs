@@ -63,15 +63,17 @@ pub struct CandidateOutput {
 pub struct CandidatePosition {
     pub file: String,
     pub from: u32,
-    pub to: u32
+    pub to: u32,
+    pub nrof_lines: Option<u32>
 }
 
 impl CandidatePosition {
-    pub fn new(file: &str, from: u32, to: u32) -> Self {
+    pub fn new(file: &str, from: u32, to: u32, nrof_lines: Option<u32>) -> Self {
         Self {
             file: file.to_string(),
             from,
-            to
+            to,
+            nrof_lines
         }
     }
 }

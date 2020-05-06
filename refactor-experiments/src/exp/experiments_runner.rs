@@ -1,4 +1,4 @@
-use super::{CmdRunner, ReportData, ShortReport, Stopwatch};
+use super::{CmdRunner, ExperimentsOutput, ReportData, Stopwatch};
 use refactor_lib_types::CandidatePosition;
 use std::path::PathBuf;
 use log::{error, info};
@@ -77,8 +77,6 @@ pub fn run_all_exp(refactoring: &str, crate_path: &str) -> std::io::Result<()> {
     let cmd_runner = CmdRunner::new_default_tmp_dir(&PathBuf::from(crate_path), tool_path);
     let mut experiments_runner = ExperimentsRunner::new(refactoring.to_string(), cmd_runner);
     experiments_runner.run_exp_on_project()?;
-    println!("{}", serde_json::to_string(&experiments_runner.report).unwrap());
-    println!("{}", serde_json::to_string(&ShortReport::from(&experiments_runner.report)).unwrap());
-    println!("{}", serde_json::to_string(&experiments_runner.report.to_report()).unwrap());
+    println!("{}", serde_json::to_string(&ExperimentsOutput::create(&experiments_runner.report)).unwrap());
     Ok(())
 }
