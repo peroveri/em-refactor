@@ -78,7 +78,7 @@
         {
             "label": "test introduce-closure",
             "type": "shell",
-            "command": "cargo test --package refactor-cli --test refactoring_introduce_closure",
+            "command": "cargo test --package refactor-cli --test refactoring_introduce_closure_cf",
             "problemMatcher": [
                 "$rustc"
             ],
