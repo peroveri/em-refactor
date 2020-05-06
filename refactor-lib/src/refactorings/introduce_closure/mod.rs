@@ -48,7 +48,7 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, add_comment: bool) -> QueryRe
         if cf_expr.has_cfs() {
             let block_src = get_source(tcx.0, span);
             let repl = cf_expr.replace_cfs(tcx.0, block_src, span.lo().0);
-            let anon_inv = format!("match (|| {})() {{{}}}", repl, cf_expr.get_cf_arms());
+            let anon_inv = format!("match {}(|| {})(){} {{{}}}", get_start_comment(add_comment), repl, get_end_comment(add_comment), cf_expr.get_cf_arms());
 
             map_change_from_span(tcx.0.sess.source_map(), span, anon_inv)?
         } else {
@@ -82,5 +82,46 @@ mod test {
         assert_eq!(actual, expected);
     }
 
+    #[test]
+    fn adds_comment_1() {
+        let input = r#"fn foo() {
+    /*refactor-tool:test-id:start*/let _ : i32 = { 1 };/*refactor-tool:test-id:end*/   
+}"#;
+        let expected = Ok(r#"fn foo() {
+    /*refactor-tool:test-id:start*/let _ : i32 = /*refactor-tool:introduce-closure.call-expr:start*/(|| { 1 })()/*refactor-tool:introduce-closure.call-expr:end*/;/*refactor-tool:test-id:end*/   
+}"#.to_owned());
+
+        let actual = run_refactoring(
+            TestInit::from_refactoring(input, NAME)
+            .with_add_comment());
+        assert_eq!(actual, expected);
+    }
+    
+    #[test]
+    fn adds_comment_2() {
+        let input = r#"fn foo() {
+    loop {
+        /*refactor-tool:test-id:start*/{
+            break;
+            5
+        }/*refactor-tool:test-id:end*/;
+    }
+}"#;
+        let expected = Ok(r#"fn foo() {
+    loop {
+        /*refactor-tool:test-id:start*/match /*refactor-tool:introduce-closure.call-expr:start*/(|| {
+            return (1, None);
+            (0, Some(5))
+        })()/*refactor-tool:introduce-closure.call-expr:end*/ {
+(1, _) => break,
+(_, a) => a.unwrap()}/*refactor-tool:test-id:end*/;
+    }
+}"#.to_owned());
+
+        let actual = run_refactoring(
+            TestInit::from_refactoring(input, NAME)
+            .with_add_comment());
+        assert_eq!(actual, expected);
+    }
     // TODO: test add_comment for call expression and match-expression
 }
