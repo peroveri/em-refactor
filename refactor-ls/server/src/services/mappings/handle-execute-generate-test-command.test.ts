@@ -1,6 +1,6 @@
 import * as assert from 'assert';
-import { handleExecuteGenerateTestCommand } from './handle-execute-generate-test-command';
 import { ApplyWorkspaceEditParams, CreateFile, ExecuteCommandParams, Position, TextDocumentEdit, TextEdit } from 'vscode-languageserver';
+import { handleExecuteGenerateTestCommand } from '.';
 
 const expectedJson = `{
 ${"\t"}"file": "main.rs",

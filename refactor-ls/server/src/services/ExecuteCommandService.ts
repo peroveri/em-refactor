@@ -1,13 +1,10 @@
 import { singleton, inject } from "tsyringe";
 import { ExecuteCommandParams, ApplyWorkspaceEditParams, TextEdit, CreateFile, TextDocumentEdit, Position } from 'vscode-languageserver';
-import { canExecuteGenerateTestCommand, handleExecuteGenerateTestCommand } from "../modules";
+import { canExecuteGenerateTestCommand, config, handleExecuteGenerateTestCommand, mapRefactorResultToWorkspaceEdits, RefactorArgs, RefactorOutputs } from "./mappings";
 import { SettingsService } from "./SettingsService";
 import { NotificationService } from "./NotificationService";
 import { ShellService } from "./ShellService";
 import { WorkspaceService } from "./WorkspaceService";
-import { mapRefactorResultToWorkspaceEdits, RefactorOutputs } from "./mappings/workspace-mappings"
-import { RefactorArgs } from "./mappings/code-action-refactoring-mappings";
-import config from "./mappings/config";
 
 @singleton()
 export class ExecuteCommandService {

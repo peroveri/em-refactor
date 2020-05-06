@@ -8,7 +8,7 @@ import {
     DidChangeConfigurationNotification,
 } from 'vscode-languageserver';
 import { CodeActionService } from "./CodeActionService";
-import { listAllCommands, listAllCodeActionKinds } from "./mappings/code-action-mappings";
+import { listAllCommands, listAllCodeActionKinds } from "./mappings";
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;

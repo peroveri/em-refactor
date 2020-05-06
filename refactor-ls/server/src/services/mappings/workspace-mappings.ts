@@ -1,5 +1,5 @@
 import { Range, ApplyWorkspaceEditParams, TextDocumentEdit, TextEdit, WorkspaceFolder } from "vscode-languageserver";
-import { RefactorArgs } from "./code-action-refactoring-mappings";
+import { RefactorArgs } from ".";
 import * as path from "path";
 
 export interface RefactorOutputs {

@@ -1,7 +1,5 @@
 import { TextDocument, CodeActionParams, CodeActionKind } from "vscode-languageserver";
-import { generateJsonCodeActions } from "../../modules";
-import { listRefactorCodeActions } from './code-action-refactoring-mappings';
-import config from "./config";
+import { config, generateJsonCodeActions, listRefactorCodeActions } from ".";
 
 const refactorings = [
     "box-field",

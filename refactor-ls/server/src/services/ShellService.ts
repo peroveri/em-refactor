@@ -1,7 +1,7 @@
 import { singleton, inject } from "tsyringe";
 import * as shell from "shelljs";
 import { NotificationService } from "./NotificationService";
-import { RefactorArgs } from "./mappings/code-action-refactoring-mappings";
+import { RefactorArgs } from "./mappings";
 
 @singleton()
 export class ShellService {

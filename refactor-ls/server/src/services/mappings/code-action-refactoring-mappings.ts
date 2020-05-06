@@ -6,8 +6,7 @@ import {
     TextDocument,
 } from 'vscode-languageserver';
 
-import { ByteRange } from '../../modules';
-import config from './config';
+import { ByteRange, config } from '.';
 
 export interface RefactorArgs {
     file: string;
