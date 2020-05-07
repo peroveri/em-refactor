@@ -35,11 +35,18 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, add_comment: bool) -> QueryRe
     let statements_source = tcx.get_source(span);
 
     let (block_start, block_end) = (get_block_start(add_comment), get_block_end(add_comment));
-    let end = block.stmts.iter().rev().find(|s| span.contains(s.span));
-    let end_s = match end {
-        Some(rustc_hir::Stmt {kind: rustc_hir::StmtKind::Expr(..), ..}) => "",
-        _ => ";"
+    
+    let end_s = 
+    if let Some(expr) = block.expr {
+        if span.contains(expr.span) {
+            ""
+        } else {
+            ";"
+        }
+    } else {
+        ";"
     };
+
     // Add declaration with assignment, and expression at end of block
     // for variables declared in the selection and used later
     let new_block_source = match vars.len() {
