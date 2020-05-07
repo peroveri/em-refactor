@@ -80,7 +80,7 @@ mod test {
     /*refactor-tool:test-id:start*/let i = 0;/*refactor-tool:test-id:end*/   
 }"#;
         let expected = Ok(r#"fn foo() {
-    /*refactor-tool:test-id:start*//*refactor-tool:extract-block.block:start*/{let i = 0;}/*refactor-tool:extract-block.block:end*//*refactor-tool:test-id:end*/   
+    /*refactor-tool:test-id:start*//*refactor-tool:extract-block.block:start*/{let i = 0;}/*refactor-tool:extract-block.block:end*/;/*refactor-tool:test-id:end*/   
 }"#.to_owned());
 
         let actual = run_refactoring(TestInit::from_refactoring(input, NAME).with_add_comment());
@@ -92,7 +92,7 @@ mod test {
     /*refactor-tool:test-id:start*/let i = 0;/*refactor-tool:test-id:end*/   
 }"#;
         let expected = Ok(r#"fn foo() {
-    /*refactor-tool:test-id:start*/{let i = 0;}/*refactor-tool:test-id:end*/   
+    /*refactor-tool:test-id:start*/{let i = 0;};/*refactor-tool:test-id:end*/   
 }"#.to_owned());
 
         let actual = run_refactoring(TestInit::from_refactoring(input, NAME));
