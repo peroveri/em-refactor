@@ -1,0 +1,11 @@
+{
+	"file": "self_mut.rs",
+	"args": {
+		"refactoring": "close-over-variables",
+		"selection": "55:97"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "self_mut_after.rs"
+	}
+}

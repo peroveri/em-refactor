@@ -154,11 +154,11 @@ impl VariableUseCollection {
     pub fn get_args_formatted(&self) -> String {
         self.get_args().iter().map(|p| p.as_arg()).collect::<Vec<_>>().join(", ")
     }
-    pub fn get_borrows(&self) -> Vec<Span> {
+    pub fn get_borrows(&self) -> Vec<(Span, String)> {
         if self.return_values.iter().any(|rv| rv.is_move()) {
             vec![]
         } else {
-            self.return_values.iter().filter(|rv| rv.is_borrow() || rv.is_mutated()).map(|rv| rv.span).collect::<Vec<_>>()
+            self.return_values.iter().filter(|rv| rv.is_borrow() || rv.is_mutated()).map(|rv| (rv.span, rv.ident.to_string())).collect::<Vec<_>>()
         }
     }
 }
@@ -182,8 +182,8 @@ impl VariableUse {
 }
 impl Param {
     pub fn as_arg(&self) -> String {
-        format!("{}{}", 
-        if self.is_move {
+        format!("{}{}",
+        if self.ident == "self" || self.is_move {
             ""
         } else if self.is_mut {
             "&mut "
@@ -194,7 +194,7 @@ impl Param {
         }, self.ident)
     }
     pub fn as_param(&self) -> String {
-        format!("{}: {}{}", self.ident,
+        format!("{}: {}{}", if self.ident == "self" {"self_"} else {&self.ident},
         if self.is_move {
             ""
         } else if self.is_mut {

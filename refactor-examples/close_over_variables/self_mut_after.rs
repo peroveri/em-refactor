@@ -1,10 +1,10 @@
 fn main() { }
 impl S {
-    fn foo(&self) {
-        (|self_: &S| {
+    fn foo(&mut self) {
+        (|self_: &mut S| {
             (*self_).bar();
         })(self);
     }
-    fn bar(&self) { }
+    fn bar(&mut self) { }
 }
 struct S;

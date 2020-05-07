@@ -45,8 +45,13 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryR
         changes.push(map_change_from_span(tcx.get_source_map(), closure.get_next_arg_pos(), args.to_string())?);
     }
 
-    for v in vars.get_borrows() {
-        changes.push(map_change_from_span(tcx.get_source_map(), v, format!("(*{})", get_source(tcx.0, v)))?);
+    for (span, ident) in vars.get_borrows() {
+        let expr = if ident == "self" {
+            "self_".to_owned()
+        } else {
+            get_source(tcx.0, span)
+        };
+        changes.push(map_change_from_span(tcx.get_source_map(), span, format!("(*{})", expr))?);
     }
 
     Ok(AstDiff(changes))
