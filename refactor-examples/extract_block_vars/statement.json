@@ -1,0 +1,11 @@
+{
+    "file": "statement.rs",
+    "args": {
+        "refactoring": "extract-block",
+        "selection": "16:27"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "statement_after.rs"
+    }
+}

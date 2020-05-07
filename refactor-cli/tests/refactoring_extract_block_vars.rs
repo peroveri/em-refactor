@@ -25,4 +25,8 @@ mod extract_block_vars {
     fn redeclare_var_2() {
         run_test("redeclare_var_2");
     }
+    #[test]
+    fn statement() {
+        run_test("statement");
+    }
 }
