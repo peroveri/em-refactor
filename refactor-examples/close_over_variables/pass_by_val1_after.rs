@@ -1,6 +1,6 @@
 fn main() {
     let i = S;
-    (|i: _| {
+    (|i: S| {
         let a: &S = &i;
         let b: S = i;
     })(i);

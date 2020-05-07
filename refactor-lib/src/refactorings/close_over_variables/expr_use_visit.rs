@@ -48,9 +48,12 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
         match self.get_ident_and_decl_span(place) {
             Ok(None) => {},
             Ok(Some(ident)) => 
-                self.usages.add_return_value(ident, bk, used_span),
+                self.usages.add_return_value(ident, bk, used_span, self.format_ty(&place.ty)),
             Err(err) => self.err = Err(err)
         };
+    }
+    fn format_ty(&self, ty: &rustc_middle::ty::Ty) -> String {
+        format!("{}", ty)
     }
 }
 
@@ -113,7 +116,7 @@ mod test {
     use crate::refactoring_invocation::TyContext;
     use crate::test_utils::assert_success3;
 
-    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(ExpressionUseKind, String, (u32, u32))>> + Send> {
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(ExpressionUseKind, String, (u32, u32), String)>> + Send> {
         Box::new(move |ty| {
             let closure = collect_anonymous_closure(ty, ty.get_span(&file_name, from, to)?).unwrap();
             let vars = collect_vars(ty.0, closure.body_id, ty.get_body_span(closure.body_id))?;
@@ -142,7 +145,7 @@ r#"fn foo () {
 }"#,
         map,
         vec![
-            (ExpressionUseKind::ImmBorrow, "i".to_string(), (56, 57))
+            (ExpressionUseKind::ImmBorrow, "i".to_owned(), (56, 57), "i32".to_owned())
         ]);
     }
     #[test]
@@ -155,7 +158,7 @@ r#"fn foo () {
     })()/*END*/;
 }"#, 
         map,
-        vec![(ExpressionUseKind::Copy, "i".to_string(), (56, 57))]);
+        vec![(ExpressionUseKind::Copy, "i".to_string(), (56, 57), "&i32".to_owned())]);
     }
     #[test]
     fn closure_expr_use_visit_should_collect_c() {
@@ -167,7 +170,7 @@ r#"fn foo () {
     })()/*END*/;
 }"#,
         map,
-        vec![(ExpressionUseKind::Mut, "i".to_string(), (59, 61))]);
+        vec![(ExpressionUseKind::Mut, "i".to_string(), (59, 61), "i32".to_owned())]);
     }
     #[test]
     fn closure_expr_use_visit_should_collect_d() {
@@ -178,7 +181,7 @@ r#"fn foo() {
         *i = 1;
     })()/*END*/;
 }"#, map,
-            vec![(ExpressionUseKind::Mut, "i".to_string(), (58, 60))]);
+            vec![(ExpressionUseKind::Mut, "i".to_string(), (58, 60), "i32".to_owned())]);
     }
     #[test]
     fn closure_expr_use_visit_should_collect_e() {
@@ -191,7 +194,7 @@ r#"fn foo () {
     })()/*END*/;
 }"#, 
         map,
-        vec![(ExpressionUseKind::Copy, "b1".to_string(), (87, 89))]);
+        vec![(ExpressionUseKind::Copy, "b1".to_string(), (87, 89), "&std::string::String".to_owned())]);
     }
     #[test]
     fn closure_expr_use_visit_should_collect_f() {
@@ -203,7 +206,7 @@ r#"fn foo () {
     })()/*END*/;
 }"#, 
         map,
-        vec![(ExpressionUseKind::Mut, "i".to_string(), (59, 60))]);
+        vec![(ExpressionUseKind::Mut, "i".to_string(), (59, 60), "i32".to_owned())]);
     }
     #[test]
     fn closure_expr_use_visit_should_collect_g() {
@@ -216,7 +219,7 @@ r#"fn foo () {
 }
 struct S;"#, 
         map,
-        vec![(ExpressionUseKind::Move, "i".to_string(), (63, 64))]);
+        vec![(ExpressionUseKind::Move, "i".to_string(), (63, 64), "S".to_owned())]);
     }
     #[test]
     fn closure_expr_use_visit_should_collect_h() {
@@ -228,7 +231,7 @@ struct S;"#,
     })()/*END*/;
 }"#,
             map,
-            vec![(ExpressionUseKind::ImmBorrow, "j".to_string(), (71, 72))]);
+            vec![(ExpressionUseKind::ImmBorrow, "j".to_string(), (71, 72), "i32".to_owned())]);
     }
     #[test]
     fn closure_expr_use_visit_should_collect_j() {
@@ -240,7 +243,7 @@ struct S;"#,
 }
 fn b(s: &i32) {}"#,
             map,
-            vec![(ExpressionUseKind::ImmBorrow, "s".to_string(), (52, 53))]);
+            vec![(ExpressionUseKind::ImmBorrow, "s".to_string(), (52, 53), "i32".to_owned())]);
     }
     #[test]
     fn closure_expr_use_visit_should_collect_k() {
@@ -253,7 +256,7 @@ fn b(s: &i32) {}"#,
 }
 struct S;"#,
             map,
-            vec![(ExpressionUseKind::ImmBorrow, "i".to_string(), (66, 67))]);
+            vec![(ExpressionUseKind::ImmBorrow, "i".to_string(), (66, 67), "S".to_owned())]);
     }
     // TODO: check patterns, e.g. let _ = i;
 }

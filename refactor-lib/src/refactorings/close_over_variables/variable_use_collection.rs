@@ -32,15 +32,17 @@ pub struct Param {
     pub ident: String,
     pub is_borrow: bool,
     pub is_mut: bool,
-    pub is_move: bool
+    pub is_move: bool,
+    pub ty: String
 }
 impl Param {
-    pub fn new(ident: &str, is_mut: bool, is_borrow: bool, is_move: bool) -> Self {
+    pub fn new(ident: &str, is_mut: bool, is_borrow: bool, is_move: bool, ty: String) -> Self {
         Self {
             ident: ident.to_string(),
             is_borrow,
             is_mut,
-            is_move
+            is_move,
+            ty
         }
     }
 }
@@ -59,9 +61,9 @@ impl VariableUseCollection {
         }
     }
     #[cfg(test)]
-    pub fn to_cmp(&self) -> Vec<(ExpressionUseKind, String, (u32, u32))> {
+    pub fn to_cmp(&self) -> Vec<(ExpressionUseKind, String, (u32, u32), String)> {
         self.return_values.iter()
-            .map(|r| (r.bk, r.ident.to_string(), (r.span.lo().0, r.span.hi().0)))
+            .map(|r| (r.bk, r.ident.to_string(), (r.span.lo().0, r.span.hi().0), r.ty.to_string()))
             .collect::<Vec<_>>()
     }
     // pub fn get_use_by_ident(&self) -> Vec<SingleVariableUse> {
@@ -85,11 +87,12 @@ impl VariableUseCollection {
     //     }
     //     ret
     // }
-    pub fn add_return_value(&mut self, ident: String, bk: ExpressionUseKind, span: Span) {
+    pub fn add_return_value(&mut self, ident: String, bk: ExpressionUseKind, span: Span, ty: String) {
         self.return_values.push(VariableUse {
             ident,
             bk,
-            span
+            span,
+            ty
         });
     }
 
@@ -107,7 +110,7 @@ impl VariableUseCollection {
                 entry.is_borrow = entry.is_borrow || rv.is_borrow();
                 entry.is_move = entry.is_move || rv.is_move();
             } else {
-                let e = Param::new(&rv.ident, rv.is_mutated(), rv.is_borrow(), rv.is_move());
+                let e = Param::new(&rv.ident, rv.is_mutated(), rv.is_borrow(), rv.is_move(), rv.ty.to_string());
                 map.insert(rv.ident.clone(), e);
             }
         }
@@ -139,7 +142,7 @@ impl VariableUseCollection {
                 entry.is_borrow = entry.is_borrow || rv.is_borrow();
                 entry.is_move = entry.is_move || rv.is_move();
             } else {
-                let e = Param::new(&rv.ident, rv.is_mutated(), rv.is_borrow(), rv.is_move());
+                let e = Param::new(&rv.ident, rv.is_mutated(), rv.is_borrow(), rv.is_move(), rv.ty.to_string());
                 map.insert(rv.ident.clone(), e);
             }
         }
@@ -163,7 +166,8 @@ impl VariableUseCollection {
 pub struct VariableUse {
     pub bk: ExpressionUseKind,
     pub ident: String,
-    pub span: Span
+    pub span: Span,
+    pub ty: String
 }
 impl VariableUse {
     pub fn is_borrow(&self) -> bool {
@@ -190,7 +194,7 @@ impl Param {
         }, self.ident)
     }
     pub fn as_param(&self) -> String {
-        format!("{}: {}_", self.ident,
+        format!("{}: {}{}", self.ident,
         if self.is_move {
             ""
         } else if self.is_mut {
@@ -199,6 +203,6 @@ impl Param {
             "&"
         } else {
             ""
-        })
+        }, self.ty)
     }
 }
