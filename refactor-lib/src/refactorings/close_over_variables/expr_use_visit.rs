@@ -24,7 +24,7 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
                 }
                 let node = self.tcx.hir().get(local_id);
                 if let Node::Binding(pat) = node {
-                    let ident = pat.simple_ident().ok_or_else(|| RefactoringErrorInternal::int(&format!("ident missing: {:?}", pat)))?;
+                    let ident = pat.simple_ident().ok_or_else(|| RefactoringErrorInternal::int(&format!("close over var / ident missing: {:?}", pat)))?;
                     Ok(Some(format!("{}", ident)))
                 } else {
                     Err(RefactoringErrorInternal::int(&format!("unhandled type: {:?}", place)))

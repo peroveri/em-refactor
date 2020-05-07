@@ -26,7 +26,7 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
                 let node = self.tcx.hir().get(local_id);
                 if let Node::Binding(pat) = node {
 
-                    Ok(Some(format!("{}", pat.simple_ident().ok_or_else(|| RefactoringErrorInternal::int(&format!("ident missing: {:?}", pat)))?)))
+                    Ok(Some(format!("{}", pat.simple_ident().ok_or_else(|| RefactoringErrorInternal::int(&format!("extract block / ident missing: {:?}", pat)))?)))
                 } else {
                     Err(RefactoringErrorInternal::int(&format!("unhandled type: {:?}", place))) // TODO: check which types node can be here
                 }
