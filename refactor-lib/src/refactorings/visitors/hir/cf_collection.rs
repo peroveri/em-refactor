@@ -116,7 +116,12 @@ impl ControlFlowExprCollection {
                     let start = (cf.cf_expr_span.lo().0 - block_start) as usize;
                     let end = (cf.cf_expr_span.hi().0 - block_start) as usize;
 
-                    let expr = format!(", Some({})", get_source(tcx, cf.cf_expr_span));
+                    // Handle implicit unit expressions, since Some() isnt allowed. 
+                    // It should instead be Some(())
+                    let mut expr_src = get_source(tcx, cf.cf_expr_span);
+                    if expr_src.len() == 0 { expr_src = "()".to_owned(); }
+
+                    let expr = format!(", Some({})", expr_src);
                     // if let Some(e) = cf.sub_expr_span {
                     //     format!(", Some({})", get_source(tcx, e))
                     // } else {

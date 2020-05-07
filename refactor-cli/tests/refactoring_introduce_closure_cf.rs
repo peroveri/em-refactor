@@ -14,7 +14,6 @@ mod introduce_closure {
         run_test("all");
     }
     #[test]
-    #[ignore]
     fn r#break() {
         run_test("break");
     }
