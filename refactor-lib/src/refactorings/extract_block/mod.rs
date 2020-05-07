@@ -29,18 +29,23 @@ mod variable_use_collection;
 /// a. identical (cut & paste)
 /// b. add declaration and assign at start of block + add var in expression at end of block
 pub fn do_refactoring(tcx: &TyContext, span: Span, add_comment: bool) -> QueryResult<AstDiff> {
-    let selection = collect_innermost_block(tcx, span)?;
+    let (block, body_id) = collect_innermost_block(tcx, span)?;
 
-    let vars = push_stmt_into_block::collect_variables_overlapping_span(tcx, selection.1, span)?;
+    let vars = push_stmt_into_block::collect_variables_overlapping_span(tcx, body_id, span)?;
     let statements_source = tcx.get_source(span);
 
     let (block_start, block_end) = (get_block_start(add_comment), get_block_end(add_comment));
+    let end = block.stmts.iter().rev().find(|s| span.contains(s.span));
+    let end_s = match end {
+        Some(rustc_hir::Stmt {kind: rustc_hir::StmtKind::Expr(..), ..}) => "",
+        _ => ";"
+    };
     // Add declaration with assignment, and expression at end of block
     // for variables declared in the selection and used later
     let new_block_source = match vars.len() {
-        0 => format!("{}{}{}", block_start, statements_source, block_end),
-        1 => format!("let {} = \n{}{}{}{};", vars.decls_fmt(), block_start, statements_source, vars.idents_fmt(), block_end),
-        _ => format!("let ({}) = \n{}{}({}){};", vars.decls_fmt(), block_start, statements_source, vars.idents_fmt(), block_end)
+        0 => format!("{}{}{}{}", block_start, statements_source, block_end, end_s),
+        1 => format!("let {} = \n{}{}{}{}{}", vars.decls_fmt(), block_start, statements_source, vars.idents_fmt(), block_end, end_s),
+        _ => format!("let ({}) = \n{}{}({}){}{}", vars.decls_fmt(), block_start, statements_source, vars.idents_fmt(), block_end, end_s)
     };
 
     Ok(AstDiff(vec![tcx.map_change(
