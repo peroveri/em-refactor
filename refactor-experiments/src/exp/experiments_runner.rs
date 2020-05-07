@@ -80,7 +80,7 @@ pub fn run_all_exp(refactoring: &str, crate_path: &str) -> std::io::Result<()> {
     let mut experiments_runner = ExperimentsRunner::new(refactoring.to_string(), cmd_runner);
     experiments_runner.run_exp_on_project()?;
 
-    let prefix = format!("{}_{}", refactoring, Local::now().format("%Y-%m-%d_%H:%M"));
+    let prefix = format!("{}_{}", refactoring, Local::now().format("%Y-%m-%d_%H_%M"));
 
     let output = serde_json::to_string(&ExperimentsOutput::create(&experiments_runner.report)).unwrap();
     let mut file = File::create(format!("{}.report.json", prefix))?;
