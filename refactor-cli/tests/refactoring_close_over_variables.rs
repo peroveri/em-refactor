@@ -30,4 +30,9 @@ mod close_over_variables {
     fn pass_by_val1() {
         run_test("pass_by_val1");
     }
+    #[test]
+    #[ignore]
+    fn self1() {
+        run_test("self1");
+    }
 }

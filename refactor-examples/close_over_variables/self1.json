@@ -1,0 +1,11 @@
+{
+	"file": "self1.rs",
+	"args": {
+		"refactoring": "close-over-variables",
+		"selection": "51:93"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "self1_after.rs"
+	}
+}
