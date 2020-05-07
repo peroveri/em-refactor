@@ -10,6 +10,10 @@ mod extract_block_vars {
     use super::*;
     
     #[test]
+    fn expr() {
+        run_test("expr");
+    }
+    #[test]
     fn extract_block_field_used_later() {
         run_test("extract_block_field_used_later");
     }
