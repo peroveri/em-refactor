@@ -25,60 +25,54 @@ impl RefactoringErrorInternal {
     fn new_int(code: InternalErrorCodes, message: String) -> Self {
         Self::new(RefactorErrorType::Internal, true, message, vec![format!("{:?}", code)])
     }
-    pub fn used_in_pattern(ident: &str) -> Self {
+    pub(crate) fn used_in_pattern(ident: &str) -> Self {
         Self::new_int(InternalErrorCodes::Error,
             format!(
                 "Field: {} is used in a pattern and cannot be boxed.",
                 ident))
     }
-    pub fn comment_not_found(name: &str) -> Self {
+    pub(crate) fn comment_not_found(name: &str) -> Self {
         Self::new_int_soft(InternalErrorCodes::FileNotFound,
             format!(
                 "Couldn't find comment: {}",
                 name))
     }
-    pub fn file_not_found(name: &str) -> Self {
-        Self::new_int(InternalErrorCodes::FileNotFound,
-            format!(
-                "Couldn't find file: {}",
-                name))
-    }
-    pub fn file_not_found_soft(name: &str) -> Self {
+    pub(crate) fn file_not_found(name: &str) -> Self {
         Self::new_int_soft(InternalErrorCodes::FileNotFound,
             format!(
                 "Couldn't find file: {}",
                 name))
     }
-    pub fn invalid_argument(msg: String) -> Self {
+    pub(crate) fn invalid_argument(msg: String) -> Self {
         Self::new_int(InternalErrorCodes::Error,
             msg)
     }
-    pub fn invalid_selection(from: u32, to: u32) -> Self {
+    pub(crate) fn invalid_selection(from: u32, to: u32) -> Self {
         Self::new_int(InternalErrorCodes::InvalidSelection,
             format!(
                 "{}:{} is not a valid selection!",
                 from, to))
     }
-    pub fn invalid_selection_with_code(from: u32, to: u32, selection: &str) -> Self {
+    pub(crate) fn invalid_selection_with_code(from: u32, to: u32, selection: &str) -> Self {
         Self::new_int(InternalErrorCodes::InvalidSelection,
             format!(
                 "{}:{} is not a valid selection! `{}`",
                 from, to, selection))
     }
-    pub fn refactoring_not_invoked() -> Self {
+    pub(crate) fn refactoring_not_invoked() -> Self {
         Self::new_int(InternalErrorCodes::Error,
            "The refactoring was not invoked".to_owned())
     }
-    pub fn int(s: &str) -> Self {
+    pub(crate) fn int(s: &str) -> Self {
         Self::new_int(InternalErrorCodes::Internal, s.to_string())
     }
-    pub fn arg_def(s: &str) -> Self {
+    pub(crate) fn arg_def(s: &str) -> Self {
         Self::new_int(InternalErrorCodes::BadFormatOnInput, s.to_string())
     }
-    pub fn compile_err() -> Self {
+    pub(crate) fn compile_err() -> Self {
         Self::new(RefactorErrorType::RustCError1, true, "Compile err".to_owned(), vec![])
     }
-    pub fn recompile_err(s: &str, codes: Vec<String>) -> Self {
+    pub(crate) fn recompile_err(s: &str, codes: Vec<String>) -> Self {
         Self::new(RefactorErrorType::RustCError2, true, s.to_string(), codes)
     }
 }

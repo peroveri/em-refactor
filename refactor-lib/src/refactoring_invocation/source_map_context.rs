@@ -28,7 +28,7 @@ impl<'a> SourceMapContext<'a> {
                 BytePos(to + source_file.start_pos.0),
             ))
         } else {
-            Err(RefactoringErrorInternal::file_not_found_soft(file_name))
+            Err(RefactoringErrorInternal::file_not_found(file_name))
         }
     }
     
