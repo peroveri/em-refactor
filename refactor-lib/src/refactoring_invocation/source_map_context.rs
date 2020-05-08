@@ -20,7 +20,7 @@ impl<'a> SourceMapContext<'a> {
         }
     }
 
-    fn map_span(&self, file_name: &str, from: u32, to: u32) -> QueryResult<Span> {
+    pub fn map_span(&self, file_name: &str, from: u32, to: u32) -> QueryResult<Span> {
         let file_name_real = FileName::Real(std::path::PathBuf::from(file_name));
         if let Some(source_file) = self.source_map.get_source_file(&file_name_real) {
             Ok(Span::with_root_ctxt(
@@ -28,10 +28,9 @@ impl<'a> SourceMapContext<'a> {
                 BytePos(to + source_file.start_pos.0),
             ))
         } else {
-            Err(RefactoringErrorInternal::file_not_found(file_name))
+            Err(RefactoringErrorInternal::file_not_found_soft(file_name))
         }
     }
-
     
     fn get_int(selection: &str) -> QueryResult<(u32, u32)> {
         let mut split = selection.split(':');

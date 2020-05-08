@@ -101,7 +101,7 @@ mod test {
 
     fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Closure> + Send> {
         Box::new(move |ty| {
-            let span = ty.get_span(&file_name, from, to)?;
+            let span = ty.source().map_span(&file_name, from, to)?;
             let closure = collect_anonymous_closure(ty, span).unwrap();
 
             Ok(Closure {

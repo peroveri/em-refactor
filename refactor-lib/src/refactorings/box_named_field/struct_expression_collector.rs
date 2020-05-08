@@ -145,7 +145,7 @@ mod test {
 
     fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<(Vec<String>, Vec<String>)> + Send> {
         Box::new(move |ty| {
-            let span = ty.get_span(&file_name, from, to)?;
+            let span = ty.source().map_span(&file_name, from, to)?;
             let (field, _) = collect_field(ty.0, span).unwrap();
             let (span1, span2) = collect_struct_expressions(&ty, field.hir_id, &ty.get_source(span)).unwrap();
 

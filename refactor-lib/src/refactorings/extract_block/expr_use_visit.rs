@@ -105,7 +105,7 @@ mod test {
 
     fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(String, bool)>> + Send> {
         Box::new(move |ty| {
-            let span = ty.get_span(&file_name, from, to)?;
+            let span = ty.source().map_span(&file_name, from, to)?;
             let block = collect_innermost_block(ty, span).unwrap();
             let vars = collect_variables_declared_in_span_and_used_later(ty, block.1, span)?;
 

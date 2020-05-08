@@ -3,9 +3,9 @@ use rustc_interface::interface::Compiler;
 use rustc_interface::Queries;
 use rustc_span::Span;
 use rustc_span::source_map::SourceMap;
-use crate::refactorings::utils::{map_range_to_span, map_change_from_span};
+use crate::refactorings::utils::map_change_from_span;
 use refactor_lib_types::FileStringReplacement;
-use super::{QueryResult, RefactoringErrorInternal, SourceCodeRange, SourceMapContext};
+use super::{QueryResult, RefactoringErrorInternal, SourceMapContext};
 
 pub struct AstContext<'a, 'b> {
     pub compiler: &'a Compiler,
@@ -14,9 +14,6 @@ pub struct AstContext<'a, 'b> {
 }
 
 impl<'a, 'b> AstContext<'a, 'b> {
-    pub fn map_range_to_span(&self, range: &SourceCodeRange) -> QueryResult<Span> {
-        map_range_to_span(self.compiler.session().source_map(), range)
-    }
     pub fn source(&self) -> SourceMapContext<'a> {
         SourceMapContext {
             source_map: self.compiler.source_map()

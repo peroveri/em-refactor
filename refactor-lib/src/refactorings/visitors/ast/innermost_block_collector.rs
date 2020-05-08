@@ -57,18 +57,17 @@ impl<'v> Visitor<'v> for BlockVisitorCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::refactoring_invocation::SourceCodeRange;
     use crate::test_utils::{assert_err2, assert_success2};
     use quote::quote;
 
     fn map(from: u32, to: u32) -> Box<dyn Fn(String) -> Box<dyn Fn(&AstContext) -> QueryResult<String> + Send>> { 
         Box::new(move |file_name| Box::new(move |ast| {
 
-            let block_span = collect_innermost_block(ast, ast.map_range_to_span(&SourceCodeRange {
-                file_name: file_name.clone(),
+            let block_span = collect_innermost_block(ast, ast.source().map_span(
+                &file_name,
                 from,
                 to
-            })?)?.span;
+            )?)?.span;
 
             Ok(ast.get_source(block_span))
         }))

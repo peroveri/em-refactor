@@ -7,16 +7,6 @@ use refactor_lib_types::RefactorErrorType;
 
 // maybe generic implementation of rustc_driver::Callbacks?
 
-///
-/// A range in a file. This will later be converted to syntax_pos::Span
-/// Note: could be an enum to support different types of ranges (line no, etc)
-#[derive(PartialEq, Debug, Clone)]
-pub struct SourceCodeRange {
-    pub file_name: String,
-    pub from: u32,
-    pub to: u32,
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct RefactoringErrorInternal {
     pub error_type: RefactorErrorType,
@@ -48,6 +38,12 @@ impl RefactoringErrorInternal {
                 name))
     }
     pub fn file_not_found(name: &str) -> Self {
+        Self::new_int(InternalErrorCodes::FileNotFound,
+            format!(
+                "Couldn't find file: {}",
+                name))
+    }
+    pub fn file_not_found_soft(name: &str) -> Self {
         Self::new_int_soft(InternalErrorCodes::FileNotFound,
             format!(
                 "Couldn't find file: {}",

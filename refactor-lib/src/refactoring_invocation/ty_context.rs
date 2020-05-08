@@ -4,7 +4,7 @@ use rustc_span::Span;
 use rustc_span::source_map::SourceMap;
 use refactor_lib_types::FileStringReplacement;
 use crate::refactorings::utils::map_change_from_span;
-use super::{QueryResult, RefactoringErrorInternal, SourceCodeRange, SourceMapContext};
+use super::{QueryResult, RefactoringErrorInternal, SourceMapContext};
 pub struct TyContext<'a>(pub TyCtxt<'a>);
 
 impl<'a> TyContext<'a> {
@@ -22,16 +22,8 @@ impl<'a> TyContext<'a> {
     pub fn get_source_map(&self) -> &SourceMap {
         self.0.sess.source_map()
     }
-    #[cfg(test)]
-    pub fn get_span(&self, file_name: &str, from: u32, to: u32) -> QueryResult<Span> {
-        let file_name = file_name.to_string();
-        crate::refactorings::utils::map_range_to_span(self.0.sess.source_map(), &SourceCodeRange {file_name, from, to})
-    }
     pub fn map_change(&self, span: Span, replacement: String) -> QueryResult<FileStringReplacement> {
         map_change_from_span(self.0.sess.source_map(), span, replacement)
-    }
-    pub fn map_range_to_span(&self, range: &SourceCodeRange) -> QueryResult<Span> {
-        crate::refactorings::utils::map_range_to_span(self.0.sess.source_map(), range)
     }
     pub fn span_err(&self, span: Span) -> RefactoringErrorInternal {
         RefactoringErrorInternal::invalid_selection_with_code(span.lo().0, span.hi().0, &self.get_source(span))

@@ -84,7 +84,7 @@ mod test {
     
     fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<String> + Send> {
         Box::new(move |ty| {
-            collect_innermost_block(ty, ty.get_span(&file_name, from, to)?)
+            collect_innermost_block(ty, ty.source().map_span(&file_name, from, to)?)
                 .map(|(block, _)| ty.get_source(block.span))
         })
     }

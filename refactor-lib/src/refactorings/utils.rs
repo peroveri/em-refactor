@@ -1,8 +1,8 @@
 use refactor_lib_types::FileStringReplacement;
-use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal, SourceCodeRange};
+use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal};
 use rustc_hir::{HirId, StructField};
 use rustc_middle::ty::TyCtxt;
-use rustc_span::{BytePos, FileName, Span};
+use rustc_span::{FileName, Span};
 use rustc_span::source_map::SourceMap;
 use std::path::PathBuf;
 
@@ -33,18 +33,6 @@ fn get_filename(source_map: &SourceMap, span: Span) -> QueryResult<String> {
         }
     }
     Err(RefactoringErrorInternal::int(&format!("unexpected file type: {:?}", filename)))
-}
-
-pub fn map_range_to_span(source_map: &SourceMap, range: &SourceCodeRange) -> Result<Span, RefactoringErrorInternal> {
-    let filename = FileName::Real(std::path::PathBuf::from(&range.file_name));
-    if let Some(source_file) = source_map.get_source_file(&filename) {
-        Ok(Span::with_root_ctxt(
-            BytePos(range.from + source_file.start_pos.0),
-            BytePos(range.to + source_file.start_pos.0),
-        ))
-    } else {
-        Err(RefactoringErrorInternal::file_not_found(&range.file_name))
-    }
 }
 
 pub fn map_change_from_span(source_map: &SourceMap, span: Span, replacement: String) -> QueryResult<FileStringReplacement> {
