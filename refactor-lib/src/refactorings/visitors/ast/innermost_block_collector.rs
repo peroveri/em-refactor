@@ -1,7 +1,7 @@
 use rustc_ast::ast::{Block, NodeId};
 use rustc_ast::visit::{FnKind, Visitor, walk_block, walk_crate, walk_fn};
 use rustc_span::Span;
-use crate::refactoring_invocation::{AstContext, QueryResult, RefactoringErrorInternal};
+use crate::refactoring_invocation::{AstContext, QueryResult};
 
 struct BlockVisitorCollector<'v> {
     span: Span,
@@ -24,11 +24,7 @@ pub fn collect_innermost_block<'v>(context: &'v AstContext, span: Span) -> Query
     if let Some(r) = v.result {
         Ok(r)
     } else {
-        Err(RefactoringErrorInternal::invalid_selection_with_code(
-            span.lo().0,
-            span.hi().0,
-            &context.get_source(span)
-        ))
+        Err(context.source().span_err(span))
     }
 }
 
@@ -57,6 +53,7 @@ impl<'v> Visitor<'v> for BlockVisitorCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::refactoring_invocation::RefactoringErrorInternal;
     use crate::test_utils::{assert_err2, assert_success2};
     use quote::quote;
 

@@ -3,7 +3,7 @@ use rustc_hir::{BodyId, Expr, ExprKind, FnDecl};
 use rustc_hir::intravisit::{NestedVisitorMap, Visitor, walk_expr, walk_crate};
 use rustc_middle::hir::map::Map;
 use rustc_middle::ty::TyCtxt;
-use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal, TyContext};
+use crate::refactoring_invocation::{QueryResult, TyContext};
 
 pub fn collect_anonymous_closure<'v>(tcx: &'v TyContext, pos: Span) -> QueryResult<Closure<'v>> {
     let mut v = ClosureCollector {
@@ -14,7 +14,7 @@ pub fn collect_anonymous_closure<'v>(tcx: &'v TyContext, pos: Span) -> QueryResu
 
     walk_crate(&mut v, tcx.0.hir().krate());
 
-    v.result.ok_or_else(|| RefactoringErrorInternal::invalid_selection_with_code(pos.lo().0, pos.hi().0, &tcx.get_source(pos)))
+    v.result.ok_or_else(|| tcx.source().span_err(pos))
 }
 
 impl<'v> Visitor<'v> for ClosureCollector<'v> {

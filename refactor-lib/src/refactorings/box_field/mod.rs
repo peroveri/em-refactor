@@ -1,8 +1,8 @@
 use rustc_hir::HirId;
 use rustc_span::Span;
 
-use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal, TyContext};
-use super::utils::{get_source, get_struct_hir_id};
+use crate::refactoring_invocation::{AstDiff, QueryResult, TyContext};
+use super::utils::get_struct_hir_id;
 use super::{box_named_field, box_tuple_field};
 use super::visitors::collect_field;
 
@@ -43,10 +43,6 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryR
         }
         
     } else {
-        Err(RefactoringErrorInternal::invalid_selection_with_code(
-            span.lo().0,
-            span.hi().0,
-            &get_source(tcx.0, span)
-        ))
+        Err(tcx.source().span_err(span))
     }
 }
