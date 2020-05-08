@@ -47,12 +47,6 @@ impl RefactoringErrorInternal {
         Self::new_int(InternalErrorCodes::Error,
             msg)
     }
-    pub(crate) fn invalid_selection(from: u32, to: u32) -> Self {
-        Self::new_int(InternalErrorCodes::InvalidSelection,
-            format!(
-                "{}:{} is not a valid selection!",
-                from, to))
-    }
     pub(crate) fn invalid_selection_with_code(from: u32, to: u32, selection: &str) -> Self {
         Self::new_int(InternalErrorCodes::InvalidSelection,
             format!(

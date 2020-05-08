@@ -1,6 +1,6 @@
 use super::utils::{map_change_from_span, get_source};
 use refactor_lib_types::{create_refactor_tool_marker, FileStringReplacement, defs::INTRODUCE_CLOSURE_CALL_EXPR};
-use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal, TyContext};
+use crate::refactoring_invocation::{AstDiff, QueryResult, TyContext};
 use crate::refactorings::visitors::hir::{collect_cfs, collect_innermost_contained_block};
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
@@ -60,7 +60,7 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, add_comment: bool) -> QueryRe
         ]))
         
     } else {
-        Err(RefactoringErrorInternal::invalid_selection(span.lo().0, span.hi().0))
+        Err(tcx.source().span_err(span))
     }
 }
 
