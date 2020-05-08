@@ -24,7 +24,7 @@ pub fn collect_innermost_block<'v>(context: &'v AstContext, span: Span) -> Query
     if let Some(r) = v.result {
         Ok(r)
     } else {
-        Err(context.source().span_err(span))
+        Err(context.source().span_err(span, false))
     }
 }
 
@@ -91,12 +91,12 @@ mod test {
     fn block_collector_shouldnt_collect_const() {
         assert_err2(quote! {
             const _ : i32 = { 1 } ;
-        }, map(17, 20), RefactoringErrorInternal::invalid_selection_with_code(17, 20, " 1 "));
+        }, map(17, 20), RefactoringErrorInternal::invalid_selection_with_code(17, 20, " 1 ", false));
     }
     #[test]
     fn block_collector_shouldnt_collect() {
         assert_err2(quote! {
             fn f ( ) { }
-        }, map(0, 12), RefactoringErrorInternal::invalid_selection_with_code(0, 12, "fn f ( ) { }"));
+        }, map(0, 12), RefactoringErrorInternal::invalid_selection_with_code(0, 12, "fn f ( ) { }", false));
     }
 }

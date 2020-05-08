@@ -108,11 +108,14 @@ fn combine_output(s: &str) -> RefactorOutputs2 {
 
     let mut output2 = RefactorOutputs2::empty();
     let mut replacements = vec![];
+    let mut some_has_no_non_errors = false;
 
     for o in outputs {
         output2.candidates.extend(o.candidates.into_iter().flat_map(|c| c.candidates));
         replacements.extend(o.refactorings.iter().flat_map(|c| c.replacements.clone()));
-        output2.errors.extend(o.refactorings.into_iter().flat_map(|c| c.errors));    
+        let errors = o.refactorings.into_iter().flat_map(|c| c.errors).collect::<Vec<_>>();
+        some_has_no_non_errors = some_has_no_non_errors || !errors.iter().any(|p| !p.is_error);
+        output2.errors.extend(errors);
     }
     output2.candidates = output2.candidates.into_iter().unique().sorted().collect::<Vec<_>>();
     let changes = replacements.into_iter()
@@ -122,7 +125,11 @@ fn combine_output(s: &str) -> RefactorOutputs2 {
     if !changes.is_empty() {
         output2.changes.push(changes);    
     }
-    output2.errors = output2.errors.into_iter().filter(|e| e.is_error).unique().sorted().collect::<Vec<_>>();
+    if some_has_no_non_errors {
+        output2.errors = output2.errors.into_iter().filter(|e| e.is_error).unique().sorted().collect::<Vec<_>>();
+    } else {
+        output2.errors = output2.errors.into_iter().unique().sorted().collect::<Vec<_>>();
+    }
 
     output2
 }

@@ -13,7 +13,7 @@ pub fn do_refactoring(context: &AstContext, span: Span, add_comment: bool) -> Qu
     let items = filter_items(&block.stmts);
     
     if contains_stmt_from_macro(&items) {
-        return Err(context.source().span_err(span));
+        return Err(context.source().span_err(span, true));
     }
     let items = filter_stmts_in_span(&items, span);
     let spans = items.iter().map(|s| s.span).collect::<Vec<_>>();
@@ -56,7 +56,7 @@ mod test {
     #[test]
     fn invalid_selection() {
         let input = r#"fn /*refactor-tool:test-id:start*/foo()/*refactor-tool:test-id:end*/ { }"#;
-        let expected = Err(RefactoringErrorInternal::invalid_selection_with_code(34, 39, "foo()"));
+        let expected = Err(RefactoringErrorInternal::invalid_selection_with_code(34, 39, "foo()", false));
         
         let actual = run_refactoring(TestInit::from_refactoring(input, NAME));
         

@@ -43,6 +43,6 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryR
         }
         
     } else {
-        Err(tcx.source().span_err(span))
+        Err(tcx.source().span_err(span, false))
     }
 }

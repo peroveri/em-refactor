@@ -30,7 +30,7 @@ pub fn collect_innermost_block<'v>(tcx: &'v TyContext, pos: Span) -> QueryResult
     if let Some(r) = v.result {
         Ok(r)
     } else {
-        Err(tcx.source().span_err(pos))
+        Err(tcx.source().span_err(pos, false))
     }
 }
 
@@ -92,7 +92,7 @@ mod test {
     #[test]
     fn invalid_selection() {
         let input = "/*START*//*END*/fn foo() { }";
-        let expected = Err(RefactoringErrorInternal::invalid_selection_with_code(9, 9, ""));
+        let expected = Err(RefactoringErrorInternal::invalid_selection_with_code(9, 9, "", false));
 
         let actual = run_ty_query(input, map);
 

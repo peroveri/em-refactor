@@ -174,7 +174,7 @@ mod cli_tests {
     fn output_json_internal_codes() {
         let expected = serde_json::to_string(&RefactorOutputs2::from_error(
             RefactoringError {
-                is_error: true,
+                is_error: false,
                 message: "0:1 is not a valid selection! `f`".to_owned(),
                 kind: RefactorErrorType::Internal,
                 codes: vec!["InvalidSelection".to_owned()],
@@ -191,6 +191,32 @@ mod cli_tests {
             .arg("extract-block")
             .arg("src/main.rs")
             .arg("0:1")
+            .assert()
+            .success()
+            .stdout(expected);
+    }
+
+    #[test]
+    fn output_never() {
+        let expected = serde_json::to_string(
+            &RefactorOutputs2::from_error(RefactoringError {
+                at_refactoring: "extract-block".to_owned(),
+                codes: vec!["InvalidSelection".to_owned()],
+                is_error: false,
+                kind: RefactorErrorType::Internal,
+                message: "97:107 is not a valid selection! `let x = 0;`".to_owned()
+        })).unwrap();
+
+        cargo_my_refactor()
+            .arg(WORKSPACE_ARG2)
+            .arg(format!(
+                "--target-dir={}",
+                create_tmp_dir().path().to_str().unwrap()
+            ))
+            .arg("refactor")
+            .arg("extract-block")
+            .arg("src/main.rs")
+            .arg("97:107")
             .assert()
             .success()
             .stdout(expected);

@@ -14,7 +14,7 @@ pub fn collect_anonymous_closure<'v>(tcx: &'v TyContext, pos: Span) -> QueryResu
 
     walk_crate(&mut v, tcx.0.hir().krate());
 
-    v.result.ok_or_else(|| tcx.source().span_err(pos))
+    v.result.ok_or_else(|| tcx.source().span_err(pos, false))
 }
 
 impl<'v> Visitor<'v> for ClosureCollector<'v> {

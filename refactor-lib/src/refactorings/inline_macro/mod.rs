@@ -10,6 +10,6 @@ pub fn do_refactoring(ast: &AstContext, span: Span, _: bool) -> QueryResult<AstD
     if let Some((replacement, repl_span)) = collect_inline_macro(span, crate_) {
         Ok(AstDiff(vec![map_change_from_span(ast.get_source_map(), repl_span, replacement)?]))
     } else {
-        Err(ast.source().span_err(span))
+        Err(ast.source().span_err(span, false))
     }
 }

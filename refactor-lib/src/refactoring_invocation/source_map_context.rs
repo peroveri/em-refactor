@@ -41,8 +41,8 @@ impl<'a> SourceMapContext<'a> {
         }
         Err(RefactoringErrorInternal::arg_def("Selection should be formatted as <byte_from>:<byte_to>"))
     }
-    pub fn span_err(&self, span: Span) -> RefactoringErrorInternal {
-        RefactoringErrorInternal::invalid_selection_with_code(span.lo().0, span.hi().0, &self.get_source(span))
+    pub fn span_err(&self, span: Span, is_error: bool) -> RefactoringErrorInternal {
+        RefactoringErrorInternal::invalid_selection_with_code(span.lo().0, span.hi().0, &self.get_source(span), is_error)
     }
     pub fn get_source(&self, span: Span) -> String {
         self.source_map.span_to_snippet(span).unwrap()
