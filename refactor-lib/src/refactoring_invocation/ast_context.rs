@@ -5,7 +5,7 @@ use rustc_span::Span;
 use rustc_span::source_map::SourceMap;
 use crate::refactorings::utils::map_change_from_span;
 use refactor_lib_types::FileStringReplacement;
-use super::{QueryResult, RefactoringErrorInternal, SourceMapContext};
+use super::{QueryResult, SourceMapContext};
 
 pub struct AstContext<'a, 'b> {
     pub compiler: &'a Compiler,
@@ -23,7 +23,7 @@ impl<'a, 'b> AstContext<'a, 'b> {
         self.compiler.session().source_map()
     }
     pub fn get_source(&self, span: Span) -> String {
-        self.compiler.source_map().span_to_snippet(span).unwrap()
+        self.source().get_source(span)
     }
 
     pub fn map_change(&self, span: Span, replacement: String) -> QueryResult<FileStringReplacement> {
@@ -48,8 +48,5 @@ impl<'a, 'b> AstContext<'a, 'b> {
             queries,
             crate_: None
         }
-    }
-    pub fn span_err(&self, span: Span) -> RefactoringErrorInternal {
-        RefactoringErrorInternal::invalid_selection_with_code(span.lo().0, span.hi().0, &self.get_source(span))
     }
 }

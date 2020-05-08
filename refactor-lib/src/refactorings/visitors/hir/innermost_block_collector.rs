@@ -30,7 +30,7 @@ pub fn collect_innermost_block<'v>(tcx: &'v TyContext, pos: Span) -> QueryResult
     if let Some(r) = v.result {
         Ok(r)
     } else {
-        Err(tcx.span_err(pos))
+        Err(tcx.source().span_err(pos))
     }
 }
 

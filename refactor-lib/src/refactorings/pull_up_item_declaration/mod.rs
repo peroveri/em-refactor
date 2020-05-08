@@ -13,7 +13,7 @@ pub fn do_refactoring(context: &AstContext, span: Span, add_comment: bool) -> Qu
     let items = filter_items(&block.stmts);
     
     if contains_stmt_from_macro(&items) {
-        return Err(context.span_err(span));
+        return Err(context.source().span_err(span));
     }
     let items = filter_stmts_in_span(&items, span);
     let spans = items.iter().map(|s| s.span).collect::<Vec<_>>();
