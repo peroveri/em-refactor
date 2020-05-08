@@ -1,0 +1,11 @@
+{
+	"file": "field_access.rs",
+	"args": {
+		"refactoring": "close-over-variables",
+		"selection": "41:72"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "field_access_after.rs"
+	}
+}

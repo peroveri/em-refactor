@@ -1,0 +1,11 @@
+{
+	"file": "mut_borrow.rs",
+	"args": {
+		"refactoring": "close-over-variables",
+		"selection": "36:67"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "mut_borrow_after.rs"
+	}
+}

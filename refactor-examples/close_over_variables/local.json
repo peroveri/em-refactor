@@ -1,0 +1,11 @@
+{
+	"file": "local.rs",
+	"args": {
+		"refactoring": "close-over-variables",
+		"selection": "31:83"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "local_after.rs"
+	}
+}

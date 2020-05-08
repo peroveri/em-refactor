@@ -1,12 +1,10 @@
-use super::utils::{map_change_from_span, get_source};
 use crate::refactoring_invocation::{AstDiff, QueryResult, TyContext};
 use rustc_span::Span;
-use expr_use_visit::collect_vars;
-use crate::refactorings::visitors::hir::{collect_anonymous_closure, ExpressionUseKind};
+use crate::refactorings::visitors::hir::{collect_anonymous_closure};
 
 mod expr_use_visit;
-mod variable_use_collection;
-
+mod local_use_collector;
+mod collect_new_closure;
 
 /// Close Over Variables
 /// 
@@ -19,39 +17,34 @@ mod variable_use_collection;
 ///    c. If V' is a borrow, add deref to all occurences of V' in C'
 pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryResult<AstDiff> {
     let closure = collect_anonymous_closure(tcx, span)?;
-    let vars = collect_vars(tcx.0, closure.body_id, tcx.get_body_span(closure.body_id))?;
+
+    let new_closure = collect_new_closure::collect_vars3(tcx, closure.body_id)?;
 
     let mut changes = vec![];
 
-    let params = vars.get_params_formatted();
-
-    if params.len() > 0 {
+    if new_closure.params.len() > 0 {
         let params = if closure.has_params {
-            format!(", {}", params)
+            format!(", {}", new_closure.params)
         } else {
-            params
+            new_closure.params.to_string()
         };
-        changes.push(
-            map_change_from_span(tcx.get_source_map(), closure.get_next_param_pos(), params)?);
+        changes.push(tcx.map_change(closure.get_next_param_pos(), params)?);
     }
 
-    let args = vars.get_args_formatted();
-    if args.len() > 0 {
+    if new_closure.args.len() > 0 {
         let args = if closure.has_params {
-            format!(", {}", args)
+            format!(", {}", new_closure.args)
         } else {
-            args
+            new_closure.args.to_string()
         };
-        changes.push(map_change_from_span(tcx.get_source_map(), closure.get_next_arg_pos(), args.to_string())?);
+        changes.push(tcx.map_change(closure.get_next_arg_pos(), args)?);
     }
-
-    for (span, ident) in vars.get_borrows() {
-        let expr = if ident == "self" {
-            "self_".to_owned()
-        } else {
-            get_source(tcx.0, span)
-        };
-        changes.push(map_change_from_span(tcx.get_source_map(), span, format!("(*{})", expr))?);
+    
+    for span in new_closure.uses {
+        changes.push(tcx.map_change(span, format!("(*{})", tcx.get_source(span)))?);
+    }
+    for span in new_closure.selfs {
+        changes.push(tcx.map_change(span, "self_".to_owned())?);
     }
 
     Ok(AstDiff(changes))

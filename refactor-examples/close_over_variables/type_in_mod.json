@@ -1,0 +1,11 @@
+{
+	"file": "type_in_mod.rs",
+	"args": {
+		"refactoring": "close-over-variables",
+		"selection": "67:108"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "type_in_mod_after.rs"
+	}
+}

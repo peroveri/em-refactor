@@ -15,8 +15,20 @@ mod close_over_variables {
         run_test("borrow_from_trait");
     }
     #[test]
+    fn field_access() {
+        run_test("field_access");
+    }
+    #[test]
+    fn local() {
+        run_test("local");
+    }
+    #[test]
     fn multiple_params() {
         run_test("multiple_params");
+    }
+    #[test]
+    fn mut_borrow() {
+        run_test("mut_borrow");
     }
     #[test]
     fn pass_by_mut_ref() {
@@ -37,5 +49,10 @@ mod close_over_variables {
     #[test]
     fn self1() {
         run_test("self1");
+    }
+    #[test]
+    #[ignore]
+    fn type_in_mod() {
+        run_test("type_in_mod");
     }
 }
