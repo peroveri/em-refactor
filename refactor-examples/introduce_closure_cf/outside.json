@@ -1,0 +1,11 @@
+{
+	"file": "outside.rs",
+	"args": {
+		"refactoring": "introduce-closure",
+		"selection": "16:71"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "outside_after.rs"
+	}
+}

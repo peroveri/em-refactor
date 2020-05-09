@@ -18,8 +18,17 @@ mod introduce_closure {
         run_test("break");
     }
     #[test]
+    #[ignore]
+    fn inside_match() {
+        run_test("inside_match");
+    }
+    #[test]
     fn loop_all() {
         run_test("loop_all");
+    }
+    #[test]
+    fn outside() {
+        run_test("outside");
     }
     #[test]
     fn return_and_expr() {

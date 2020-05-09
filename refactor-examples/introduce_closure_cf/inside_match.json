@@ -1,0 +1,11 @@
+{
+	"file": "inside_match.rs",
+	"args": {
+		"refactoring": "introduce-closure",
+		"selection": "51:162"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "inside_match_after.rs"
+	}
+}
