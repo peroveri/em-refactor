@@ -56,7 +56,7 @@ pub fn collect_vars3<'v>(tcx: &'v TyContext, body_id: BodyId) -> QueryResult<New
             ""
         };
 
-        if (is_borrowded || is_mutated) && is_type_normal {
+        if !is_moved && (is_borrowded || is_mutated) && is_type_normal {
             hir_ids.push(val[0].0);
         }
         if k == "self" {
