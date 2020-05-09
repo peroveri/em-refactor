@@ -47,3 +47,40 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
         walk_path(self, path);
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::super::*;
+    use crate::refactoring_invocation::TyContext;
+    use crate::test_utils::assert_success3;
+    use super::super::expr_use_visit::collect_vars;
+
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<String>> + Send> {
+        Box::new(move |ty| {
+            let closure = collect_anonymous_closure(ty, ty.source().map_span(&file_name, from, to)?).unwrap();
+            let vars = collect_vars(ty.0, closure.body_id)?;
+            let hirs = vars.iter().map(|e| e.0).collect::<Vec<_>>();
+            let spans = super::super::local_use_collector::collect_local_uses(ty, hirs, closure.body_id)?;
+
+            let strs = spans.into_iter().map(|s| ty.get_source(s)).collect::<Vec<_>>();
+
+            Ok(strs)
+        })
+    }
+
+    #[test]
+    fn should_collect_1() {
+        assert_success3(
+        r#"fn foo() {
+    let mut i = S{f: 0};
+    /*START*/(|| {
+        i.f = 0;
+        i.f = 0;
+    })()/*END*/;
+}
+struct S{f: u32}"#,
+            map,
+            vec!["i".to_owned(), "i".to_owned()]);
+    }
+    // TODO: check patterns, e.g. let _ = i;
+}

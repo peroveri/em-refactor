@@ -6,7 +6,7 @@ use rustc_span::Span;
 use crate::refactorings::visitors::hir::ExpressionUseKind;
 use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal};
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum TypeKind {
     Mut,
     Borrow,
@@ -72,7 +72,7 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
         }
 
 
-        ("".to_owned(), TypeKind::None)
+        ("".to_owned(), TypeKind::None) // return err?
     }
 }
 
@@ -118,34 +118,37 @@ mod test {
     use super::*;
     use super::super::*;
     use crate::refactoring_invocation::TyContext;
-    use crate::test_utils::assert_success3;
+    use crate::test_utils::run_ty_query;
 
-    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<String>> + Send> {
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(String, ExpressionUseKind, String, TypeKind)>> + Send> {
         Box::new(move |ty| {
-            let closure = collect_anonymous_closure(ty, ty.source().map_span(&file_name, from, to)?).unwrap();
-            let vars = collect_vars(ty.0, closure.body_id)?;
-            let hirs = vars.iter().map(|e| e.0).collect::<Vec<_>>();
-            let spans = super::super::local_use_collector::collect_local_uses(ty, hirs, closure.body_id)?;
-
-            let strs = spans.into_iter().map(|s| ty.get_source(s)).collect::<Vec<_>>();
-
-            Ok(strs)
+            let span = ty.source().map_span(&file_name, from, to)?;
+            let closure = collect_anonymous_closure(ty, span)?;
+            Ok(collect_vars(ty.0, closure.body_id)?.into_iter()
+                .map(|(_, a, b,c ,d)| (a,b,c,d))
+                .collect::<Vec<_>>())
         })
     }
 
     #[test]
-    fn hould_collect_1() {
-        assert_success3(
-        r#"fn foo() {
-    let mut i = S{f: 0};
-    /*START*/(|| {
-        i.f = 0;
-        i.f = 0;
-    })()/*END*/;
-}
-struct S{f: u32}"#,
-            map,
-            vec!["i".to_owned(), "i".to_owned()]);
+    #[ignore]
+    fn should_collect_submod() {
+
+        let input = r#"
+mod submod {
+    fn foo(s: S) {
+        /*START*/(|| {
+            &s;
+        })()/*END*/;
     }
-    // TODO: check patterns, e.g. let _ = i;
+    pub struct S;
+}"#;
+        let expected = Ok(vec![
+            ("s".to_owned(), ExpressionUseKind::ImmBorrow, "S".to_owned(), TypeKind::None)
+        ]);
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(expected, actual);
+    }
 }
