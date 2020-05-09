@@ -10,7 +10,6 @@ mod close_over_variables {
     use super::*;
     
     #[test]
-    #[ignore]
     fn borrow_from_trait() {
         run_test("borrow_from_trait");
     }

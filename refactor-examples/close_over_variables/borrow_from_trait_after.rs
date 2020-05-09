@@ -1,5 +1,5 @@
 fn foo(s: &Box<i32>) {
-    (|s| {
+    (|s: &std::boxed::Box<i32>| {
         b(s);
     })(s);
 }
