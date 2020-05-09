@@ -7,7 +7,10 @@ use itertools::Itertools;
 pub struct NewClosure {
     pub params: String,
     pub args: String,
+    /// Used to introduce deref when we introduce & or &mut
     pub uses: Vec<Span>,
+    /// Used to rewrite occurences of 'self' with self_
+    /// Assuming that there isnt already a variable called self_ in scope
     pub selfs: Vec<Span>
 }
 
@@ -34,7 +37,7 @@ pub fn collect_vars3<'v>(tcx: &'v TyContext, body_id: BodyId) -> QueryResult<New
         let is_mutated = bks.iter().any(|bk| bk.is_mutated());
         let is_type_normal = val.iter().any(|(.., a)| *a == TypeKind::None);
 
-        let modif_arg = if is_moved || k == "self" || !is_type_normal {
+        let modif_arg = if is_moved || !is_type_normal {
             ""
         } else if is_mutated {
             "&mut "
@@ -53,7 +56,7 @@ pub fn collect_vars3<'v>(tcx: &'v TyContext, body_id: BodyId) -> QueryResult<New
             ""
         };
 
-        if !is_moved && k != "self" && (is_borrowded || is_mutated) && is_type_normal {
+        if (is_borrowded || is_mutated) && is_type_normal {
             hir_ids.push(val[0].0);
         }
         if k == "self" {
