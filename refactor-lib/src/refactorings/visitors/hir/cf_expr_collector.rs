@@ -119,7 +119,6 @@ impl<'v> Visitor<'v> for CfExprCollector<'v> {
 }
 
 #[cfg(test)]
-#[allow(non_upper_case_globals)]
 mod test {
     use super::*;
     use crate::test_utils::run_ty_query;
@@ -143,7 +142,6 @@ mod test {
     }
 
     #[test]
-    #[ignore]
     fn should_collect_when_inside() {
 
         let input = r#"
@@ -170,7 +168,6 @@ mod test {
         assert_eq!(expected, actual);
     }
     #[test]
-    #[ignore]
     fn should_not_collect_when_outside() {
 
         let input = r#"
