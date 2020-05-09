@@ -122,135 +122,78 @@ impl<'v> Visitor<'v> for CfExprCollector<'v> {
 #[allow(non_upper_case_globals)]
 mod test {
     use super::*;
-    use super::super::*;
-    use crate::{create_test_span, run_after_analysis};
-    use crate::refactorings::utils::get_source;
-    use quote::quote;
-    use quote::__private::TokenStream;
+    use crate::test_utils::run_ty_query;
+    use crate::refactorings::visitors::hir::collect_innermost_contained_block;
+    use crate::refactoring_invocation::{QueryResult, TyContext};
+    use super::super::cf_collection::CfType;
 
-    fn create_program_match_1() -> TokenStream {
-        quote! {
-            fn foo ( ) -> i32 { let _ = loop { let _ = { continue ; break 1 ; return 2 ; 3 } ; } ; 4 }
-        }
-    }
-    fn create_program_match_2() -> TokenStream {
-        quote! {
-            fn foo ( ) { while true { { continue ; } } }
-        }
-    }
-    fn get_block<'v>(tcx: TyCtxt<'v>) -> HirId {
-        collect_innermost_contained_block(tcx, create_test_span(43, 80)).unwrap().0.hir_id
-    }
-    fn get_block_2<'v>(tcx: TyCtxt<'v>) -> HirId {
-        collect_innermost_contained_block(tcx, create_test_span(26, 40)).unwrap().0.hir_id
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(String, CfType, Option<String>)>> + Send> {
+        Box::new(move |ty| {
+            let span = ty.source().map_span(&file_name, from, to)?;
+            let block = collect_innermost_contained_block(ty.0, span).unwrap();
+            let cfs = collect_cfs(ty.0, block.0.hir_id);
+
+            Ok(cfs.items.into_iter()
+                .map(|cf| (
+                    ty.get_source(cf.cf_expr_span), 
+                    cf.cf_type, 
+                    cf.sub_expr_span.map(|span| ty.get_source(span))))
+                .collect::<Vec<_>>())
+        })
     }
 
     #[test]
-    fn cf_expr_collector_should_collect_continue() {
-        run_after_analysis(create_program_match_1(), |tcx| {
-            let block = get_block(tcx);
-            let actual = collect_cfs(tcx, block);
+    #[ignore]
+    fn should_collect_when_inside() {
 
-            for cf in &actual.items {
-                if let CfType::Continue = cf.cf_type {
-                    assert_eq!("continue", get_source(tcx, cf.cf_expr_span));
-                    return;
-                }
-            }
-            assert!(false);
-        });
+        let input = r#"
+        fn foo () -> i32 {
+            let _ = loop { 
+                let _ = /*START*/{ 
+                    continue; 
+                    break 1;
+                    return 2; 
+                    3 
+                }/*END*/;
+            };
+            4
+        }"#;
+        let expected = Ok(vec![
+            ("continue".to_owned(), CfType::Continue, None),
+            ("break 1".to_owned(), CfType::Break, Some("1".to_owned())),
+            ("return 2".to_owned(), CfType::Return, Some("2".to_owned())),
+            ("3".to_owned(), CfType::Nothing, None),
+        ]);
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(expected, actual);
     }
     #[test]
-    fn cf_expr_collector_should_collect_break() {
-        run_after_analysis(create_program_match_1(), |tcx| {
-            let block = get_block(tcx);
-            let actual = collect_cfs(tcx, block);
+    #[ignore]
+    fn should_not_collect_when_outside() {
 
-            for cf in &actual.items {
-                if let CfType::Break = cf.cf_type {
-                    assert_eq!("break 1", get_source(tcx, cf.cf_expr_span));
-                    assert_eq!("1", get_source(tcx, cf.sub_expr_span.unwrap()));
-                    return;
-                }
-            }
-            assert!(false);
-        });
-    }
-    #[test]
-    fn cf_expr_collector_should_collect_return() {
-        run_after_analysis(create_program_match_1(), |tcx| {
-            let block = get_block(tcx);
-            let actual = collect_cfs(tcx, block);
+        let input = r#"
+        fn foo () -> i32 {
+            /*START*/{
+                let _ = loop { 
+                    let _ = { 
+                        continue; 
+                        break 1;
+                        return 2; 
+                        3 
+                    };
+                };
+                4
+            }/*END*/
+        }"#;
+        let expected = Ok(vec![
+            ("return 2".to_owned(), CfType::Return, Some("2".to_owned())),
+            ("4".to_owned(), CfType::Nothing, None),
+        ]);
 
-            for cf in &actual.items {
-                if let CfType::Return = cf.cf_type {
-                    assert_eq!("return 2", get_source(tcx, cf.cf_expr_span));
-                    assert_eq!("2", get_source(tcx, cf.sub_expr_span.unwrap()));
-                    return;
-                }
-            }
-            assert!(false);
-        });
-    }
-    #[test]
-    fn cf_expr_collector_should_collect_expr() {
-        run_after_analysis(create_program_match_1(), |tcx| {
-            let block = get_block(tcx);
-            let actual = collect_cfs(tcx, block);
+        let actual = run_ty_query(input, map);
 
-            for cf in &actual.items {
-                if let CfType::Nothing = cf.cf_type {
-                    assert_eq!("3", get_source(tcx, cf.cf_expr_span));
-                    return;
-                }
-            }
-            assert!(false);
-        });
-    }
-    #[test]
-    fn cf_expr_collector_should_collect_continue_2() {
-        run_after_analysis(create_program_match_2(), |tcx| {
-            let block = get_block_2(tcx);
-            let actual = collect_cfs(tcx, block);
-
-            assert_eq!(2, actual.items.len());
-            let cf = &actual.items[0];
-            assert_eq!(CfType::Continue, cf.cf_type);
-            assert_eq!("continue", get_source(tcx, cf.cf_expr_span));
-            let ex = &actual.items[1];
-            assert_eq!(CfType::Nothing, ex.cf_type);
-        });
-    }
-    #[test]
-    fn cf_expr_collector_should_collect_continue_3() {
-        run_after_analysis(quote! {
-            fn foo ( ) { while true { { if false { continue ; } } } }
-        }, |tcx| {
-            let block = get_block_3(tcx, 26, 53);
-            let actual = collect_cfs(tcx, block);
-
-            assert_eq!(2, actual.items.len());
-            let cf = &actual.items[0];
-            assert_eq!(CfType::Continue, cf.cf_type);
-            assert_eq!("continue", get_source(tcx, cf.cf_expr_span));
-            let ex = &actual.items[1];
-            assert_eq!(CfType::Nothing, ex.cf_type);
-        });
-    }
-    fn get_block_3<'v>(tcx: TyCtxt<'v>, lo: u32, hi: u32) -> HirId {
-        collect_innermost_contained_block(tcx, create_test_span(lo, hi)).unwrap().0.hir_id
-    }
-    #[test]
-    fn cf_expr_collector_should_collect_expr_2() {
-        run_after_analysis(quote! {
-            fn foo ( ) { loop { let _ = { if true { } 1 } ; } }
-        }, |tcx| {
-            let block = get_block_3(tcx, 28, 45);
-            let actual = collect_cfs(tcx, block);
-
-            assert_eq!(1, actual.items.len());
-            let ex = &actual.items[0];
-            assert_eq!(CfType::Nothing, ex.cf_type);
-        });
+        assert_eq!(expected, actual);
     }
 }
