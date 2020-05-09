@@ -1,0 +1,11 @@
+{
+	"file": "submod.rs",
+	"args": {
+		"refactoring": "convert-closure-to-function",
+		"selection": "66:74"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "submod_after.rs"
+	}
+}

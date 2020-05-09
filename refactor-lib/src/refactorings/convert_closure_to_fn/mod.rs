@@ -1,5 +1,5 @@
-use rustc_hir::{BodyId, Expr, ExprKind, Param, PatKind, Ty, TyKind};
-use rustc_middle::ty::TyS;
+use rustc_hir::{BodyId, Expr, ExprKind, Param, PatKind};
+use rustc_middle::ty::{TyS, print::with_crate_prefix};
 use rustc_span::Span;
 use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal, TyContext};
 use crate::refactorings::visitors::hir::collect_anonymous_closure;
@@ -34,13 +34,8 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryR
     let mut i = 0;
     for param in body.params {
         let ident = get_ident(param);
-        let input = &closure.fn_decl.inputs[i];
         let type_s = 
-        if contains_infer(input) {
-            format_ty(infer_concrete(tcx, &closure.args_1[i], closure.body_id)?)
-        } else {
-            rustc_hir_pretty::to_string(rustc_hir_pretty::NO_ANN, |s| s.print_type(input))
-        };
+            format_ty(infer_concrete(tcx, &closure.args_1[i], closure.body_id)?);
         new_fn.params.push((ident, type_s));
         i += 1;
     }
@@ -94,15 +89,8 @@ fn get_ident(ty: &Param) -> String {
 }
 fn fresh_name() -> String {"foo".to_owned()}
 
-fn contains_infer(pat: &Ty) -> bool {
-    match pat.kind {
-        TyKind::Infer => true,
-        _ => false
-    }
-}
-
 fn format_ty(ty: &TyS) -> String {
-    format!("{}", ty)
+    with_crate_prefix(||  format!("{}", ty))
 }
 
 fn infer_concrete<'v>(tcx: &'v TyContext, expr: &Expr, body_id: BodyId) -> QueryResult<&'v TyS<'v>> {

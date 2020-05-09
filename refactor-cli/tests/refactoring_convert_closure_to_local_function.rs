@@ -21,4 +21,8 @@ mod convert_closure_to_local_function {
     fn returns_int() {
         run_test("returns_int");
     }
+    #[test]
+    fn submod() {
+        run_test("submod");
+    }
 }
