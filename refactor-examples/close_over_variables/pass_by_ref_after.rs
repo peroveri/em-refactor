@@ -1,6 +1,6 @@
 fn main() {
     let i = S;
-    (|i: &S| {
+    (|i: &crate::S| {
         let _: &S = &(*i);
     })(&i);
     i;

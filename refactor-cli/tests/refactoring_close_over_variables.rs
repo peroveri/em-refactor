@@ -50,7 +50,6 @@ mod close_over_variables {
         run_test("self1");
     }
     #[test]
-    #[ignore]
     fn type_in_mod() {
         run_test("type_in_mod");
     }

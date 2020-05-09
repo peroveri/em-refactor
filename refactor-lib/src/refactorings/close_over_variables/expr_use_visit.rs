@@ -1,6 +1,6 @@
 use rustc_hir::{BodyId, Node, hir_id::HirId};
 use rustc_infer::infer::{TyCtxtInferExt};
-use rustc_middle::ty::{self, TyCtxt};
+use rustc_middle::ty::{self, TyCtxt, print::with_crate_prefix};
 use rustc_typeck::expr_use_visitor::{ConsumeMode, Delegate, ExprUseVisitor, Place, PlaceBase};
 use rustc_span::Span;
 use crate::refactorings::visitors::hir::ExpressionUseKind;
@@ -58,7 +58,7 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
         };
     }
     fn get_type(&self, pat: &rustc_hir::Pat) -> (String, TypeKind) {
-        
+
         let typecheck_table = self.tcx.typeck_tables_of(pat.hir_id.owner.to_def_id());
         if let Some(pat_type) = typecheck_table.pat_ty_opt(pat) {
 
@@ -68,7 +68,9 @@ impl<'tcx> VariableCollectorDelegate<'tcx> {
                 _ => TypeKind::None
             };
 
-            return (format!("{}", pat_type), kind);
+            let type_ = with_crate_prefix(|| format!("{}", pat_type));
+
+            return (type_, kind);
         }
 
 

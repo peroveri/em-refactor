@@ -1,6 +1,6 @@
 fn main() {
     let mut i = S;
-    (|i: &mut S| {
+    (|i: &mut crate::S| {
         (*i) = S;
     })(&mut i);
     i;
