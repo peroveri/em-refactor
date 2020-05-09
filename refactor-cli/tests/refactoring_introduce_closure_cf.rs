@@ -18,7 +18,6 @@ mod introduce_closure {
         run_test("break");
     }
     #[test]
-    #[ignore]
     fn inside_match() {
         run_test("inside_match");
     }

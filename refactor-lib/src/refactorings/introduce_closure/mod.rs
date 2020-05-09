@@ -44,20 +44,24 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, add_comment: bool) -> QueryRe
 
         let cf_expr = collect_cfs(tcx.0, result.0.hir_id);
 
-        let replacements = 
+        let mut replacements = vec![]; 
         if cf_expr.has_cfs() {
-            let block_src = get_source(tcx.0, span);
-            let repl = cf_expr.replace_cfs(tcx.0, block_src, span.lo().0);
-            let anon_inv = format!("match {}(|| {})(){} {{{}}}", get_start_comment(add_comment), repl, get_end_comment(add_comment), cf_expr.get_cf_arms());
 
-            map_change_from_span(tcx.0.sess.source_map(), span, anon_inv)?
+            replacements.push(tcx.map_change(span.shrink_to_lo(), 
+                format!("match {}(|| ", get_start_comment(add_comment)))?);
+
+            for (span, replacement) in cf_expr.replace_cfs() {
+                replacements.push(tcx.map_change(span, replacement)?);
+            }
+
+            replacements.push(tcx.map_change(span.shrink_to_hi(), 
+                format!(")(){} {{{}}}", get_end_comment(add_comment), cf_expr.get_cf_arms()))?);
+
         } else {
-            get_call(tcx.0, result.0.span, add_comment)?
-        };
+            replacements.push(get_call(tcx.0, result.0.span, add_comment)?);
+        }
 
-        Ok(AstDiff(vec![
-            replacements,
-        ]))
+        Ok(AstDiff(replacements))
         
     } else {
         Err(tcx.source().span_err(span, false))

@@ -1,6 +1,4 @@
-use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
-use crate::refactorings::utils::get_source;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CfType {
@@ -23,6 +21,7 @@ impl CfType {
 #[derive(Clone)]
 pub struct ControlFlowExpr {
     pub cf_type: CfType,
+    pub cf_key_span: Span,
     pub cf_expr_span: Span,
     pub sub_expr_span: Option<Span>
 }
@@ -84,10 +83,9 @@ impl ControlFlowExprCollection {
         false
     }
 
-    pub fn replace_cfs(&self, tcx: TyCtxt, mut source: String, block_start: u32) -> String {
-        let mut cfs = self.items.to_vec();
-        cfs.sort_by_key(|c| c.cf_expr_span);
-        cfs.reverse();
+    pub fn replace_cfs(&self) -> Vec<(Span, String)> {
+        let mut replacements = vec![];
+        let cfs = self.items.to_vec();
 
         let break_part = self.get_self_arm(CfType::Break);
         let return_part = self.get_self_arm(CfType::Return);
@@ -97,52 +95,52 @@ impl ControlFlowExprCollection {
             match cf.cf_type {
                 CfType::Break => {
                     // check macros inv!
-                    let start = (cf.cf_expr_span.lo().0 - block_start) as usize;
-                    let end = (cf.cf_expr_span.hi().0 - block_start) as usize;
-                    let expr = 
-                    if let Some(e) = cf.sub_expr_span {
-                        format!(", Some({})", get_source(tcx, e))
+                    let (expr_pre, expr_suff) = 
+                    if let Some(_) = cf.sub_expr_span {
+                        (", Some(", ")")
                     } else {
-                        "".to_owned()
+                        ("", "")
                     };
-                    source.replace_range(start..end, &format!("return ({}{}{}{})", CfType::Break as i32, expr, return_part.3, expr_part.3));
+                    let pre = format!("return ({}{}", CfType::Break as i32, expr_pre);
+
+                    let suff = format!("{}{}{})", expr_suff, return_part.3, expr_part.3);
+                    replacements.push((cf.cf_key_span, pre));
+                    replacements.push((cf.cf_expr_span.shrink_to_hi(), suff));
                 },
                 CfType::Continue => {
-                    let start = (cf.cf_expr_span.lo().0 - block_start) as usize;
-                    let end = (cf.cf_expr_span.hi().0 - block_start) as usize;
-                    source.replace_range(start..end, &format!("return ({}{}{}{})", CfType::Continue as i32, break_part.3, return_part.3, expr_part.3));
+                    let replacement = format!("return ({}{}{}{})", CfType::Continue as i32, break_part.3, return_part.3, expr_part.3);
+                    replacements.push((cf.cf_key_span, replacement));
                 },
                 CfType::Nothing => {
-                    let start = (cf.cf_expr_span.lo().0 - block_start) as usize;
-                    let end = (cf.cf_expr_span.hi().0 - block_start) as usize;
 
-                    // Handle implicit unit expressions, since Some() isnt allowed. 
-                    // It should instead be Some(())
-                    let mut expr_src = get_source(tcx, cf.cf_expr_span);
-                    if expr_src.len() == 0 { expr_src = "()".to_owned(); }
+                    if cf.cf_expr_span.lo() == cf.cf_expr_span.hi() {
+                        let replacement = format!("({}{}{}, Some(()))", CfType::Nothing as i32, break_part.3, return_part.3);
+                        replacements.push((cf.cf_expr_span, replacement));
+                    } else {
+                        
+                        let pre = format!("({}{}{}, Some(", CfType::Nothing as i32, break_part.3, return_part.3);
 
-                    let expr = format!(", Some({})", expr_src);
-                    // if let Some(e) = cf.sub_expr_span {
-                    //     format!(", Some({})", get_source(tcx, e))
-                    // } else {
-                    //     "".to_owned()
-                    // };
-                    source.replace_range(start..end, &format!("({}{}{}{})", CfType::Nothing as i32, break_part.3, return_part.3, expr));
+                        let suff = "))".to_owned();
+                        replacements.push((cf.cf_expr_span.shrink_to_lo(), pre));
+                        replacements.push((cf.cf_expr_span.shrink_to_hi(), suff));
+                    }
                 },
                 CfType::Return => {
-                    let start = (cf.cf_expr_span.lo().0 - block_start) as usize;
-                    let end = (cf.cf_expr_span.hi().0 - block_start) as usize;
-                    let expr = 
-                    if let Some(e) = cf.sub_expr_span {
-                        format!(", Some({})", get_source(tcx, e))
+                    let (expr_pre, expr_suff) = 
+                    if let Some(_) = cf.sub_expr_span {
+                        (", Some(", ")")
                     } else {
-                        "".to_owned()
+                        ("", "")
                     };
-                    source.replace_range(start..end, &format!("return ({}{}{}{})", CfType::Return as i32, break_part.3, expr, expr_part.3));
+                    let pre = format!("return ({}{}{}", CfType::Return as i32, break_part.3, expr_pre);
+
+                    let suff = format!("{}{})", expr_suff, expr_part.3);
+                    replacements.push((cf.cf_key_span, pre));
+                    replacements.push((cf.cf_expr_span.shrink_to_hi(), suff));
                 },
             }
         }
-        source
+        replacements
     }
 
     // fn get_ret_opt 
@@ -170,10 +168,11 @@ impl ControlFlowExpr {
             _ => true
         }
     }
-    pub fn new(cf_type: CfType, cf_expr_span: Span, sub_expr_span: Option<Span>) -> Self {
+    pub fn new(cf_type: CfType, cf_expr_span: Span, cf_key_span: Span, sub_expr_span: Option<Span>) -> Self {
         Self {
             cf_type,
             cf_expr_span,
+            cf_key_span,
             sub_expr_span
         }
     }
@@ -181,26 +180,30 @@ impl ControlFlowExpr {
         Self::new(
             CfType::Continue,
             cf_expr_span,
+            cf_expr_span,
             None
         )
     }
-    pub fn brk(cf_expr_span: Span, sub_expr_span: Option<Span>) -> Self {
+    pub fn brk(cf_expr_span: Span, cf_key_span: Span, sub_expr_span: Option<Span>) -> Self {
         Self::new(
             CfType::Break,
             cf_expr_span,
+            cf_key_span,
             sub_expr_span
         )
     }
-    pub fn ret(cf_expr_span: Span, sub_expr_span: Option<Span>) -> Self {
+    pub fn ret(cf_expr_span: Span, cf_key_span: Span, sub_expr_span: Option<Span>) -> Self {
         Self::new(
             CfType::Return,
             cf_expr_span,
+            cf_key_span,
             sub_expr_span
         )
     }
     pub fn expr(cf_expr_span: Span) -> Self {
         Self::new(
             CfType::Nothing,
+            cf_expr_span,
             cf_expr_span,
             None
         )

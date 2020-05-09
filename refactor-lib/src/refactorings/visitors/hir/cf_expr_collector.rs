@@ -87,14 +87,14 @@ impl<'v> Visitor<'v> for CfExprCollector<'v> {
             //     }
             // },
             ExprKind::Break(dest, break_ex) => {
-                let break_ex_span = 
+                let (break_span, break_ex_span) = 
                 if let Some(ret_ex) = break_ex {
-                    Some(ret_ex.span)
+                    (ex.span.with_hi(ret_ex.span.lo()), Some(ret_ex.span))
                 } else {
-                    None
+                    (ex.span, None)
                 };
                 if self.points_outside(&dest) {
-                    self.res.push(ControlFlowExpr::brk(ex.span, break_ex_span));
+                    self.res.push(ControlFlowExpr::brk(ex.span, break_span, break_ex_span));
                 }
             },
             ExprKind::Continue(dest) => {
@@ -103,13 +103,13 @@ impl<'v> Visitor<'v> for CfExprCollector<'v> {
                 }
             },
             ExprKind::Ret(ret_ex) => {
-                let ret_ex_span = 
+                let (return_span, return_expression_span) = 
                 if let Some(ret_ex) = ret_ex {
-                    Some(ret_ex.span)
+                    (ex.span.with_hi(ret_ex.span.lo()), Some(ret_ex.span))
                 } else {
-                    None
+                    (ex.span, None)
                 };
-                self.res.push(ControlFlowExpr::ret(ex.span, ret_ex_span));
+                self.res.push(ControlFlowExpr::ret(ex.span, return_span, return_expression_span));
             },
             _ => {
                 walk_expr(self, ex);
@@ -126,7 +126,7 @@ mod test {
     use crate::refactoring_invocation::{QueryResult, TyContext};
     use super::super::cf_collection::CfType;
 
-    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(String, CfType, Option<String>)>> + Send> {
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(String, String, CfType, Option<String>)>> + Send> {
         Box::new(move |ty| {
             let span = ty.source().map_span(&file_name, from, to)?;
             let block = collect_innermost_contained_block(ty.0, span).unwrap();
@@ -135,6 +135,7 @@ mod test {
             Ok(cfs.items.into_iter()
                 .map(|cf| (
                     ty.get_source(cf.cf_expr_span), 
+                    ty.get_source(cf.cf_key_span), 
                     cf.cf_type, 
                     cf.sub_expr_span.map(|span| ty.get_source(span))))
                 .collect::<Vec<_>>())
@@ -157,10 +158,10 @@ mod test {
             4
         }"#;
         let expected = Ok(vec![
-            ("continue".to_owned(), CfType::Continue, None),
-            ("break 1".to_owned(), CfType::Break, Some("1".to_owned())),
-            ("return 2".to_owned(), CfType::Return, Some("2".to_owned())),
-            ("3".to_owned(), CfType::Nothing, None),
+            ("continue".to_owned(), "continue".to_owned(), CfType::Continue, None),
+            ("break 1".to_owned(), "break ".to_owned(), CfType::Break, Some("1".to_owned())),
+            ("return 2".to_owned(), "return ".to_owned(), CfType::Return, Some("2".to_owned())),
+            ("3".to_owned(), "3".to_owned(), CfType::Nothing, None),
         ]);
 
         let actual = run_ty_query(input, map);
@@ -185,8 +186,29 @@ mod test {
             }/*END*/
         }"#;
         let expected = Ok(vec![
-            ("return 2".to_owned(), CfType::Return, Some("2".to_owned())),
-            ("4".to_owned(), CfType::Nothing, None),
+            ("return 2".to_owned(), "return ".to_owned(), CfType::Return, Some("2".to_owned())),
+            ("4".to_owned(), "4".to_owned(), CfType::Nothing, None),
+        ]);
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(expected, actual);
+    }
+    #[test]
+    fn should_collect_cf_inside_expr() {
+
+        let input = r#"
+        fn foo () -> i32 {
+            let _ = loop { 
+                let _ = /*START*/{
+                    { continue; 1 }
+                }/*END*/;
+            };
+            4
+        }"#;
+        let expected = Ok(vec![
+            ("continue".to_owned(), "continue".to_owned(), CfType::Continue, None),
+            ("{ continue; 1 }".to_owned(), "{ continue; 1 }".to_owned(), CfType::Nothing, None),
         ]);
 
         let actual = run_ty_query(input, map);
