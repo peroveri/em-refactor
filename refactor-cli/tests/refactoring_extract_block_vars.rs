@@ -30,6 +30,11 @@ mod extract_block_vars {
         run_test("redeclare_var_2");
     }
     #[test]
+    #[ignore]
+    fn single_match_exp() {
+        run_test("single_match_exp");
+    }
+    #[test]
     fn statement() {
         run_test("statement");
     }

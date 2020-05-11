@@ -1,0 +1,11 @@
+{
+    "file": "single_match_expr.rs",
+    "args": {
+        "refactoring": "extract-block",
+        "selection": "16:55"
+    },
+    "expected": {
+        "code": 0,
+        "stdout_file": "single_match_expr_after.rs"
+    }
+}
