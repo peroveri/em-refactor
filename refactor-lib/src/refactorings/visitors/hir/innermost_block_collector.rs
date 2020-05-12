@@ -76,8 +76,6 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
 
 #[cfg(test)]
 mod test {
-    use quote::quote;
-    use super::test_util::{assert_fail, assert_success};
     use super::*;
     use crate::test_utils::run_ty_query;
     use crate::refactoring_invocation::RefactoringErrorInternal;
@@ -99,104 +97,195 @@ mod test {
         assert_eq!(actual, expected);
     }    
     #[test]
-    fn innermost_block_collector_fn_with_single_block() {
-        assert_success(quote! {
-            fn f ( ) { 1 ; }
-        }, (10, 15), "{ 1 ; }");
+    fn fn_with_single_block() {
+        let input = r#"
+        fn foo() { 
+            /*START*/1;/*END*/
+        }"#;
+
+        let expected = Ok(r#"{ 
+            /*START*/1;/*END*/
+        }"#.to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn innermost_block_collector_desugar_for() {
-        let p = quote!{
-            fn f ( ) { for i in { vec ! [ 1 ] } { i ; } }
-        };
-        assert_success(p.clone(), (10, 44), "{ for i in { vec ! [ 1 ] } { i ; } }");
-        assert_success(p.clone(), (21, 34), "{ vec ! [ 1 ] }");
-        assert_success(p.clone(), (37, 42), "{ i ; }");
+    fn desugar_for() {
+        let input = r#"
+        fn foo() {
+            for i in { vec![ 1 ] } {
+                /*START*/print!("{}", i);/*END*/
+            }
+        }"#;
+
+        let expected = Ok(r#"{
+                /*START*/print!("{}", i);/*END*/
+            }"#.to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn innermost_block_collector_desugar_if() {
-        let p = quote! {
-            fn f ( ) { if { true } { 1 ; } }
-        };
-        assert_success(p.clone(), (10, 31), "{ if { true } { 1 ; } }");
-        assert_success(p.clone(), (15, 21), "{ true }");
-        assert_success(p.clone(), (24, 29), "{ 1 ; }");
+    fn desugar_if() {
+        let input = r#"
+        fn foo(c: bool) {
+            if c {
+                /*START*/print!("{}", c);/*END*/
+            }
+        }"#;
+
+        let expected = Ok(r#"{
+                /*START*/print!("{}", c);/*END*/
+            }"#.to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn innermost_block_collector_desugar_ifelse() {
-        let p = quote! {
-            fn f ( ) { if { true } { 1 ; } else { 2 ; } }
-        };
-        assert_success(p.clone(), (10, 44), "{ if { true } { 1 ; } else { 2 ; } }");
-        assert_success(p.clone(), (15, 21), "{ true }");
-        assert_success(p.clone(), (24, 29), "{ 1 ; }");
-        assert_success(p.clone(), (37, 42), "{ 2 ; }");
+    fn desugar_ifelse_if() {
+        let input = r#"
+        fn foo(c: bool) {
+            if c {
+                /*START*/print!("{}", c);/*END*/
+            } else {
+                print!("else: {}", c);
+            }
+        }"#;
+
+        let expected = Ok(r#"{
+                /*START*/print!("{}", c);/*END*/
+            }"#.to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn innermost_block_collector_desugar_iflet() {
-        let p = quote! {
-            fn f ( ) { if let _ = { true } { 1 ; } }
-        };
-        assert_success(p.clone(), (10, 39), "{ if let _ = { true } { 1 ; } }");
-        assert_success(p.clone(), (23, 29), "{ true }");
-        assert_success(p.clone(), (32, 37), "{ 1 ; }");
+    fn desugar_ifelse_else() {
+        let input = r#"
+        fn foo(c: bool) {
+            if c {
+                print!("{}", c);
+            } else {
+                /*START*/print!("else: {}", c);/*END*/
+            }
+        }"#;
+
+        let expected = Ok(r#"{
+                /*START*/print!("else: {}", c);/*END*/
+            }"#.to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn innermost_block_collector_desugar_ifletelse() {
-        let p = quote! {
-            fn f ( ) { if let _ = { true } { 1 ; } else { 2 ; } }
-        };
-        assert_success(p.clone(), (10, 52), "{ if let _ = { true } { 1 ; } else { 2 ; } }");
-        assert_success(p.clone(), (23, 29), "{ true }");
-        assert_success(p.clone(), (32, 37), "{ 1 ; }");
-        assert_success(p.clone(), (45, 50), "{ 2 ; }");
+    fn desugar_iflet() {
+        let input = r#"
+        fn foo(c: Option<i32>) {
+            if let Some(i) = c {
+                /*START*/print!("{}", i);/*END*/
+            }
+        }"#;
+
+        let expected = Ok(r#"{
+                /*START*/print!("{}", i);/*END*/
+            }"#.to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn innermost_block_collector_desugar_while() {
-        let p = quote! {
-            fn f ( ) { while { true } { 1 ; } }
-        };
-        assert_success(p.clone(), (10, 34), "{ while { true } { 1 ; } }");
-        assert_success(p.clone(), (18, 24), "{ true }");
-        assert_success(p.clone(), (27, 32), "{ 1 ; }");
+    fn desugar_ifletelse_if() {
+        let input = r#"
+        fn foo(c: Option<i32>) {
+            if let Some(i) = c {
+                /*START*/print!("{}", i);/*END*/
+            } else {
+                print!("{:?}", c);
+            }
+        }"#;
+
+        let expected = Ok(r#"{
+                /*START*/print!("{}", i);/*END*/
+            }"#.to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn innermost_block_collector_desugar_whilelet() {
-        let p = quote! {
-            fn f ( ) { while let _ = { true } { 1 ; } }
-        };
-        assert_success(p.clone(), (10, 42), "{ while let _ = { true } { 1 ; } }");
-        assert_success(p.clone(), (26, 32), "{ true }");
-        assert_success(p.clone(), (35, 40), "{ 1 ; }");
+    fn desugar_ifletelse_else() {
+        let input = r#"
+        fn foo(c: Option<i32>) {
+            if let Some(i) = c {
+                print!("{}", i);
+            } else {
+                /*START*/print!("{:?}", c);/*END*/
+            }
+        }"#;
+
+        let expected = Ok(r#"{
+                /*START*/print!("{:?}", c);/*END*/
+            }"#.to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
+    }
+    #[test]
+    fn desugar_while() {
+        let input = r#"
+        fn foo(mut i: i32) {
+            while i > 0 {
+                /*START*/print!("{}", i);/*END*/
+                i += 1;
+            }
+        }"#;
+
+        let expected = Ok(r#"{
+                /*START*/print!("{}", i);/*END*/
+                i += 1;
+            }"#.to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
+    }
+    #[test]
+    fn desugar_whilelet() {
+        let input = r#"
+        fn foo(mut i: Option<i32>) {
+            while let Some(x) = i {
+                /*START*/print!("{}", x);/*END*/
+                i = None;
+            }
+        }"#;
+
+        let expected = Ok(r#"{
+                /*START*/print!("{}", x);/*END*/
+                i = None;
+            }"#.to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
+    }
+    #[test]
+    fn shouldnt_collect_const() {
+        let input = r#"const C: i32 = {
+            /*START*/1/*END*/
+        };"#;
+        let expected = Err(RefactoringErrorInternal::invalid_selection_with_code(38, 39, "1", false));
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     // TODO: try + await
-    #[test]
-    fn innermost_block_collector_const() {
-        assert_fail( quote! {
-            const _ : i32 = { 0 } ;
-        }, (17, 20));
-    }
-}
-
-#[cfg(test)]
-mod test_util {
-    use super::*;
-    use quote::__private::TokenStream;
-    use crate::{create_test_span, run_after_analysis};
-    use crate::refactorings::utils::get_source;
-
-    pub fn assert_success(prog: TokenStream, span: (u32, u32), expected: &str) {
-        run_after_analysis(prog, |tcx| {
-            let tcx1 = TyContext(tcx);
-            let (block, _) = collect_innermost_block(&tcx1, create_test_span(span.0, span.1)).unwrap();
-            
-            assert_eq!(get_source(tcx, block.span), expected);
-        });
-    }
-    pub fn assert_fail(prog: TokenStream, span: (u32, u32)) {
-        run_after_analysis(prog, |tcx| {
-            let tcx1 = TyContext(tcx);
-            assert!(collect_innermost_block(&tcx1, create_test_span(span.0, span.1)).is_err());
-        });
-    }
 }
