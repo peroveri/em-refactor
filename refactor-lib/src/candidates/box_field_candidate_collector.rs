@@ -13,7 +13,7 @@ pub enum CollectFieldMode {
 pub fn collect_box_field_all_candidates(ctx: &AstContext) -> QueryResult<Vec<Span>> {
     collect_box_field_candidates(ctx, CollectFieldMode::All)
 }
-pub fn collect_box_field_namede_candidates(ctx: &AstContext) -> QueryResult<Vec<Span>> {
+pub fn collect_box_field_named_candidates(ctx: &AstContext) -> QueryResult<Vec<Span>> {
     collect_box_field_candidates(ctx, CollectFieldMode::Named)
 }
 pub fn collect_box_field_tuple_candidates(ctx: &AstContext) -> QueryResult<Vec<Span>> {

@@ -13,7 +13,7 @@ extern crate rustc_span;
 extern crate rustc_typeck;
 
 use std::process::exit;
-use refactor_lib::candidates::list_candidates_and_print_result;
+use refactor_lib::candidates::query_candidates::list_candidates_and_print_result;
 use refactor_lib::refactoring_invocation::{get_candidate_args, get_compiler_args, get_refactor_args, pass_to_rustc, run_refactoring_and_output_result, should_pass_to_rustc};
 
 ///

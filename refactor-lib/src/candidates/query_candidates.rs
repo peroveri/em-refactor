@@ -1,12 +1,8 @@
-use super::{arg_value, collect_extract_block_candidates, collect_box_field_all_candidates, collect_box_field_namede_candidates, collect_box_field_tuple_candidates};
+use super::{box_field_candidate_collector::{collect_box_field_all_candidates, collect_box_field_named_candidates, collect_box_field_tuple_candidates}, extract_method_candidate_collector::collect_extract_block_candidates};
 use rustc_span::Span;
-use crate::refactorings::utils::map_span_to_index;
 use refactor_lib_types::{CandidateArgs, CandidateOutput, CandidatePosition, RefactorErrorType, RefactoringError, RefactorOutputs, defs::{BOX_FIELD_CANDIDATES, EXTRACT_METHOD_CANDIDATES}};
-use crate::refactoring_invocation::{AstContext, is_dep, QueryResult, Query, RefactoringErrorInternal, MyRefactorCallbacks, from_error, serialize};
-
-pub fn should_query_candidates(refactor_args: &[String]) -> bool {
-    arg_value(refactor_args, "--query-candidates", |_| true).is_some()
-}
+use crate::refactoring_invocation::{arg_value, AstContext, is_dep, QueryResult, Query, RefactoringErrorInternal, MyRefactorCallbacks, from_error, serialize};
+use crate::refactorings::utils::map_span_to_index;
 
 fn map_to_pos_query(args: CandidateQueryArgs, f: Box<dyn Fn(&AstContext) -> QueryResult<Vec<Span>> + Send>) -> Query<CandidateOutput> {
     Query::AfterExpansion(
@@ -37,7 +33,7 @@ fn map_to_query(args: CandidateQueryArgs) -> QueryResult<Query<CandidateOutput>>
     match args.refactoring.as_ref() {
         EXTRACT_METHOD_CANDIDATES => Ok(map_to_pos_query(args, Box::new(collect_extract_block_candidates))),
         BOX_FIELD_CANDIDATES => Ok(map_to_pos_query(args, Box::new(collect_box_field_all_candidates))),
-        "box-named-field" => Ok(map_to_pos_query(args, Box::new(collect_box_field_namede_candidates))),
+        "box-named-field" => Ok(map_to_pos_query(args, Box::new(collect_box_field_named_candidates))),
         "box-tuple-field" => Ok(map_to_pos_query(args, Box::new(collect_box_field_tuple_candidates))),
         _ => Err(RefactoringErrorInternal::invalid_argument(format!("Unknown argument to query-candidate: `{}`", args.refactoring)))
     }
