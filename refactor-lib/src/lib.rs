@@ -14,7 +14,7 @@ extern crate rustc_span;
 extern crate rustc_session;
 extern crate rustc_typeck;
 
-pub mod extra;
+pub mod candidates;
 mod refactorings;
 pub mod refactoring_invocation;
 
