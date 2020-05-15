@@ -3,7 +3,7 @@ use rustc_hir::intravisit::{NestedVisitorMap, FnKind, walk_block, walk_fn, walk_
 use rustc_middle::hir::map::Map;
 use rustc_middle::ty::TyCtxt;
 use rustc_span::{BytePos, Span};
-use crate::refactorings::utils::get_source;
+use crate::refactoring_invocation::TyContext;
 use super::walk_desugars;
 
 struct BlockCollector<'v> {
@@ -13,8 +13,8 @@ struct BlockCollector<'v> {
     selected_block: Option<(&'v Block<'v>, BodyId)>
 }
 
-fn trim_span(tcx: TyCtxt, mut span: Span) -> Span {
-    let source = get_source(tcx, span);
+fn trim_span(tcx: &TyContext, mut span: Span) -> Span {
+    let source = tcx.get_source(span);
     if let Some(d) = source.find(|c| !char::is_whitespace(c)) {
         span = span.with_lo(BytePos(span.lo().0 + d as u32));
     }
@@ -30,15 +30,15 @@ fn trim_span(tcx: TyCtxt, mut span: Span) -> Span {
  * or a single block expression.
  * The block expression should not be the body of a function, loop, etc.
  */
-pub fn collect_innermost_contained_block<'v>(tcx: TyCtxt<'v>, pos: Span) -> Option<(&'v Block<'v>, BodyId)> {
+pub fn collect_innermost_contained_block<'v>(tcx: &'v TyContext, pos: Span) -> Option<(&'v Block<'v>, BodyId)> {
     let mut v = BlockCollector {
-        tcx,
+        tcx: tcx.0,
         pos: trim_span(tcx, pos),
         body_ids: vec![],
         selected_block: None
     };
 
-    walk_crate(&mut v, tcx.hir().krate());
+    walk_crate(&mut v, tcx.0.hir().krate());
 
     v.selected_block
 }
@@ -115,13 +115,13 @@ mod test_utils {
     use super::*;
     use quote::__private::TokenStream;
     use crate::{create_test_span, run_after_analysis};
-    use crate::refactorings::utils::get_source;
 
     pub fn assert_success(prog: TokenStream, span: (u32, u32), expected: &str) {
         run_after_analysis(prog, |tcx| {
-            let (block, _) = collect_innermost_contained_block(tcx, create_test_span(span.0, span.1)).unwrap();
+            let ty = TyContext(tcx);
+            let (block, _) = collect_innermost_contained_block(&ty, create_test_span(span.0, span.1)).unwrap();
             
-            assert_eq!(get_source(tcx, block.span), expected);
+            assert_eq!(ty.get_source(block.span), expected);
         });
     }
     // pub fn assert_fail(prog: TokenStream, span: (u32, u32)) {

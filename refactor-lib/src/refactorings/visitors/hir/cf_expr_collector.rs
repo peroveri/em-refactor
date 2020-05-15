@@ -129,7 +129,7 @@ mod test {
     fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<(String, String, CfType, Option<String>)>> + Send> {
         Box::new(move |ty| {
             let span = ty.source().map_span(&file_name, from, to)?;
-            let block = collect_innermost_contained_block(ty.0, span).unwrap();
+            let block = collect_innermost_contained_block(ty, span).unwrap();
             let cfs = collect_cfs(ty.0, block.0.hir_id);
 
             Ok(cfs.items.into_iter()
