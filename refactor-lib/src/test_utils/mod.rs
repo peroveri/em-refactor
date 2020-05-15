@@ -1,4 +1,4 @@
-use rustc_interface::{interface, Queries, interface::Compiler};
+use rustc_interface::interface;
 use rustc_middle::ty::TyCtxt;
 use std::fs::File;
 use std::io::prelude::*;
@@ -24,37 +24,6 @@ where
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
     err.unwrap();
 }
-/**
- * Function that can be used to run unit tests.
- * Accepts a TokenStream (from quote) and a function with a single parameter TyCtxt.
- */
-#[allow(unused)]
-pub fn run_after_expansion<F>(program: TokenStream, func: F)
-where
-    F: Fn(&Queries<'_>, &Compiler) -> (),
-    F: Send,
-{
-    let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
-    let mut c = RustcAfterExpansionCallbacks(func);
-    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
-    err.unwrap();
-}
-
-/**
- * Function that can be used to run unit tests.
- * Accepts a TokenStream (from quote) and a function with a single parameter TyCtxt.
- */
-#[allow(unused)]
-pub fn run_after_parsing<F>(program: TokenStream, func: F)
-where
-    F: Fn(&Queries<'_>, &Compiler) -> (),
-    F: Send,
-{
-    let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
-    let mut c = RustcAfterParsingCallbacks(func);
-    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
-    err.unwrap();
-}
 
 pub fn create_test_span(lo: u32, hi: u32) -> rustc_span::Span {
     Span::with_root_ctxt(BytePos(lo), BytePos(hi))
@@ -77,38 +46,6 @@ where
             .unwrap()
             .peek_mut()
             .enter(|tcx| self.0(tcx));
-        rustc_driver::Compilation::Stop
-    }
-}
-
-struct RustcAfterParsingCallbacks<F>(F);
-impl<F> rustc_driver::Callbacks for RustcAfterParsingCallbacks<F>
-where
-    F: Fn(&Queries<'_>, &Compiler) -> ()
-{
-    fn after_parsing<'tcx>(
-        &mut self, 
-        compiler: &interface::Compiler,
-        queries: &'tcx rustc_interface::Queries<'tcx>
-    ) -> rustc_driver::Compilation {
-        compiler.session().abort_if_errors();
-        self.0(queries, compiler);
-        rustc_driver::Compilation::Stop
-    }
-}
-
-struct RustcAfterExpansionCallbacks<F>(F);
-impl<F> rustc_driver::Callbacks for RustcAfterExpansionCallbacks<F>
-where
-    F: Fn(&Queries<'_>, &Compiler) -> ()
-{
-    fn after_expansion<'tcx>(
-        &mut self, 
-        compiler: &interface::Compiler,
-        queries: &'tcx rustc_interface::Queries<'tcx>
-    ) -> rustc_driver::Compilation {
-        compiler.session().abort_if_errors();
-        self.0(queries, compiler);
         rustc_driver::Compilation::Stop
     }
 }
