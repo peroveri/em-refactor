@@ -84,49 +84,52 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
 
 #[cfg(test)]
 mod test {
-    use super::test_utils::{/*assert_fail,*/ assert_success};
-    use quote::quote;
+    use super::*;
+    use crate::test_utils::run_ty_query;
+    use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal};
+    
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<String> + Send> {
+        Box::new(move |ty| {
+            collect_innermost_contained_block(ty, ty.source().map_span(&file_name, from, to)?)
+                .map(|(block, _)| ty.get_source(block.span))
+                .ok_or_else(|| RefactoringErrorInternal::int("unwrap()"))
+        })
+    }
     
     #[test]
-    fn collect_innermost_contained_block_1() {
-        let p = quote! {
-            fn f ( ) { { } }
-        };
-        assert_success(p.clone(), (11, 11), "{ }");
-        assert_success(p.clone(), (10, 15), "{ }");
-        // TODO: check parent in AST instead of HIR?
-        // assert_fail(p.clone(), (9, 16));
-        // assert_fail(p.clone(), (9, 9));
+    fn should_collect_block_1() {
+        let input = r#"
+        fn foo() { 
+            /*START*/{ }/*END*/
+        }"#;
+        let expected = Ok("{ }".to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn collect_innermost_contained_block_should_collect_while() {
-        let p = quote! {
-            fn f ( ) { while { true } { { 1 ; } } }
-        };
-        // assert_fail(p.clone(), (9, 39));
-        // assert_fail(p.clone(), (26, 37));
-        assert_success(p.clone(), (17, 25), "{ true }");
-        assert_success(p.clone(), (28, 35), "{ 1 ; }");
-    }
-}
+    fn should_collect_while_expr() {
+        let input = r#"
+        fn foo() { 
+            while /*START*/{true}/*END*/{ }
+        }"#;
+        let expected = Ok("{true}".to_owned());
 
-#[cfg(test)]
-mod test_utils {
-    use super::*;
-    use quote::__private::TokenStream;
-    use crate::{create_test_span, run_after_analysis};
+        let actual = run_ty_query(input, map);
 
-    pub fn assert_success(prog: TokenStream, span: (u32, u32), expected: &str) {
-        run_after_analysis(prog, |tcx| {
-            let ty = TyContext(tcx);
-            let (block, _) = collect_innermost_contained_block(&ty, create_test_span(span.0, span.1)).unwrap();
-            
-            assert_eq!(ty.get_source(block.span), expected);
-        });
+        assert_eq!(actual, expected);
     }
-    // pub fn assert_fail(prog: TokenStream, span: (u32, u32)) {
-    //     run_after_analysis(prog, |tcx| {
-    //         assert!(collect_innermost_contained_block(tcx, create_test_span(span.0, span.1)).is_none());
-    //     });
-    // }
+    #[test]
+    fn should_collect_while_body() {
+        let input = r#"
+        fn foo() { 
+            while {true}/*START*/{1;}/*END*/
+        }"#;
+        let expected = Ok("{1;}".to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
+    }
 }
