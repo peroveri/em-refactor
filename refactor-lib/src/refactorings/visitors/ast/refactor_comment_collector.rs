@@ -84,56 +84,83 @@ pub fn collect_comments(context: &SourceMapContext) -> QueryResult<Vec<Span>> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::test_utils::{assert_success5, TestContext};
+    use crate::test_utils::{run_ast_query, TestContext};
     use crate::refactoring_invocation::AstContext;
 
-    fn map_with_id(range_id: &'static str) -> Box<dyn Fn(&TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<String> + Send>> { 
-        Box::new(move |_| Box::new(move |ast| {
-            let block_span = collect_comments_with_id(&ast.source(), range_id)?;
+    fn map_with_id(_: TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<String> + Send> { 
+        Box::new(move |ast| {
+            let block_span = collect_comments_with_id(&ast.source(), "extract-block.block")?;
             Ok(ast.get_source(block_span))
-        }))
+        })
     }
-    fn map() -> Box<dyn Fn(&TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send>> { 
-        Box::new(move |_| Box::new(move |ast| {
+    fn map_with_id_other(_: TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<String> + Send> { 
+        Box::new(move |ast| {
+            let block_span = collect_comments_with_id(&ast.source(), "other")?;
+            Ok(ast.get_source(block_span))
+        })
+    }
+    fn map(_: TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
+        Box::new(move |ast| {
             let spans = collect_comments(&ast.source())?;
             Ok(spans.iter().map(|e| ast.get_source(*e)).collect())
-        }))
+        })
     }
-
 
     #[test]
     fn should_collect_with_id1() {
-        assert_success5(
-r#"fn foo() {
-    /*refactor-tool:extract-block.block:start*/let bar = 0;/*refactor-tool:extract-block.block:end*/
-}"#, map_with_id("extract-block.block"), Ok("let bar = 0;".to_owned()));
+        let input = r#"fn foo() {
+            /*refactor-tool:extract-block.block:start*/let bar = 0;/*refactor-tool:extract-block.block:end*/
+        }"#;
+        let expected = Ok("let bar = 0;".to_owned());
+
+        let actual = run_ast_query(input, map_with_id);
+
+        assert_eq!(actual, expected);
     }
     #[test]
     fn should_collect_with_id2() {
-        assert_success5(
-r#"fn foo() {
-    /*refactor-tool:other:start*/let baz = 0;/*refactor-tool:other:end*/
-}"#, map_with_id("other"), Ok("let baz = 0;".to_owned()));
+        let input = r#"fn foo() {
+            /*refactor-tool:other:start*/let baz = 0;/*refactor-tool:other:end*/
+        }"#;
+        let expected = Ok("let baz = 0;".to_owned());
+
+        let actual = run_ast_query(input, map_with_id_other);
+
+        assert_eq!(actual, expected);
     }
     #[test]
     fn should_fail_when_start_not_found() {
-        assert_success5(
-r#"fn foo() {
-    /*refactor-tool:other:start*/let baz = 0;/*refactor-tool:not-found:end*/
-}"#, map_with_id("not-found"), Err(RefactoringErrorInternal::comment_not_found("/*refactor-tool:not-found:start*/")));
+        let input = r#"fn foo() {
+            /*refactor-tool:x:start*/let baz = 0;/*refactor-tool:other:end*/
+        }"#;
+        let expected = Err(RefactoringErrorInternal::comment_not_found("/*refactor-tool:other:start*/"));
+
+        let actual = run_ast_query(input, map_with_id_other);
+
+        assert_eq!(actual, expected);
     }
     #[test]
     fn should_fail_when_end_not_found() {
-        assert_success5(
-r#"fn foo() {
-    /*refactor-tool:not-found:start*/let baz = 0;/*refactor-tool:other:end*/
-}"#, map_with_id("not-found"), Err(RefactoringErrorInternal::int("Couldn't find string: /*refactor-tool:not-found:end*/")));
+        let input = r#"fn foo() {
+            /*refactor-tool:other:start*/let baz = 0;/*refactor-tool::end*/
+        }"#;
+        let expected = Err(RefactoringErrorInternal::int("Couldn't find string: /*refactor-tool:other:end*/"));
+
+        let actual = run_ast_query(input, map_with_id_other);
+
+        assert_eq!(actual, expected);
     }
     #[test]
     fn should_collect_comments() {
-        assert_success5(
-r#"fn foo() {
-    /*refactor-tool:extract-block.block:start*/let bar = 0;/*refactor-tool:extract-block.block:end*/
-}"#, map(), Ok(vec!["/*refactor-tool:extract-block.block:start*/".to_owned(), "/*refactor-tool:extract-block.block:end*/".to_owned()]));
+        let input = r#"fn foo() {
+            /*refactor-tool:extract-block.block:start*/let bar = 0;/*refactor-tool:extract-block.block:end*/
+        }"#;
+        let expected = Ok(vec![
+            "/*refactor-tool:extract-block.block:start*/".to_owned(), 
+            "/*refactor-tool:extract-block.block:end*/".to_owned()]);
+
+        let actual = run_ast_query(input, map);
+
+        assert_eq!(actual, expected);
     }
 }

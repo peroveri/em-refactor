@@ -147,23 +147,6 @@ fn find_selection(program: &str) -> Option<(u32, u32)> {
         None
     }
 }
-pub fn assert_success5<T>(prog: &str, init: Box<dyn Fn(&TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<T> + Send>>, expected: QueryResult<T>) 
-    where T: std::fmt::Debug + PartialEq + Send {
-
-    let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", prog));
-    let test_context = TestContext {
-        main_path: d.path().join("./main.rs").to_str().unwrap().to_owned(),
-        selection: None
-    };
-    let q = init(&test_context);
-
-    let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q), false);
-    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
-    d.close().unwrap();
-    err.unwrap();
-
-    assert_eq!(c.result, expected);
-}
 pub fn run_ast_query<T, F>(program: &str, init: F) -> QueryResult<T>
     where
         F: Fn(TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<T> + Send>,
