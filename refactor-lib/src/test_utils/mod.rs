@@ -292,17 +292,3 @@ pub fn assert_success3<T, F>(program: &str, init: F, expected: T)
 
     assert_eq!(c.result.unwrap(), expected);
 }
-pub fn assert_ast_success3<T, F>(program: &str, init: F, expected: T) 
-    where
-        F: Fn() -> Box<dyn Fn(&AstContext) -> QueryResult<T> + Send>,
-        T: std::fmt::Debug + PartialEq + Send {
-    
-    let (rustc_args, _d) = init_main_rs_and_get_args(program);
-    let q = init();
-
-    let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q), false);
-    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
-    err.unwrap();
-
-    assert_eq!(c.result.unwrap(), expected);
-}

@@ -45,7 +45,7 @@ impl<'ast> Visitor<'ast> for ExtractBlockCandidateVisitor {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::test_utils::assert_ast_success3;
+    use crate::test_utils::run_ast_query;
 
     fn map() -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
         Box::new(|ast| 
@@ -59,53 +59,64 @@ mod test {
     }
     #[test]
     fn local_variable_use_collector_should_collect_uses_1() {
-        assert_ast_success3(
-            r#"fn foo() { 
-                1;
-            }"#,
-            map,
-            vec!["1;".to_string()]
-        );
+        let input = r#"
+        fn foo() { 
+            1;
+        }"#;
+        let expected = Ok(vec!["1;".to_owned()]);
+
+        let actual = run_ast_query(input, map);
+        
+        assert_eq!(actual, expected);
     }
     #[test]
     fn local_variable_use_collector_should_collect_uses_2() {
-        assert_ast_success3(
-            r#"fn foo() -> u32 { 
-                1
-            }"#,
-            map,
-            vec!["1".to_string()]
-        );
+        let input = r#"
+        fn foo() -> u32 { 
+            1
+        }"#;
+        let expected = Ok(vec!["1".to_owned()]);
+
+        let actual = run_ast_query(input, map);
+        
+        assert_eq!(actual, expected);
     }
     #[test]
     fn local_variable_use_collector_should_collect_uses_3() {
-        assert_ast_success3(
-            r#"fn foo() -> u32 { 
-                1; 2
-            }"#,
-            map,
-            vec!["1;".to_string(), "1; 2".to_string(), "2".to_string()]
-        );
+        let input = r#"
+        fn foo() -> u32 { 
+            1; 2
+        }"#;
+        let expected = Ok(vec![
+            "1;".to_owned(), 
+            "1; 2".to_owned(), 
+            "2".to_owned()]);
+
+        let actual = run_ast_query(input, map);
+        
+        assert_eq!(actual, expected);
     }
     #[test]
     fn local_variable_use_collector_should_collect_uses_4() {
-        assert_ast_success3(
-r#"mod a {
-    struct S;
-    impl S {
-        fn foo() {
-            loop {
-                let _ = 1;
+        let input = r#"
+        mod a {
+            struct S;
+            impl S {
+                fn foo() {
+                    loop {
+                        let _ = 1;
+                    }
+                }
             }
-        }
-    }
-}"#,
-            map,
-            vec![
-r#"loop {
-                let _ = 1;
-            }"#.to_string(), 
-"let _ = 1;".to_string()]
-        );
+        }"#;
+        let expected = Ok(vec![
+            r#"loop {
+                        let _ = 1;
+                    }"#.to_owned(),
+            "let _ = 1;".to_owned()]);
+
+        let actual = run_ast_query(input, map);
+        
+        assert_eq!(actual, expected);
     }
 }
