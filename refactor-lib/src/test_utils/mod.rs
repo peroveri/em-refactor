@@ -6,7 +6,7 @@ use std::path::Path;
 use quote::__private::TokenStream;
 use rustc_span::{BytePos, Span};
 use tempfile::TempDir;
-use crate::refactoring_invocation::{argument_list_to_refactor_def, AstContext, get_sys_root, MyRefactorCallbacks, Query, QueryResult, RefactoringErrorInternal, TyContext};
+use crate::refactoring_invocation::{argument_list_to_refactor_def, AstContext, get_sys_root, MyRefactorCallbacks, Query, QueryResult, TyContext};
 use refactor_lib_types::{FileStringReplacement, RefactorArgs, SelectionType};
 
 /**
@@ -194,41 +194,29 @@ pub fn run_refactoring(init: TestInit) -> QueryResult<String>  {
     err.unwrap();
     Ok(crate::refactoring_invocation::get_file_content(&c.result?.0).unwrap())
 }
-pub fn assert_success2(prog: TokenStream, init: Box<dyn Fn(String) -> Box<dyn Fn(&AstContext) -> QueryResult<String> + Send>>, expected: &str)  {
-
-    let program = &format!("{}", prog);
-    
-    let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
-    let q = init(d.path().join("./main.rs").to_str().unwrap().to_owned());
-
-    let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q), false);
-    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
-    err.unwrap();
-
-    assert_eq!(c.result.unwrap(), expected);
-}
-pub fn assert_err2(prog: TokenStream, init: Box<dyn Fn(String) -> Box<dyn Fn(&AstContext) -> QueryResult<String> + Send>>, expected: RefactoringErrorInternal)  {
-
-    let program = &format!("{}", prog);
-    
-    let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
-    let q = init(d.path().join("./main.rs").to_str().unwrap().to_owned());
-
-    let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q), false);
-    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
-    err.unwrap();
-
-    assert_eq!(c.result.unwrap_err(), expected);
-}
 pub struct TestContext {
-    pub main_path: String
+    pub main_path: String,
+    pub selection: Option<(u32, u32)>
+}
+fn find_selection(program: &str) -> Option<(u32, u32)> {
+    const S0_STR: &str = "/*START*/";
+    const S1_STR: &str = "/*END*/";
+
+    if let Some(x0) = program.find(S0_STR) {
+        Some((
+            (x0 + S0_STR.len()) as u32, 
+            program.find(S1_STR).unwrap() as u32))
+    } else {
+        None
+    }
 }
 pub fn assert_success5<T>(prog: &str, init: Box<dyn Fn(&TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<T> + Send>>, expected: QueryResult<T>) 
     where T: std::fmt::Debug + PartialEq + Send {
 
     let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", prog));
     let test_context = TestContext {
-        main_path: d.path().join("./main.rs").to_str().unwrap().to_owned()
+        main_path: d.path().join("./main.rs").to_str().unwrap().to_owned(),
+        selection: None
     };
     let q = init(&test_context);
 
@@ -241,12 +229,15 @@ pub fn assert_success5<T>(prog: &str, init: Box<dyn Fn(&TestContext) -> Box<dyn 
 }
 pub fn run_ast_query<T, F>(program: &str, init: F) -> QueryResult<T>
     where
-        F: Fn() -> Box<dyn Fn(&AstContext) -> QueryResult<T> + Send>,
+        F: Fn(TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<T> + Send>,
         T: std::fmt::Debug + PartialEq + Send {
     
     let (rustc_args, d) = init_main_rs_and_get_args(program);
-    let _main_path = d.path().join("./main.rs").to_str().unwrap().to_owned();
-    let q = init();
+    let ctx = TestContext {
+        main_path: d.path().join("./main.rs").to_str().unwrap().to_owned(),
+        selection: find_selection(program)
+    };
+    let q = init(ctx);
 
     let mut c = MyRefactorCallbacks::from_arg(Query::AfterExpansion(q), false);
     let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);

@@ -53,50 +53,73 @@ impl<'v> Visitor<'v> for BlockVisitorCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::test_utils::{run_ast_query, TestContext};
     use crate::refactoring_invocation::RefactoringErrorInternal;
-    use crate::test_utils::{assert_err2, assert_success2};
-    use quote::quote;
 
-    fn map(from: u32, to: u32) -> Box<dyn Fn(String) -> Box<dyn Fn(&AstContext) -> QueryResult<String> + Send>> { 
-        Box::new(move |file_name| Box::new(move |ast| {
+    fn map(ctx: TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<String> + Send> { 
+        Box::new(move |ast| {
+            let span = ast.source().map_span(&ctx.main_path, ctx.selection.unwrap().0, ctx.selection.unwrap().1)?;
+            collect_innermost_block(ast, span)
+                .map(|block| ast.get_source(block.span))
+        })
+    }
+    #[test]
+    fn fn_with_single_block() {
+        let input = r#"
+        fn foo () {/*START*/
+            1; 2;
+        /*END*/}"#;
+        let expected = Ok(r#"{/*START*/
+            1; 2;
+        /*END*/}"#.to_owned());
 
-            let block_span = collect_innermost_block(ast, ast.source().map_span(
-                &file_name,
-                from,
-                to
-            )?)?.span;
+        let actual = run_ast_query(input, map);
 
-            Ok(ast.get_source(block_span))
-        }))
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn block_collector_fn_with_single_block() {
-        assert_success2(quote! {
-            fn foo ( ) { 1 ; 2 ; }
-        }, map(12, 21), "{ 1 ; 2 ; }");
+    fn should_collect_outermost() {
+        let input = r#"
+        fn foo () {/*START*/
+            { 1 ; 2 ; }
+        /*END*/}"#;
+        let expected = Ok(r#"{/*START*/
+            { 1 ; 2 ; }
+        /*END*/}"#.to_owned());
+
+        let actual = run_ast_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn block_collector_should_collect_outermost() {
-        assert_success2(quote! {
-            fn foo ( ) { { 1 ; 2 ; } }
-        }, map(12, 25), "{ { 1 ; 2 ; } }");
+    fn should_collect_innermost() {
+        let input = r#"
+        fn foo () {
+            {/*START*/ 1 ; 2 ; /*END*/}
+        }"#;
+        let expected = Ok(
+            "{/*START*/ 1 ; 2 ; /*END*/}".to_owned());
+
+        let actual = run_ast_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn block_collector_should_collect_innermost() {
-        assert_success2(quote! {
-            fn foo ( ) { { 1 ; 2 ; } }
-        }, map(14, 23), "{ 1 ; 2 ; }");
+    fn shouldnt_collect_const() {
+        let input = "const _: i32 = {/*START*/ 1 /*END*/};";
+        let expected = Err(RefactoringErrorInternal::invalid_selection_with_code(25, 28, " 1 ", false));
+
+        let actual = run_ast_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn block_collector_shouldnt_collect_const() {
-        assert_err2(quote! {
-            const _ : i32 = { 1 } ;
-        }, map(17, 20), RefactoringErrorInternal::invalid_selection_with_code(17, 20, " 1 ", false));
-    }
-    #[test]
-    fn block_collector_shouldnt_collect() {
-        assert_err2(quote! {
-            fn f ( ) { }
-        }, map(0, 12), RefactoringErrorInternal::invalid_selection_with_code(0, 12, "fn f ( ) { }", false));
+    fn shouldnt_collect() {
+        let input = "/*START*/fn f () { }/*END*/";
+        let expected = Err(RefactoringErrorInternal::invalid_selection_with_code(9, 20, "fn f () { }", false));
+
+        let actual = run_ast_query(input, map);
+
+        assert_eq!(actual, expected);
     }
 }

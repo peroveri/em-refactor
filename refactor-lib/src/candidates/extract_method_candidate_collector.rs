@@ -45,9 +45,9 @@ impl<'ast> Visitor<'ast> for ExtractBlockCandidateVisitor {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::test_utils::run_ast_query;
+    use crate::test_utils::{run_ast_query, TestContext};
 
-    fn map() -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
+    fn map(_: TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
         Box::new(|ast| 
             Ok(
                 collect_extract_block_candidates(ast)?

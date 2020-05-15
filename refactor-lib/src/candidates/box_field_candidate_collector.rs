@@ -69,7 +69,7 @@ impl<'ast> Visitor<'ast> for ExtractBlockCandidateVisitor {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::test_utils::run_ast_query;
+    use crate::test_utils::{run_ast_query, TestContext};
     
     fn map(mode: CollectFieldMode) -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> {
         Box::new(move |ast| {
@@ -81,13 +81,13 @@ mod test {
             )
         })
     }
-    fn map_all() -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
+    fn map_all(_: TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
         map(CollectFieldMode::All)
     }
-    fn map_named() -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
+    fn map_named(_: TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
         map(CollectFieldMode::Named)
     }
-    fn map_tuple() -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
+    fn map_tuple(_: TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<Vec<String>> + Send> { 
         map(CollectFieldMode::Tuple)
     }
 
