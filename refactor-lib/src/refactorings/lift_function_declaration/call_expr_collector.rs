@@ -1,4 +1,4 @@
-use rustc_hir::{ExprKind, HirId, Expr, def_id::DefId, def::Res};
+use rustc_hir::{Block, HirId, Expr, ExprKind, def_id::DefId, def::Res};
 use rustc_hir::intravisit::{NestedVisitorMap, Visitor, walk_crate, walk_expr};
 use rustc_middle::hir::map::Map;
 use rustc_middle::ty::TyCtxt;
@@ -17,6 +17,38 @@ pub fn collect_call_exprs<'v>(tcx: &'v TyContext, def_id: HirId) -> Vec<CallExpr
     v.calls
 }
 
+impl<'v> CallExprCollector<'v> {
+    fn visit_call_expr(&mut self, call_expr: &'v Expr<'v>, path_expr: &'v Expr<'v>, arg_exprs: &'v [Expr<'v>]) {
+
+        match &path_expr.kind {
+            ExprKind::Path(qpath) => {
+                let typeck_table = self.tcx.typeck_tables_of(call_expr.hir_id.owner);
+                match typeck_table.qpath_res(qpath, path_expr.hir_id) {
+                    Res::Def(.., def_id) => {
+                        if def_id == self.def_id {
+                            self.calls.push(CallExpr {
+                                arg_exprs,
+                                call_expr,
+                                path_expr
+                            });
+                        }
+                    },
+                    _ => {}
+                }
+            },
+            ExprKind::Tup([expr]) => { // Tuple with single entry
+                self.visit_call_expr(call_expr, expr, arg_exprs);
+            },
+            ExprKind::Block( Block { // Block with only an expression
+                stmts: [], expr: Some(expr), ..
+            }, ..) => {
+                self.visit_call_expr(call_expr, expr, arg_exprs);
+            },
+            _ => {}
+        }
+    }
+}
+
 impl<'v> Visitor<'v> for CallExprCollector<'v> {
     type Map = Map<'v>;
     fn nested_visit_map(&mut self) -> NestedVisitorMap<Self::Map> {
@@ -26,30 +58,9 @@ impl<'v> Visitor<'v> for CallExprCollector<'v> {
 
         match expr.kind {
             ExprKind::Call(path_expr, arg_exprs) =>  {
-
-                match &path_expr.kind {
-                    ExprKind::Path(qpath) => {
-                        let typeck_table = self.tcx.typeck_tables_of(expr.hir_id.owner);
-                        match typeck_table.qpath_res(qpath, path_expr.hir_id) {
-                            Res::Def(.., def_id) => {
-                                if def_id == self.def_id {
-                                    self.calls.push(CallExpr {
-                                        arg_exprs,
-                                        call_expr: expr,
-                                        path_expr
-                                    });
-                                }
-                            },
-                            _ => {}
-                        }
-
-                    },
-                    _ => {}
-                }
+                self.visit_call_expr(expr, path_expr, arg_exprs);
             },
-            _ => {
-                
-            }
+            _ => { }
         }
 
         walk_expr(self, expr);
@@ -146,6 +157,26 @@ mod test {
                 args: "2".to_owned(),
                 path: "foo".to_owned(),
             }
+        ]);
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
+    }
+    #[test]
+    fn fn_decl_4() {
+        let input = r#"
+        fn main () {
+            /*START*/fn foo(_: i32) {}/*END*/;
+            ({foo})(1);
+        }"#;
+
+        let expected = Ok(vec![
+            FnDecl2Test {
+                call: "({foo})(1)".to_owned(),
+                args: "1".to_owned(),
+                path: "foo".to_owned(),
+            },
         ]);
 
         let actual = run_ty_query(input, map);
