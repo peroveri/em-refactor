@@ -23,6 +23,8 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryR
     // else:
     //   move to parent mod
 
+    // also: for each call expr: replace ({path}) with path if it matches that
+
     let changes = vec![
         tcx.map_change(fn_def.span, "".to_owned())?,
         tcx.map_change(fn_def.get_parent_mod_inner().shrink_to_hi(), format!("\n{}", tcx.get_source(fn_def.span)))?
