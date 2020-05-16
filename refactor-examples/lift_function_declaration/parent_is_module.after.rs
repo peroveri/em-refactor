@@ -1,4 +1,5 @@
-fn foo() { }
 fn main() {
+    
     foo();
 }
+fn foo() { }
