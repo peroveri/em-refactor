@@ -6,6 +6,7 @@ pub mod convert_closure_to_fn;
 pub mod extract_block;
 pub mod inline_macro;
 pub mod introduce_closure;
+pub mod lift_function_declaration;
 pub mod pull_up_item_declaration;
 pub mod remove_refactoring_comments;
 pub mod utils;

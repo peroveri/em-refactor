@@ -39,7 +39,7 @@ pub fn map_change_from_span(source_map: &SourceMap, span: Span, replacement: Str
     let filename = get_local_filename(source_map, span)?;
     let file_offset = get_file_offset(source_map, &filename)?;
     let lines = source_map.span_to_lines(span).unwrap().lines;
-    let line_start = lines.first().unwrap();
+    let line_start = lines.first().ok_or_else(|| RefactoringErrorInternal::int(&format!("Span: {:?} had no lines", span)))?;
     let line_end = lines.last().unwrap();
     Ok(FileStringReplacement {
         file_name: filename,

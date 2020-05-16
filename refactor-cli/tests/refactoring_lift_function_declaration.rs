@@ -35,7 +35,6 @@ mod lift_function_declaration {
         run_test("parent_is_impl");
     }
     #[test]
-    #[ignore]
     fn parent_is_module() {
         run_test("parent_is_module");
     }

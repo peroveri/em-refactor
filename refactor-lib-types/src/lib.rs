@@ -180,6 +180,7 @@ pub mod defs {
     pub const EXTRACT_METHOD_CANDIDATES: &str = EXTRACT_METHOD;
     pub const INTRODUCE_CLOSURE: &str = "introduce-closure";
     pub const INTRODUCE_CLOSURE_CALL_EXPR: &str = "introduce-closure.call-expr";
+    pub const LIFT_FUNCTION_DECLARATION: &str = "lift-function-declaration";
     pub const PULL_UP_ITEM_DECLARATIONS: &str = "pull-up-item-declaration";
     pub const PULL_UP_ITEM_DECLARATIONS_STMTS: &str = "pull-up-item-declaration.stmts";
     pub const REMOVE_REFACTORING_COMMENTS: &str = "remove-refactoring-comments";
