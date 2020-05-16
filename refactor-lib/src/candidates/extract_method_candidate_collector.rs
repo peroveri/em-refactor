@@ -33,9 +33,7 @@ impl<'ast> Visitor<'ast> for ExtractBlockCandidateVisitor {
             let si = spans[i];
             for j in i..l {
                 let sj = spans[j];
-                if i == j || si != sj {
-                    self.candidates.push(si.with_hi(sj.hi()));
-                }
+                self.candidates.push(si.with_hi(sj.hi()));
             }
         }
         walk_block(self, b);
