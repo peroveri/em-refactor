@@ -1,0 +1,11 @@
+{
+	"file": "method_mutable.rs",
+	"args": {
+		"refactoring": "lift-function-declaration",
+		"selection": "66:91"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "method_mutable.after.rs"
+	}
+}

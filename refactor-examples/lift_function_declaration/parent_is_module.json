@@ -1,0 +1,11 @@
+{
+	"file": "parent_is_module.rs",
+	"args": {
+		"refactoring": "lift-function-declaration",
+		"selection": "16:28"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "parent_is_module.after.rs"
+	}
+}

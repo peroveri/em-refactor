@@ -1,0 +1,11 @@
+{
+	"file": "method_parent_is_impl.rs",
+	"args": {
+		"refactoring": "lift-function-declaration",
+		"selection": "62:83"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "method_parent_is_impl.after.rs"
+	}
+}
