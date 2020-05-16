@@ -9,6 +9,7 @@ const refactorings = [
     "extract-method",
     "inline-macro",
     "introduce-closure",
+    "lift-function-declaration",
     "pull-up-item-declaration"
 ];
 
