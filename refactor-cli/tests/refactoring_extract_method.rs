@@ -10,7 +10,7 @@ mod extract_method {
     use super::*;
     
     #[test]
-    fn eexample_1() {
+    fn example_1() {
         run_test("example_1");
     }
 }
