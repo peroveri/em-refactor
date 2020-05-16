@@ -3,6 +3,7 @@ use rustc_middle::ty::{TyS, print::with_crate_prefix};
 use rustc_span::Span;
 use crate::refactoring_invocation::{AstDiff, QueryResult, RefactoringErrorInternal, TyContext};
 use crate::refactorings::visitors::hir::collect_anonymous_closure;
+use refactor_lib_types::{create_refactor_tool_marker, defs::CONVERT_CLOSURE_TO_FUNCTION_FN_DEF};
 
 /// Convert anonymous closure to function
 /// 
@@ -17,7 +18,7 @@ use crate::refactorings::visitors::hir::collect_anonymous_closure;
 ///     Run inference on where?
 /// 
 /// Change Closure Expr to block return fn
-pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryResult<AstDiff> {
+pub fn do_refactoring(tcx: &TyContext, span: Span, add_comment: bool) -> QueryResult<AstDiff> {
     let closure = collect_anonymous_closure(tcx, span)?;
 
     let mut changes = vec![];
@@ -45,7 +46,7 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryR
         new_fn.output = Some(format_ty(out));
     }
 
-    changes.push(tcx.map_change(closure.call_fn_expr.span, format!("({{{}\n{}}})", new_fn.formatted(), new_fn.ident))?);
+    changes.push(tcx.map_change(closure.call_fn_expr.span, format!("({{{}{}{}\n{}}})", create_comment(add_comment, false), new_fn.formatted(), create_comment(add_comment, true), new_fn.ident))?);
 
 
     Ok(AstDiff(changes))
@@ -102,4 +103,12 @@ fn infer_concrete<'v>(tcx: &'v TyContext, expr: &Expr, body_id: BodyId) -> Query
     } else {
         Err(RefactoringErrorInternal::int(&format!("Failed to get type of expression: {}", tcx.get_source(expr.span))))
     } 
+}
+
+fn create_comment(add_comment: bool, is_end: bool) -> String {
+    if add_comment {
+        create_refactor_tool_marker(CONVERT_CLOSURE_TO_FUNCTION_FN_DEF, is_end)
+    } else {
+        "".to_owned()
+    }
 }

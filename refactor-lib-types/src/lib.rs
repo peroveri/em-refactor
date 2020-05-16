@@ -174,6 +174,7 @@ pub mod defs {
     pub const BOX_FIELD_CANDIDATES: &str = BOX_FIELD;
     pub const CLOSE_OVER_VARIABLES: &str = "close-over-variables";
     pub const CONVERT_CLOSURE_TO_FUNCTION: &str = "convert-closure-to-function";
+    pub const CONVERT_CLOSURE_TO_FUNCTION_FN_DEF: &str = "convert-closure-to-function.fn-def";
     pub const EXTRACT_BLOCK: &str = "extract-block";
     pub const EXTRACT_BLOCK_BLOCK: &str = "extract-block.block";
     pub const EXTRACT_METHOD: &str = "extract-method";
@@ -195,6 +196,7 @@ pub mod defs {
             (INTRODUCE_CLOSURE, EXTRACT_BLOCK_BLOCK),
             (CLOSE_OVER_VARIABLES, INTRODUCE_CLOSURE_CALL_EXPR),
             (CONVERT_CLOSURE_TO_FUNCTION, INTRODUCE_CLOSURE_CALL_EXPR),
+            (LIFT_FUNCTION_DECLARATION, CONVERT_CLOSURE_TO_FUNCTION_FN_DEF),
             (REMOVE_REFACTORING_COMMENTS, ""),
         ]
     }
