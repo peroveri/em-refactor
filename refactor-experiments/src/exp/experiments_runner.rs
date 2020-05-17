@@ -1,5 +1,4 @@
 use super::{CmdRunner, ExperimentsOutput, ReportData, Stopwatch};
-use chrono::prelude::*;
 use refactor_lib_types::CandidatePosition;
 use std::path::PathBuf;
 use log::{error, info};
@@ -69,21 +68,31 @@ impl ExperimentsRunner {
     }
 }
 
-pub fn run_all_exp(refactoring: &str, crate_path: &str) -> std::io::Result<()> {
+pub fn run_all_exp(options: ExperimentOptions) -> std::io::Result<()> {
     let mut tool_path = std::env::current_exe()
         .expect("current executable path invalid")
         .with_file_name("cargo-my-refactor");
     if cfg!(windows) {
         tool_path.set_extension("exe");
     }
-    let cmd_runner = CmdRunner::new_default_tmp_dir(&PathBuf::from(crate_path), tool_path);
-    let mut experiments_runner = ExperimentsRunner::new(refactoring.to_string(), cmd_runner);
+    let cmd_runner = CmdRunner::new_default_tmp_dir(&PathBuf::from(&options.workspace_root), tool_path);
+    let mut experiments_runner = ExperimentsRunner::new(options.refactoring.to_string(), cmd_runner);
     experiments_runner.run_exp_on_project()?;
 
-    let prefix = format!("{}_{}", refactoring, Local::now().format("%Y-%m-%d_%H_%M"));
-
     let output = serde_json::to_string(&ExperimentsOutput::create(&experiments_runner.report)).unwrap();
-    let mut file = File::create(format!("{}.report.json", prefix))?;
+    let mut file = File::create(format!("{}.report.json", options.get_file_prefix()))?;
     file.write_all(output.as_bytes())?;
     Ok(())
+}
+pub struct ExperimentOptions {
+    pub refactoring: String,
+    pub started_at: String,
+    pub workspace_root: String,
+    pub log_to_file: bool
+}
+
+impl ExperimentOptions {
+    pub fn get_file_prefix(&self) -> String {
+         format!("{}_{}", self.refactoring, self.started_at)
+    }
 }

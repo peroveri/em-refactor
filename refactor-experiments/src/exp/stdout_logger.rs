@@ -1,8 +1,8 @@
 use log::{Record, Level, Metadata};
 
-pub struct SimpleLogger;
+pub struct StdoutLogger;
 
-impl log::Log for SimpleLogger {
+impl log::Log for StdoutLogger {
     fn enabled(&self, metadata: &Metadata) -> bool {
         metadata.level() <= Level::Trace
     }

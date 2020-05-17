@@ -1,12 +1,17 @@
 mod exp;
 use clap::{Arg, App};
 use log::{SetLoggerError, LevelFilter};
+use chrono::prelude::*;
 
-static LOGGER: exp::SimpleLogger = exp::SimpleLogger;
-
-pub fn init_logger() -> Result<(), SetLoggerError> {
-    log::set_logger(&LOGGER)
-        .map(|()| log::set_max_level(LevelFilter::Info))
+pub fn init_logger(options: &exp::ExperimentOptions) -> Result<(), SetLoggerError> {
+     if options.log_to_file {
+          log::set_boxed_logger(Box::new(
+               exp::FileLogger::new(format!("{}.txt", options.get_file_prefix()))
+          )).map(|()| log::set_max_level(LevelFilter::Info))
+     } else {
+          log::set_boxed_logger(Box::new(exp::StdoutLogger))
+               .map(|()| log::set_max_level(LevelFilter::Info))
+     }
 }
 fn app<'a, 'b>() -> App<'a, 'b> {
      App::new("Refactoring experiments runner")
@@ -21,20 +26,21 @@ fn app<'a, 'b>() -> App<'a, 'b> {
           .arg(Arg::with_name("refactoring")
                .takes_value(true)
                .required(true))
-          .arg(Arg::with_name("v")
-               .short("v")
-               .multiple(true)
-               .help("Sets the level of verbosity"))
+          .arg(Arg::with_name("log-to-file")
+               .long("log-to-file"))
 }
 
 // given project, already in file system
 // run experiment --refactoring=extract-method
 
 fn main() -> std::io::Result<()> {
-     init_logger().unwrap();
      let matches = app().get_matches();
-     exp::run_all_exp(
-         matches.value_of("refactoring").unwrap(),
-         matches.value_of("workspace-root").unwrap()
-     )
+     let options = exp::ExperimentOptions {
+          refactoring: matches.value_of("refactoring").unwrap().to_string(),
+          workspace_root: matches.value_of("workspace-root").unwrap().to_string(),
+          started_at: format!("{}", Local::now().format("%Y-%m-%d_%H_%M")),
+          log_to_file: matches.is_present("log-to-file")
+     };
+     init_logger(&options).unwrap();
+     exp::run_all_exp(options)
 }
