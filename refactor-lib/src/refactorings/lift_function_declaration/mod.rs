@@ -1,6 +1,6 @@
 use rustc_span::Span;
 use crate::refactoring_invocation::{AstDiff, QueryResult, TyContext};
-use function_definition_collector::{collect_function_definition, FnDecl2};
+use function_definition_collector::{collect_function_definition, FnDefinition};
 use qpath_res_collector::collect_qpaths;
 
 mod function_definition_collector;
@@ -30,7 +30,7 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryR
     }
 }
 
-fn move_to_parent_mod(tcx: &TyContext, fn_def: FnDecl2) -> QueryResult<AstDiff> {
+fn move_to_parent_mod(tcx: &TyContext, fn_def: FnDefinition) -> QueryResult<AstDiff> {
 
     let changes = vec![
         tcx.map_change(fn_def.span, "".to_owned())?,
@@ -39,7 +39,7 @@ fn move_to_parent_mod(tcx: &TyContext, fn_def: FnDecl2) -> QueryResult<AstDiff> 
 
     Ok(AstDiff(changes))
 }
-fn move_to_impl(tcx: &TyContext, fn_def: FnDecl2) -> QueryResult<AstDiff> {
+fn move_to_impl(tcx: &TyContext, fn_def: FnDefinition) -> QueryResult<AstDiff> {
 
     let mut changes = vec![
         tcx.map_change(fn_def.span, "".to_owned())?,

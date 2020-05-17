@@ -4,19 +4,18 @@ use rustc_hir::intravisit::{NestedVisitorMap, Visitor, walk_crate, walk_impl_ite
 use rustc_middle::hir::map::Map;
 use crate::refactoring_invocation::{QueryResult, TyContext};
 
-/// Collects a function declaration + closest parent module
-pub fn collect_function_definition<'a, 'v>(tcx: &'a TyContext<'v>, pos: Span) -> QueryResult<FnDecl2<'v>> {
+/// Collects a function definition + closest parent module
+pub fn collect_function_definition<'a, 'v>(tcx: &'a TyContext<'v>, pos: Span) -> QueryResult<FnDefinition<'v>> {
     let mut v = FnDefCollector {
         tcx,
         pos,
-        fn_decl: None,
+        fn_definition: None,
         impl_items: vec![],
         impl_for: vec![]
     };
-
     walk_crate(&mut v, tcx.0.hir().krate());
 
-    v.fn_decl.ok_or_else(|| tcx.source().span_err(pos, false))
+    v.fn_definition.ok_or_else(|| tcx.source().span_err(pos, false))
 }
 
 impl<'a, 'v> Visitor<'v> for FnDefCollector<'a, 'v> {
@@ -38,7 +37,7 @@ impl<'a, 'v> Visitor<'v> for FnDefCollector<'a, 'v> {
                     let parent_mod_id = self.tcx.0.parent_module(i.hir_id);
                     let (parent_mod, span, ..) = self.tcx.0.hir().get_module(parent_mod_id.to_def_id());
 
-                    self.fn_decl = Some(FnDecl2 {
+                    self.fn_definition = Some(FnDefinition {
                         hir_id: self.tcx.0.hir().local_def_id(i.hir_id),
                         span: i.span,
                         parent_mod,
@@ -59,14 +58,14 @@ impl<'a, 'v> Visitor<'v> for FnDefCollector<'a, 'v> {
         walk_item(self, i);
     }
 }
-pub struct FnDecl2<'v> {
+pub struct FnDefinition<'v> {
     pub span: Span,
     pub hir_id: DefId,
     pub parent_mod: &'v Mod<'v>,
     pub mod_span: Span,
     pub impl_: Option<(Span, bool)>
 }
-impl FnDecl2<'_> {
+impl FnDefinition<'_> {
     /// Mod.inner contains first token past '{' but until '}' in some cases, so we have to shrink the span for those 
     /// see: https://doc.rust-lang.org/nightly/nightly-rustc/rustc_hir/hir/struct.Mod.html
     pub fn get_parent_mod_inner(&self) -> Span {
@@ -81,7 +80,7 @@ impl FnDecl2<'_> {
 struct FnDefCollector<'a, 'v> {
     tcx: &'a TyContext<'v>,
     pos: Span,
-    fn_decl: Option<FnDecl2<'v>>,
+    fn_definition: Option<FnDefinition<'v>>,
     impl_items: Vec<Span>,
     impl_for: Vec<bool>
 }
@@ -92,21 +91,21 @@ mod test {
     use crate::test_utils::run_ty_query;
 
     #[derive(Debug, PartialEq)]
-    struct FnDecl2Test {
+    struct FnDefinitionTest {
         span: String,
         parent_mod_span: String,
         parent_impl_span: Option<(String, bool)>
     }
 
-    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<FnDecl2Test> + Send> {
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<FnDefinitionTest> + Send> {
         Box::new(move |ty| {
             let span = ty.source().map_span(&file_name, from, to)?;
-            let closure = collect_function_definition(ty, span)?;
+            let fn_def = collect_function_definition(ty, span)?;
 
-            Ok(FnDecl2Test {
-                span: ty.get_source(closure.span),
-                parent_mod_span: ty.get_source(closure.get_parent_mod_inner()),
-                parent_impl_span: closure.impl_.map(|(span, is_for)| (ty.get_source(span), is_for))
+            Ok(FnDefinitionTest {
+                span: ty.get_source(fn_def.span),
+                parent_mod_span: ty.get_source(fn_def.get_parent_mod_inner()),
+                parent_impl_span: fn_def.impl_.map(|(span, is_for)| (ty.get_source(span), is_for))
             })
         })
     }
@@ -117,7 +116,7 @@ mod test {
             /*START*/fn foo() {}/*END*/;
         }"#;
 
-        let expected = Ok(FnDecl2Test{
+        let expected = Ok(FnDefinitionTest{
             span: "fn foo() {}".to_owned(),
             parent_mod_span: input.trim().to_string(),
             parent_impl_span: None
@@ -139,7 +138,7 @@ mod test {
             }
         }"#;
 
-        let expected = Ok(FnDecl2Test{
+        let expected = Ok(FnDefinitionTest{
             span: "fn foo() {}".to_owned(),
             parent_mod_span: r#"fn baz() {}
                 fn main () {
@@ -163,7 +162,7 @@ mod test {
             }
         }"#;
 
-        let expected = Ok(FnDecl2Test{
+        let expected = Ok(FnDefinitionTest{
             span: "fn foo() {}".to_owned(),
             parent_mod_span: input.trim().to_owned(),
             parent_impl_span: Some((r#"fn main () {
@@ -186,7 +185,7 @@ mod test {
             }
         }"#;
 
-        let expected = Ok(FnDecl2Test{
+        let expected = Ok(FnDefinitionTest{
             span: "fn foo() {}".to_owned(),
             parent_mod_span: input.trim().to_owned(),
             parent_impl_span: Some((r#"fn baz () {
