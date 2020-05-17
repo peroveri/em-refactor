@@ -36,12 +36,12 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, add_comment: bool) -> QueryRe
     for param in body.params {
         let ident = get_ident(param);
         let type_s = 
-            format_ty(infer_concrete(tcx, &closure.args_1[i], closure.body_id)?);
+            format_ty(get_type_of_expression(tcx, &closure.args_1[i], closure.body_id)?);
         new_fn.params.push((ident, type_s));
         i += 1;
     }
 
-    let out = infer_concrete(tcx, &body.value, closure.body_id)?;
+    let out = get_type_of_expression(tcx, &body.value, closure.body_id)?;
     if !out.is_unit() {
         new_fn.output = Some(format_ty(out));
     }
@@ -94,7 +94,7 @@ fn format_ty(ty: &TyS) -> String {
     with_crate_prefix(||  format!("{}", ty))
 }
 
-fn infer_concrete<'v>(tcx: &'v TyContext, expr: &Expr, body_id: BodyId) -> QueryResult<&'v TyS<'v>> {
+fn get_type_of_expression<'v>(tcx: &'v TyContext, expr: &Expr, body_id: BodyId) -> QueryResult<&'v TyS<'v>> {
 
     let def_id = tcx.0.hir().body_owner_def_id(body_id);
     let typecheck_table = tcx.0.typeck_tables_of(def_id);
