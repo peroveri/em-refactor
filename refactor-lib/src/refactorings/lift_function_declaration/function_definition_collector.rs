@@ -1,5 +1,5 @@
 use rustc_span::{BytePos, Span};
-use rustc_hir::{ImplItem, Item, ItemKind, Mod, HirId};
+use rustc_hir::{ImplItem, Item, ItemKind, Mod, def_id::DefId};
 use rustc_hir::intravisit::{NestedVisitorMap, Visitor, walk_crate, walk_impl_item, walk_item};
 use rustc_middle::hir::map::Map;
 use crate::refactoring_invocation::{QueryResult, TyContext};
@@ -39,7 +39,7 @@ impl<'a, 'v> Visitor<'v> for FnDefCollector<'a, 'v> {
                     let (parent_mod, span, ..) = self.tcx.0.hir().get_module(parent_mod_id.to_def_id());
 
                     self.fn_decl = Some(FnDecl2 {
-                        hir_id: i.hir_id,
+                        hir_id: self.tcx.0.hir().local_def_id(i.hir_id),
                         span: i.span,
                         parent_mod,
                         mod_span: span,
@@ -61,7 +61,7 @@ impl<'a, 'v> Visitor<'v> for FnDefCollector<'a, 'v> {
 }
 pub struct FnDecl2<'v> {
     pub span: Span,
-    pub hir_id: HirId,
+    pub hir_id: DefId,
     pub parent_mod: &'v Mod<'v>,
     pub mod_span: Span,
     pub impl_: Option<(Span, bool)>

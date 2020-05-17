@@ -1,11 +1,10 @@
 use rustc_span::Span;
 use crate::refactoring_invocation::{AstDiff, QueryResult, TyContext};
-#[allow(unused)]
-use call_expr_collector::collect_call_exprs;
 use function_definition_collector::{collect_function_definition, FnDecl2};
+use qpath_res_collector::collect_qpaths;
 
-mod call_expr_collector;
 mod function_definition_collector;
+mod qpath_res_collector;
 
 /// Lift function declaration
 pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryResult<AstDiff> {
@@ -42,10 +41,16 @@ fn move_to_parent_mod(tcx: &TyContext, fn_def: FnDecl2) -> QueryResult<AstDiff> 
 }
 fn move_to_impl(tcx: &TyContext, fn_def: FnDecl2) -> QueryResult<AstDiff> {
 
-    let changes = vec![
+    let mut changes = vec![
         tcx.map_change(fn_def.span, "".to_owned())?,
-        tcx.map_change(fn_def.get_parent_mod_inner().shrink_to_hi(), format!("\n{}", tcx.get_source(fn_def.span)))?
+        tcx.map_change(fn_def.impl_.unwrap().0.shrink_to_hi(), format!("\n{}", tcx.get_source(fn_def.span)))?
     ];
+
+    for span in collect_qpaths(tcx, fn_def.hir_id) {
+        changes.push(
+            tcx.map_change(span, format!("Self::{}", tcx.get_source(span)))?
+        );
+    }
 
     Ok(AstDiff(changes))
 }

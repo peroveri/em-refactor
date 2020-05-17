@@ -6,5 +6,5 @@ impl S {
         
         Self::bar();
     }
-    fn bar() { }
+fn bar() { }
 }

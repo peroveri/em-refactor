@@ -30,7 +30,6 @@ mod lift_function_declaration {
         run_test("parent_is_impl_for");
     }
     #[test]
-    #[ignore]
     fn parent_is_impl() {
         run_test("parent_is_impl");
     }
