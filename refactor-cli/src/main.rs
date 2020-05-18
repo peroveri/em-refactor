@@ -34,7 +34,7 @@ fn app<'a, 'b>() -> App<'a, 'b> {
                 .required(true)
                 .takes_value(true))
             .arg(Arg::with_name("selection")
-                .help("Selection on format 10:20")
+                .help("Selection on the format <byte start>:<byte end>. E.g.: 10:20")
                 .required(true)
                 .takes_value(true))
             .arg(Arg::with_name("unsafe")
