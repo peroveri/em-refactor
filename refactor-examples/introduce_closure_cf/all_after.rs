@@ -2,21 +2,27 @@ fn foo() -> i32 {
     for i in 10..12 {
         let _: i32 = match (|| {
             if i == 1 {
-                return (2, None, None);
+                return ReturnFoo::Continue();
             } else if i == 3 {
-                return (1, None, None);
+                return ReturnFoo::Break();
             } else if i == 4 {
-                return (3, Some(1), None);
+                return ReturnFoo::Return(1);
             }
             print!("{}", i);
-            (0, None, Some(10))
+            ReturnFoo::Expr(10)
         })() {
-(1, _, _) => break,
-(2, _, _) => continue,
-(3, a, _) => return a.unwrap(),
-(_, _, a) => a.unwrap()};
+ReturnFoo::Break() => break,
+ReturnFoo::Continue() => continue,
+ReturnFoo::Expr(e) => e,
+ReturnFoo::Return(e) => return e};
     }
     0
 }
 fn main() { }
+enum ReturnFoo {
+Break(),
+Continue(),
+Expr(i32),
+Return(i32)
+}
 // Introduce closure at line 3 to 13

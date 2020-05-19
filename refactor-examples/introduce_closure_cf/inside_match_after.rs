@@ -2,13 +2,18 @@ fn main() { }
 fn foo() -> i32 {
     loop {
         match (|| {
-            (0, None, Some(match 10 {
-                11 => return (2, None, None),
-                _ => return (3, Some(12), None)
-            }))
+            ReturnFoo::Expr(match 10 {
+                11 => return ReturnFoo::Continue(),
+                _ => return ReturnFoo::Return(12)
+            })
         })() {
-(2, _, _) => continue,
-(3, a, _) => return a.unwrap(),
-(_, _, a) => a.unwrap()}
+ReturnFoo::Continue() => continue,
+ReturnFoo::Expr(e) => e,
+ReturnFoo::Return(e) => return e}
     }
+}
+enum ReturnFoo {
+Continue(),
+Expr(()),
+Return(i32)
 }

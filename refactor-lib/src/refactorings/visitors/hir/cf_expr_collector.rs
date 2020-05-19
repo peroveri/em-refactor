@@ -1,7 +1,7 @@
 use rustc_hir::{Arm, BodyId, Destination, Expr, ExprKind, FnDecl, HirId, MatchSource, Node };
 use rustc_hir::intravisit::{NestedVisitorMap, FnKind, Visitor, walk_block, walk_expr};
 use rustc_middle::hir::map::Map;
-use rustc_middle::ty::TyCtxt;
+use rustc_middle::ty::{TyCtxt, print::with_crate_prefix};
 use rustc_span::{BytePos, Span};
 use super::{ControlFlowExpr, ControlFlowExprCollection};
 
@@ -33,9 +33,9 @@ pub fn collect_cfs(tcx: TyCtxt<'_>, block_hir_id: HirId) -> ControlFlowExprColle
     walk_block(&mut v, block);
 
     if let Some(e) = block.expr {
-        v.res.push(ControlFlowExpr::expr(e.span));
+        v.res.push(ControlFlowExpr::expr(e.span, get_type_of_expr(&tcx,e)));
     } else {
-        v.res.push(ControlFlowExpr::expr(block.span.with_hi(BytePos((block.span.hi().0 - 1) as u32)).shrink_to_hi()))
+        v.res.push(ControlFlowExpr::expr(block.span.with_hi(BytePos((block.span.hi().0 - 1) as u32)).shrink_to_hi(), "()".to_owned()))
     }
 
     ControlFlowExprCollection { items: v.res }
@@ -87,14 +87,14 @@ impl<'v> Visitor<'v> for CfExprCollector<'v> {
             //     }
             // },
             ExprKind::Break(dest, break_ex) => {
-                let (break_span, break_ex_span) = 
+                let (break_span, break_ex_span, expr_type) = 
                 if let Some(ret_ex) = break_ex {
-                    (ex.span.with_hi(ret_ex.span.lo()), Some(ret_ex.span))
+                    (ex.span.with_hi(ret_ex.span.lo()), Some(ret_ex.span), Some(get_type_of_expr(&self.tcx,ret_ex)))
                 } else {
-                    (ex.span, None)
+                    (ex.span, None, None)
                 };
                 if self.points_outside(&dest) {
-                    self.res.push(ControlFlowExpr::brk(ex.span, break_span, break_ex_span));
+                    self.res.push(ControlFlowExpr::brk(ex.span, break_span, break_ex_span, expr_type));
                 }
             },
             ExprKind::Continue(dest) => {
@@ -103,19 +103,26 @@ impl<'v> Visitor<'v> for CfExprCollector<'v> {
                 }
             },
             ExprKind::Ret(ret_ex) => {
-                let (return_span, return_expression_span) = 
+                let (return_span, return_expression_span, expr_type) = 
                 if let Some(ret_ex) = ret_ex {
-                    (ex.span.with_hi(ret_ex.span.lo()), Some(ret_ex.span))
+                    (ex.span.with_hi(ret_ex.span.lo()), Some(ret_ex.span), Some(get_type_of_expr(&self.tcx, ret_ex)))
                 } else {
-                    (ex.span, None)
+                    (ex.span, None, None)
                 };
-                self.res.push(ControlFlowExpr::ret(ex.span, return_span, return_expression_span));
+                self.res.push(ControlFlowExpr::ret(ex.span, return_span, return_expression_span, expr_type));
             },
             _ => {
                 walk_expr(self, ex);
             }
         }
     }
+}
+
+fn get_type_of_expr(tcx: &TyCtxt, expr: &Expr) -> String {
+    let typecheck_table = tcx.typeck_tables_of(expr.hir_id.owner.to_def_id());
+    let ty = typecheck_table.expr_ty(expr);
+
+    with_crate_prefix(|| format!("{}", ty))
 }
 
 #[cfg(test)]

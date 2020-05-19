@@ -7,71 +7,45 @@ pub enum CfType {
     Return = 3,
     Nothing = 0
 }
-impl CfType {
-    fn get_keyword(&self) -> &str {
-        match self {
-            CfType::Break => "break",
-            CfType::Continue => "continue",
-            CfType::Nothing => "{}",
-            CfType::Return => "return",
-        }
-    }
-}
-
 #[derive(Clone)]
 pub struct ControlFlowExpr {
     pub cf_type: CfType,
     pub cf_key_span: Span,
     pub cf_expr_span: Span,
-    pub sub_expr_span: Option<Span>
+    pub sub_expr_span: Option<Span>,
+    pub sub_expr_type: Option<String>
 }
-
 
 pub struct ControlFlowExprCollection {
     pub items: Vec<ControlFlowExpr>
 }
+fn get_enum_name() -> String {
+    "ReturnFoo".to_owned() // TODO: add a random number to the name?
+}
 
 impl ControlFlowExprCollection {
 
-    // (, .0, ..) => .2
-    // (, .1, ..) ..
-    fn get_self_arm<'a>(&self, cf_type: CfType) -> (String, String, String, String) {
-        if let Some(c) = self.items.iter().find(|c| c.cf_type == cf_type) {
-            if cf_type == CfType::Nothing {
-                (", a".to_owned(), ", _".to_owned(), "a.unwrap()".to_owned(), ", None".to_owned())
-            } else if let Some(_) = c.sub_expr_span {
-                (", a".to_owned(), ", _".to_owned(), format!("{} a.unwrap(),", cf_type.get_keyword()), ", None".to_owned())
-            } else {
-                ("".to_owned(), "".to_owned(), format!("{},", cf_type.get_keyword()), "".to_owned())
-            }
-        } else {
-            ("".to_owned(), "".to_owned(), "".to_owned(), "".to_owned())
-        }
-    }
-
     pub fn get_cf_arms(&self) -> String {
-        let mut break_arm = "".to_owned();
-        let mut return_arm = "".to_owned();
-        let mut expr_arm = "".to_owned();
-        let mut cont_arm = "".to_owned();
-        let break_part = self.get_self_arm(CfType::Break);
-        let return_part = self.get_self_arm(CfType::Return);
-        let expr_part = self.get_self_arm(CfType::Nothing);
+        let enum_name = get_enum_name();
+        let mut arms = vec![];
         
-        if let Some(_) = self.get_cf_break() {
-            break_arm = format!("\n({}{}{}{}) => {}", CfType::Break as i32, break_part.0, return_part.1, expr_part.1, break_part.2);
+        if let Some(e) = self.get_cf_break() {
+            let (sub1, sub2) = 
+                if e.sub_expr_span.is_some() {("e".to_owned(), " e".to_owned())}
+                else {("".to_owned(), "".to_owned())};
+            arms.push(format!("\n{}::Break({}) => break{}", enum_name, sub1, sub2));
         }
         if let Some(_) = self.get_cf_cont() {
-            cont_arm = format!("\n({}{}{}{}) => continue,", CfType::Continue as i32, break_part.1, return_part.1, expr_part.1);
-        }
-        if let Some(_) = self.get_cf_ret() {
-            return_arm = format!("\n({}{}{}{}) => {}", CfType::Return as i32, break_part.1, return_part.0, expr_part.1, return_part.2);
+            arms.push(format!("\n{}::Continue() => continue", enum_name));
         }
         if let Some(_) = self.get_cf_expr() {
-            expr_arm = format!("\n(_{}{}{}) => {}", break_part.1, return_part.1, expr_part.0, expr_part.2);
+            arms.push(format!("\n{}::Expr(e) => e", enum_name));
+        }
+        if let Some(_) = self.get_cf_ret() {
+            arms.push(format!("\n{}::Return(e) => return e", enum_name));
         }
 
-        format!("{}{}{}{}", break_arm, cont_arm, return_arm, expr_arm)
+        arms.join(",")
     }
 
     pub fn has_cfs(&self) -> bool {
@@ -87,56 +61,30 @@ impl ControlFlowExprCollection {
         let mut replacements = vec![];
         let cfs = self.items.to_vec();
 
-        let break_part = self.get_self_arm(CfType::Break);
-        let return_part = self.get_self_arm(CfType::Return);
-        let expr_part = self.get_self_arm(CfType::Nothing);
-
+        let enum_name = get_enum_name();
         for cf in cfs {
             match cf.cf_type {
                 CfType::Break => {
                     // check macros inv!
-                    let (expr_pre, expr_suff) = 
-                    if let Some(_) = cf.sub_expr_span {
-                        (", Some(", ")")
-                    } else {
-                        ("", "")
-                    };
-                    let pre = format!("return ({}{}", CfType::Break as i32, expr_pre);
 
-                    let suff = format!("{}{}{})", expr_suff, return_part.3, expr_part.3);
-                    replacements.push((cf.cf_key_span, pre));
-                    replacements.push((cf.cf_expr_span.shrink_to_hi(), suff));
+                    replacements.push((cf.cf_key_span, format!("return {}::Break(", enum_name)));
+                    replacements.push((cf.cf_expr_span.shrink_to_hi(), ")".to_owned()));
                 },
                 CfType::Continue => {
-                    let replacement = format!("return ({}{}{}{})", CfType::Continue as i32, break_part.3, return_part.3, expr_part.3);
-                    replacements.push((cf.cf_key_span, replacement));
+                    replacements.push((cf.cf_key_span, format!("return {}::Continue()", enum_name)));
                 },
                 CfType::Nothing => {
 
                     if cf.cf_expr_span.lo() == cf.cf_expr_span.hi() {
-                        let replacement = format!("({}{}{}, Some(()))", CfType::Nothing as i32, break_part.3, return_part.3);
-                        replacements.push((cf.cf_expr_span, replacement));
+                        replacements.push((cf.cf_expr_span, format!("{}::Expr(())", enum_name)));
                     } else {
-                        
-                        let pre = format!("({}{}{}, Some(", CfType::Nothing as i32, break_part.3, return_part.3);
-
-                        let suff = "))".to_owned();
-                        replacements.push((cf.cf_expr_span.shrink_to_lo(), pre));
-                        replacements.push((cf.cf_expr_span.shrink_to_hi(), suff));
+                        replacements.push((cf.cf_expr_span.shrink_to_lo(), format!("{}::Expr(", enum_name)));
+                        replacements.push((cf.cf_expr_span.shrink_to_hi(), ")".to_owned()));
                     }
                 },
                 CfType::Return => {
-                    let (expr_pre, expr_suff) = 
-                    if let Some(_) = cf.sub_expr_span {
-                        (", Some(", ")")
-                    } else {
-                        ("", "")
-                    };
-                    let pre = format!("return ({}{}{}", CfType::Return as i32, break_part.3, expr_pre);
-
-                    let suff = format!("{}{})", expr_suff, expr_part.3);
-                    replacements.push((cf.cf_key_span, pre));
-                    replacements.push((cf.cf_expr_span.shrink_to_hi(), suff));
+                    replacements.push((cf.cf_key_span, format!("return {}::Return(", enum_name)));
+                    replacements.push((cf.cf_expr_span.shrink_to_hi(), ")".to_owned()));
                 },
             }
         }
@@ -158,6 +106,28 @@ impl ControlFlowExprCollection {
         self.items.iter().find(|c| c.cf_type == CfType::Break)
     }
 
+    pub fn get_enum_decl(&self) -> String {
+        let enum_name = get_enum_name();
+
+        let mut parts = vec![];
+        if let Some(e) = self.get_cf_break() {
+            parts.push(format!("Break({})", e.sub_expr_type.clone().unwrap_or_default()));
+        }
+        if let Some(_) = self.get_cf_cont() {
+            parts.push(format!("Continue()"));
+        }
+        if let Some(e) = self.get_cf_expr() {
+            parts.push(format!("Expr({})", e.sub_expr_type.clone().unwrap_or_default()));
+        }
+        if let Some(e) = self.get_cf_ret() {
+            parts.push(format!("Return({})", e.sub_expr_type.clone().unwrap_or_default()));
+        }
+
+        format!(r#"
+enum {} {{
+{}
+}}"#, enum_name, parts.join(",\n"))
+    }
 
 }
 
@@ -168,12 +138,13 @@ impl ControlFlowExpr {
             _ => true
         }
     }
-    pub fn new(cf_type: CfType, cf_expr_span: Span, cf_key_span: Span, sub_expr_span: Option<Span>) -> Self {
+    pub fn new(cf_type: CfType, cf_expr_span: Span, cf_key_span: Span, sub_expr_span: Option<Span>, sub_expr_type: Option<String>) -> Self {
         Self {
             cf_type,
             cf_expr_span,
             cf_key_span,
-            sub_expr_span
+            sub_expr_span,
+            sub_expr_type
         }
     }
     pub fn cont(cf_expr_span: Span) -> Self {
@@ -181,31 +152,35 @@ impl ControlFlowExpr {
             CfType::Continue,
             cf_expr_span,
             cf_expr_span,
+            None,
             None
         )
     }
-    pub fn brk(cf_expr_span: Span, cf_key_span: Span, sub_expr_span: Option<Span>) -> Self {
+    pub fn brk(cf_expr_span: Span, cf_key_span: Span, sub_expr_span: Option<Span>, sub_expr_type: Option<String>) -> Self {
         Self::new(
             CfType::Break,
             cf_expr_span,
             cf_key_span,
-            sub_expr_span
+            sub_expr_span,
+            sub_expr_type
         )
     }
-    pub fn ret(cf_expr_span: Span, cf_key_span: Span, sub_expr_span: Option<Span>) -> Self {
+    pub fn ret(cf_expr_span: Span, cf_key_span: Span, sub_expr_span: Option<Span>, sub_expr_type: Option<String>) -> Self {
         Self::new(
             CfType::Return,
             cf_expr_span,
             cf_key_span,
-            sub_expr_span
+            sub_expr_span,
+            sub_expr_type
         )
     }
-    pub fn expr(cf_expr_span: Span) -> Self {
+    pub fn expr(cf_expr_span: Span, sub_expr_type: String) -> Self {
         Self::new(
             CfType::Nothing,
             cf_expr_span,
             cf_expr_span,
-            None
+            None,
+            Some(sub_expr_type)
         )
     }
 }

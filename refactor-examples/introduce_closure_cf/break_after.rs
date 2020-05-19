@@ -2,13 +2,17 @@ fn main() {
     for i in 10..12 {
         match (|| {
             if i == 11 {
-                return (1, None);
+                return ReturnFoo::Break();
             }
             print!("{}", i);
-        (0, Some(()))})() {
-(1, _) => break,
-(_, a) => a.unwrap()}
+        ReturnFoo::Expr(())})() {
+ReturnFoo::Break() => break,
+ReturnFoo::Expr(e) => e}
     }
+}
+enum ReturnFoo {
+Break(),
+Expr(())
 }
 // Introduce closure at line 3 to 8
 // The conditional break at line 5 should be preserved.

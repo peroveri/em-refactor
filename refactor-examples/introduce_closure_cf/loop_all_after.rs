@@ -3,22 +3,28 @@ fn foo() -> i32 {
     loop {
         let _: i32 = match (|| {
             if 1 == 1 {
-                return (2, None, None, None);
+                return ReturnFoo::Continue();
             } else if 3 == 3 {
-                return (1, Some(5), None, None);
+                return ReturnFoo::Break(5);
             } else if 4 == 4 {
-                return (3, None, Some(6), None);
+                return ReturnFoo::Return(6);
             }
-            (0, None, None, Some(10))
+            ReturnFoo::Expr(10)
         })() {
-(1, a, _, _) => break a.unwrap(),
-(2, _, _, _) => continue,
-(3, _, a, _) => return a.unwrap(),
-(_, _, _, a) => a.unwrap()};
+ReturnFoo::Break(e) => break e,
+ReturnFoo::Continue() => continue,
+ReturnFoo::Expr(e) => e,
+ReturnFoo::Return(e) => return e};
 
         continue;
     };
     0
 }
 fn main() { }
+enum ReturnFoo {
+Break(i32),
+Continue(),
+Expr(i32),
+Return(i32)
+}
 // Introduce closure at line 4 to 13

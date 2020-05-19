@@ -4,14 +4,18 @@ fn foo() -> i32 {
         let j = 
         match (|| {
             if i == 11 {
-                return (3, Some(20), None);
+                return ReturnFoo::Return(20);
             }
-            (0, None, Some(30))
+            ReturnFoo::Expr(30)
         })() {
-(3, a, _) => return a.unwrap(),
-(_, _, a) => a.unwrap()};
+ReturnFoo::Expr(e) => e,
+ReturnFoo::Return(e) => return e};
     }
     return 0;
+}
+enum ReturnFoo {
+Expr(i32),
+Return(i32)
 }
 // Introduce closure at line 5 to 10
 // The conditional return at line 7 should be preserved.
