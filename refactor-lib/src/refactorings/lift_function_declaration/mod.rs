@@ -1,9 +1,8 @@
 use rustc_span::Span;
 use crate::refactoring_invocation::{AstDiff, QueryResult, TyContext};
-use function_definition_collector::{collect_function_definition, FnDefinition};
+use crate::refactorings::visitors::hir::{collect_function_definition, FnDefinition};
 use qpath_res_collector::collect_qpaths;
 
-mod function_definition_collector;
 mod qpath_res_collector;
 
 /// Lift function declaration

@@ -51,7 +51,7 @@ mod test {
     use super::*;
     use crate::test_utils::run_ty_query;
     use crate::refactoring_invocation::QueryResult;
-    use super::super::function_definition_collector::collect_function_definition;
+    use crate::refactorings::visitors::hir::collect_function_definition;
 
     #[derive(Debug, PartialEq)]
     struct FnDecl2Test {
