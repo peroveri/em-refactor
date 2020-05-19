@@ -41,8 +41,11 @@ impl ControlFlowExprCollection {
         if let Some(_) = self.get_cf_expr() {
             arms.push(format!("\n{}::Expr(e) => e", enum_name));
         }
-        if let Some(_) = self.get_cf_ret() {
-            arms.push(format!("\n{}::Return(e) => return e", enum_name));
+        if let Some(e) = self.get_cf_ret() {
+            let (sub1, sub2) = 
+                if e.sub_expr_span.is_some() {("e".to_owned(), " e".to_owned())}
+                else {("".to_owned(), "".to_owned())};
+            arms.push(format!("\n{}::Return({}) => return{}", enum_name, sub1, sub2));
         }
 
         arms.join(",")

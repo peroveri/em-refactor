@@ -18,6 +18,10 @@ mod introduce_closure {
         run_test("break");
     }
     #[test]
+    fn empty_return() {
+        run_test("empty_return");
+    }
+    #[test]
     fn inside_match() {
         run_test("inside_match");
     }

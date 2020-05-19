@@ -1,0 +1,11 @@
+{
+	"file": "empty_return.rs",
+	"args": {
+		"refactoring": "introduce-closure",
+		"selection": "16:41"
+	},
+	"expected": {
+		"code": 0,
+		"stdout_file": "empty_return.after.rs"
+	}
+}
