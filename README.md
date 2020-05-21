@@ -1,23 +1,54 @@
-## [refactor-ls -- LSP client and server](./refactor-ls)
-### How to run the language server locally
-Requirements:
-- Node.js - https://nodejs.org/en/
+# Running from the terminal
+## Requirements
 - Rust - https://www.rust-lang.org/tools/install
+
+## Steps
+1. The rustc-dev component is required for compiling this repo, and it can be added to the nightly toolchain using:
+
+```sh
+rustup component add --toolchain nightly-2020-04-15 rustc-dev
+```
+
+2. Compile the refactoring tool by running the following command in the root folder of this repository:
+
+```sh
+cargo build --bins --release
+```
+
+3. Candidates and refactorings can be run either in the current directory, or by setting the --target-dir="path" option
+
+Candidates:
+
+```cargo-my-refactor candidates <box-field/extract-method> [--target-dir=PATH]```
+```sh
+./target/release/cargo-my-refactor candidates box-field --target-dir="../path/to/project"
+./target/release/cargo-my-refactor candidates extract-method
+```
+
+Refactoring:
+
+```cargo-my-refactor refactor <box-field/extract-block/extract-method/...> <FILE> <SELECTION> [--target-dir=PATH]```
+```sh
+./target/release/cargo-my-refactor refactor box-field refactor-lib/src/refactorings/visitors/struct_field_access_expression_collector.rs 1242:1255
+```
+
+# Running in VS Code
+
+## Requirements
+- Run Step 1 & 2 from [Running from the terminal](#running-from-the-terminal)
+- Node.js - https://nodejs.org/en/
 - Visual Studio Code - https://code.visualstudio.com
 
-Steps:
-- The rustc-dev component is required, and it can be added to the nightly toolchain using: ```rustup component add --toolchain nightly-2020-04-15 rustc-dev```
-- Compile the refactoring tool by running ```cargo build --bins --release``` in this folder.
+## Steps
 - Run ```npm install``` in the [./refactor-ls](./refactor-ls) folder
 - Open Visual Studio Code in the [./refactor-ls](./refactor-ls) folder: ```code refactor-ls```
 - Run the build task (Ctrl+Shift+B)
 - Debug the extension (Debug View -> Launch client)
-- Configure settings
+- Configure settings in the new window that launched
   - Open the vs code extension settings (File->Preferences->Settings) 
   - Set the "Refactoring Binary Path" setting to the absolute path of the binary file from step 2 ( it will be \<git repo folder> + /target/release/cargo-my-refactor )
-   
 
-## [./refactor-examples -- Examples in rust](./refactor-examples)
+# [./refactor-examples -- Examples in rust](./refactor-examples)
 This project should contain a list of valid refactorings that can be used for unit tests.
 
 Each refactoring example should contain the code before, after and the arguments passed to the refactoring tool. The arguments must contain refactoring definition name (e.g. 'extract-method') and selection (from and to). Other arguments might be required depending on the actual refactoring.
