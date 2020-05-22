@@ -1,0 +1,8 @@
+language: rust
+os:
+  - linux
+install:
+  - rustup component add --toolchain nightly-2020-04-15 rustc-dev
+script:
+  - cargo build --verbose --all
+  - cargo test --verbose --all
