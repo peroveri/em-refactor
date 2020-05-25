@@ -5,7 +5,7 @@ use rustc_span::{FileName, Span};
 use rustc_span::source_map::SourceMap;
 use std::path::PathBuf;
 
-pub fn get_file_offset(source_map: &SourceMap, file_name: &str) -> QueryResult<u32> {
+pub(crate) fn get_file_offset(source_map: &SourceMap, file_name: &str) -> QueryResult<u32> {
     let file_name_real = FileName::Real(PathBuf::from(file_name.to_string()));
     let source_file = source_map.get_source_file(&file_name_real).ok_or_else(|| RefactoringErrorInternal::int(&format!("Couldn't find file: {}", file_name)))?;
     Ok(source_file.start_pos.0 as u32)
@@ -34,7 +34,7 @@ fn get_filename(source_map: &SourceMap, span: Span) -> QueryResult<String> {
     Err(RefactoringErrorInternal::int(&format!("unexpected file type: {:?}", filename)))
 }
 
-pub fn map_change_from_span(source_map: &SourceMap, span: Span, replacement: String) -> QueryResult<FileStringReplacement> {
+pub(crate) fn map_change_from_span(source_map: &SourceMap, span: Span, replacement: String) -> QueryResult<FileStringReplacement> {
     let filename = get_local_filename(source_map, span)?;
     let file_offset = get_file_offset(source_map, &filename)?;
     let lines = source_map.span_to_lines(span).unwrap().lines;
@@ -52,12 +52,12 @@ pub fn map_change_from_span(source_map: &SourceMap, span: Span, replacement: Str
     })
 }
 
-pub fn get_source(tcx: TyCtxt, span: Span) -> String {
+pub(crate) fn get_source(tcx: TyCtxt, span: Span) -> String {
     tcx.sess.source_map().span_to_snippet(span).unwrap()
 }
 
 
-pub fn map_span_to_index(source_map: &SourceMap, span: Span) -> QueryResult<(String, Range)> {
+pub(crate) fn map_span_to_index(source_map: &SourceMap, span: Span) -> QueryResult<(String, Range)> {
     let filename = get_filename(source_map, span)?;
     let file_offset = get_file_offset(source_map, &filename)?;
     let lines = source_map.span_to_lines(span).unwrap().lines;
@@ -77,12 +77,12 @@ pub fn map_span_to_index(source_map: &SourceMap, span: Span) -> QueryResult<(Str
     }))
 }
 
-pub struct Position {
+pub(crate) struct Position {
     pub byte: u32,
     pub character: usize,
     pub line: usize
 }
-pub struct Range {
+pub(crate) struct Range {
     pub from: Position,
     pub to: Position
 }
