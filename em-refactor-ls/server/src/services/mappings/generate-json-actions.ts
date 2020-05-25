@@ -8,7 +8,7 @@ export const mapToCodeAction = (params: CodeActionParams, refactoring: string, s
     title: `Generate ${getDocName(params.textDocument)}.json for ${refactoring} ${should_fail ? ' (failing)' : ''}`,
     command: {
         title: 'generate',
-        command: 'mrefactor.generate_test_file',
+        command: 'emRefactor.generate_test_file',
         arguments: [{
             file_uri: params.textDocument.uri,
             refactoring,

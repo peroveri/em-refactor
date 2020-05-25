@@ -1,6 +1,6 @@
 export const config = {
-    refactorCommand: 'mrefactor.refactor',
-    generateTestJsonCommand: 'mrefactor.generate_test_file',
-    cargoCheckCommand: 'mrefactor.cargo_check',
-    candidatesCommand: 'mrefactor.candidates',
+    refactorCommand: 'emRefactor.refactor',
+    generateTestJsonCommand: 'emRefactor.generate_test_file',
+    cargoCheckCommand: 'emRefactor.cargo_check',
+    candidatesCommand: 'emRefactor.candidates',
 };

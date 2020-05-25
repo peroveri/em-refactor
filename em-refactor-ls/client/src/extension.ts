@@ -66,8 +66,8 @@ export function activate(context: vscode.ExtensionContext) {
 	
 	// Create the language client and start the client.
 	client = new LanguageClient(
-		'languageServerExample',
-		'Language Server Example',
+		'emRefactor',
+		'Extract method and Box Field refactoring for Rust',
 		serverOptions,
 		clientOptions
 	);
@@ -89,13 +89,13 @@ function executeCommand(cmd: string) {
 
 	switch (cmd) {
 		case 'cargo check --target-dir=./target/refactorings': {
-			return vscode.commands.executeCommand("mrefactor.cargo_check");
+			return vscode.commands.executeCommand("emRefactor.cargo_check");
 		}
 		case 'candidates extract method': {
-			return vscode.commands.executeCommand("mrefactor.candidates", "extract-method");
+			return vscode.commands.executeCommand("emRefactor.candidates", "extract-method");
 		}
 		case 'candidates box field': {
-			return vscode.commands.executeCommand("mrefactor.candidates", "box-field");
+			return vscode.commands.executeCommand("emRefactor.candidates", "box-field");
 		}
 		default: {}
 	}

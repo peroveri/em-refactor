@@ -17,7 +17,7 @@ const expectedTestMain = `{
 
 const executeGenerateTestFileCommand = (file: string, start: number, end: number) => 
     vscode.commands.executeCommand(
-        'mrefactor.generate_test_file',
+        'emRefactor.generate_test_file',
         {
             file_uri: file,
             selection: `${start}:${end}`,
@@ -39,7 +39,7 @@ suite('generate test file', () => {
 
     suite("extract-block", () => {
 
-        test('Should have generate test command', async () => assertCommandExists('mrefactor.generate_test_file'));
+        test('Should have generate test command', async () => assertCommandExists('emRefactor.generate_test_file'));
 
         test('Should generate test file', async () => {
             assert.equal(await setTestContent(mainrs), true);

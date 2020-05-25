@@ -21,7 +21,7 @@ describe("generate-json-actions", () => {
             let expected: CodeAction = {
                 title: "Generate some_file.json for a_refactoring_name ",
                 command: {
-                    command: "mrefactor.generate_test_file",
+                    command: "emRefactor.generate_test_file",
                     title: "generate",
                     arguments: [{
                         "file_uri": "some_dir/some_file.rs",

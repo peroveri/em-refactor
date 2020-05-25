@@ -30,7 +30,7 @@ const getTestName = (s: string): string =>
 
 
 export const canExecuteGenerateTestCommand = (params: ExecuteCommandParams) =>
-    `mrefactor.generate_test_file` === params.command;
+    `emRefactor.generate_test_file` === params.command;
 
 export const handleExecuteGenerateTestCommand = (params: ExecuteCommandParams): ApplyWorkspaceEditParams[] => {
     let args = params.arguments as GenerateTestFileArgs[];

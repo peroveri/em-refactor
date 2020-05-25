@@ -18,7 +18,7 @@ export async function activate(docUri: vscode.Uri, wsUri: vscode.Uri) {
 	// The extensionId is `publisher.name` from package.json
 	await vscode.commands.executeCommand('vscode.openFolder', wsUri);
 	await sleep(1000);
-	const ext = vscode.extensions.getExtension('test-publisher.lsp-refactoring-sample')!;
+	const ext = vscode.extensions.getExtension('peroveri.emRefactor')!;
 	await ext.activate();
 	try {
 		doc = await vscode.workspace.openTextDocument(docUri);

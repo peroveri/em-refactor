@@ -22,7 +22,7 @@ s};
 
 const executeExtractBlockCommand = (file: string, start: number, end: number) => 
     vscode.commands.executeCommand(
-        'mrefactor.refactor',
+        'emRefactor.refactor',
         {
             file,
             version: null,
@@ -45,7 +45,7 @@ suite('executeCommand', () => {
 
     suite("extract-block", () => {
 
-        test('Should have refactor command', async () => assertCommandExists('mrefactor.refactor'));
+        test('Should have refactor command', async () => assertCommandExists('emRefactor.refactor'));
 
         test('Should extract block and set content', async () => {
             assert.equal(await setTestContent(mainrs), true);

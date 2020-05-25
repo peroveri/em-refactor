@@ -8,7 +8,7 @@ export class SettingsService {
     getSettings() {
         return this.connection.workspace.getConfiguration({
             scopeUri: 'window',
-            section: 'languageServerExample'
+            section: 'emRefactor'
         }).then(e => <LSPExtensionSettings>e);
     }
 }

@@ -18,7 +18,7 @@ describe("handle-execute-generate-test-command", () => {
     describe("handleExecuteGenerateTestCommand", () => {
         it("Should map params to workspace edits", () => {
             let params: ExecuteCommandParams = {
-                command: "mrefactor.generate_test_file",
+                command: "emRefactor.generate_test_file",
                 arguments: [{
                     refactoring: "refactoring..",
                     file_uri: "src/main.rs",
