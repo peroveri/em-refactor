@@ -66,47 +66,45 @@ impl<'v> Visitor<'v> for LocalVariableUseCollector<'v> {
 
 #[cfg(test)]
 mod test {
-    use super::super::collect_field;
-    use crate::refactorings::utils::{
-        get_source, get_struct_hir_id
-    };
-    use crate::refactorings::box_named_field::struct_named_pattern_collector::collect_struct_named_patterns;
     use super::*;
-    use crate::{create_test_span, run_after_analysis};
-    use quote::quote;
-    use quote::__private::TokenStream;
+    use crate::test_utils::run_ty_query;
+    use crate::refactorings::visitors::collect_field;
+    use crate::refactoring_invocation::{QueryResult, TyContext};
+    use crate::refactorings::utils::get_struct_hir_id;
+    use crate::refactorings::box_named_field::struct_named_pattern_collector::collect_struct_named_patterns;
 
-    fn create_program_1() -> TokenStream {
-        quote! {
-            struct S {field: u32}
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<String>> + Send> {
+        Box::new(move |ty| {
+            let span = ty.source().map_span(&file_name, from, to)?;
+
+            let (field, _) = collect_field(ty.0, span).unwrap();
+            let struct_hir_id = get_struct_hir_id(ty.0, &field);
+            let patterns = collect_struct_named_patterns(ty.0, struct_hir_id, &ty.get_source(span)).new_bindings;
+
+            let mut ret = vec![];
+            for id in patterns {
+                ret.extend(collect_local_variable_use(ty.0, id));
+            }
+            Ok(ret.iter().map(|s| ty.get_source(*s)).collect::<Vec<_>>())
+        })
+    }
+
+    #[test]
+    fn should_collect_uses_1() {
+        let input = r#"
+            struct S { /*START*/field/*END*/: u32 }
             fn foo() {
                 match (S {field: 0}) {
                     S {field} => {
                         let i = &field;
                     }
                 }
-            }
-        }
-    }
+            }"#;
+        let expected = Ok(
+            vec!["field".to_owned()]);
 
-    fn init_test(tcx: TyCtxt<'_>) -> HirId {
-        let field = collect_field(tcx, create_test_span(11, 16));
-        assert!(field.is_some());
-        let (field, _) = field.unwrap();
-        let struct_hir_id = get_struct_hir_id(tcx, &field);
-        let patterns = collect_struct_named_patterns(tcx, struct_hir_id, &field.ident.to_string());
+        let actual = run_ty_query(input, map);
 
-        assert_eq!(1, patterns.new_bindings.len());
-        patterns.new_bindings[0]
-    }
-
-    #[test]
-    fn local_variable_use_collector_should_collect_uses_1() {
-        run_after_analysis(create_program_1(), |tcx| {
-            let uses = collect_local_variable_use(tcx, init_test(tcx));
-
-            assert_eq!(1, uses.len());
-            assert_eq!("field", get_source(tcx, uses[0]));
-        });
+        assert_eq!(actual, expected);
     }
 }
