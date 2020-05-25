@@ -67,46 +67,45 @@ impl<'v> Visitor<'v> for FieldCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::refactorings::utils::get_source;
-    use crate::{create_test_span, run_after_analysis};
-    use quote::quote;
-    use quote::__private::TokenStream;
+    use crate::test_utils::run_ty_query;
+    use crate::refactoring_invocation::{QueryResult, TyContext};
 
-    fn create_struct() -> TokenStream {
-        quote! {
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Option<(String, String, usize)>> + Send> {
+        Box::new(move |ty| {
+            let span = ty.source().map_span(&file_name, from, to)?;
+
+            if let Some((field, index)) = collect_field(ty.0, span) {
+                Ok(Some((field.ident.as_str().to_string(), ty.get_source(field.span), index)))
+            } else {
+                Ok(None)
+            }
+        })
+    }
+
+    #[test]
+    fn should_collect_field_definition() {
+        let input = r#"
             struct T {not_this: i32}
-            struct S {not_this: i32, field: u32}
-        }
-    }
-    fn create_tuple() -> TokenStream {
-        quote! {
-            struct T ( i32 );
-            struct S ( i32, u32 );
-        }
-    }
+            struct S {not_this: i32, /*START*/field/*END*/: u32}"#;
+        
+        let expected = Ok(Some((
+            "field".to_owned(), "field/*END*/: u32".to_owned(), 1)));
 
-    #[test]
-    fn struct_field_collector_should_collect_field_definition() {
-        run_after_analysis(create_struct(), |tcx| {
-            let field = collect_field(tcx, create_test_span(56, 61));
+        let actual = run_ty_query(input, map);
 
-            assert!(field.is_some());
-            let (field, _) = field.unwrap();
-
-            assert_eq!("field", field.ident.as_str().to_string());
-        });
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn struct_field_collector_should_collect_tuple_definition() {
-        run_after_analysis(create_tuple(), |tcx| {
-            let field = collect_field(tcx, create_test_span(36, 39));
-            assert!(field.is_some());
-            let (field, index) = field.unwrap();
+    fn should_collect_tuple_definition() {
+        let input = r#"
+            struct T (i32);
+            struct S (i32, /*START*/u32/*END*/);"#;
+        
+        let expected = Ok(Some((
+            "1".to_owned(), "u32".to_owned(), 1)));
 
-            assert_eq!(1, index);
-            assert_eq!("1", field.ident.as_str().to_string());
-            assert_eq!("u32", get_source(tcx, field.span));
-            assert!(field.is_positional());
-        });
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
 }
