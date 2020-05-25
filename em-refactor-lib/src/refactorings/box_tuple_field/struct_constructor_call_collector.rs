@@ -4,6 +4,7 @@ use rustc_middle::hir::map::Map;
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 use if_chain::if_chain;
+use crate::refactoring_invocation::TyContext;
 
 ///
 /// Collect all places where a given struct occurs in a call expression.
@@ -20,19 +21,19 @@ use if_chain::if_chain;
 /// # Grammar
 /// [Struct expression grammar](https://doc.rust-lang.org/stable/reference/expressions/struct-expr.html)
 pub fn collect_struct_constructor_calls(
-    tcx: TyCtxt,
+    tcx: &TyContext,
     struct_hir_id: HirId,
     field_index: usize,
 ) -> Vec<Span> {
     let mut v = StructConstructorCallCollector {
-        tcx,
+        tcx: tcx.0,
         struct_hir_id,
         field: vec![],
         field_index,
         body_id: None,
     };
     
-    walk_crate(&mut v, tcx.hir().krate());
+    walk_crate(&mut v, tcx.0.hir().krate());
 
     v.field
 }
@@ -100,7 +101,7 @@ impl<'v> Visitor<'v> for StructConstructorCallCollector<'v> {
 mod test {
     use super::*;
     use crate::test_utils::run_ty_query;
-    use crate::refactoring_invocation::{QueryResult, TyContext};
+    use crate::refactoring_invocation::QueryResult;
     use crate::refactorings::visitors::collect_field;
     use crate::refactorings::utils::get_struct_hir_id;
 
@@ -110,7 +111,7 @@ mod test {
 
             let (field, _) = collect_field(ty.0, span).unwrap();
             let hir_id = get_struct_hir_id(ty.0, field);
-            let fields = collect_struct_constructor_calls(ty.0, hir_id, 0);
+            let fields = collect_struct_constructor_calls(ty, hir_id, 0);
 
             Ok(fields.iter().map(|s| ty.get_source(*s)).collect::<Vec<_>>())
         })

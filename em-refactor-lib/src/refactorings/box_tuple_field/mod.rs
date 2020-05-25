@@ -22,7 +22,7 @@ pub fn do_refactoring(tcx: &TyContext, struct_hir_id: HirId, field_index: usize,
         format!("Box<{}>", tcx.get_source(field_ty_span))
     )?];
 
-    for struct_expression in collect_struct_constructor_calls(tcx.0, struct_hir_id, field_index) {
+    for struct_expression in collect_struct_constructor_calls(tcx, struct_hir_id, field_index) {
         let replacement = format!("Box::new({})", tcx.get_source(struct_expression));
         changes.push(tcx.map_change(struct_expression, replacement)?);
     }
