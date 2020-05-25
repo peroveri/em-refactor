@@ -99,56 +99,53 @@ impl<'v> Visitor<'v> for StructConstructorCallCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{create_test_span, run_after_analysis};
+    use crate::test_utils::run_ty_query;
+    use crate::refactoring_invocation::{QueryResult, TyContext};
     use crate::refactorings::visitors::collect_field;
-    use super::super::super::utils::get_source;
-    use quote::quote;
-    use quote::__private::TokenStream;
+    use crate::refactorings::utils::get_struct_hir_id;
 
-    fn create_program_match_6() -> TokenStream {
-        quote! {
-            struct S ( i32 );
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<String>> + Send> {
+        Box::new(move |ty| {
+            let span = ty.source().map_span(&file_name, from, to)?;
+
+            let (field, _) = collect_field(ty.0, span).unwrap();
+            let hir_id = get_struct_hir_id(ty.0, field);
+            let fields = collect_struct_constructor_calls(ty.0, hir_id, 0);
+
+            Ok(fields.iter().map(|s| ty.get_source(*s)).collect::<Vec<_>>())
+        })
+    }
+
+    #[test]
+    fn should_collect_6() {
+        let input = r#"
+            struct S (/*START*/i32/*END*/);
             fn foo() {
                 let _ = S(123);
-            }
-        }
+            }"#;
+
+        let expected = Ok(vec!["123".to_owned()]);
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
-    fn create_program_match_7() -> TokenStream {
-        quote! {
-            struct S ( i32 );
+    #[test]
+    fn should_not_collect_7() {
+        let input = r#"
+            struct S (/*START*/i32/*END*/);
             fn foo(s: S, b: bool) -> S {
                 if b {
                     foo(s, false)
                 } else {
                     s
                 }
-            }
-        }
-    }
+            }"#;
 
-    fn get_struct_tuple_hir_id(tcx: TyCtxt<'_>) -> HirId {
-        let (field, _) = collect_field(tcx, create_test_span(11, 14)).unwrap();
-        let struct_def_id = field.hir_id.owner.to_def_id();
-        tcx.hir().as_local_hir_id(struct_def_id).unwrap()
-    }
+        let expected = Ok(vec![]);
 
-    #[test]
-    fn struct_expression_collector_should_collect_6() {
-        run_after_analysis(create_program_match_6(), |tcx| {
-            let hir_id = get_struct_tuple_hir_id(tcx);
-            let fields = collect_struct_constructor_calls(tcx, hir_id, 0);
+        let actual = run_ty_query(input, map);
 
-            assert_eq!(fields.len(), 1);
-            assert_eq!(get_source(tcx, fields[0]), "123");
-        });
-    }
-    #[test]
-    fn struct_expression_collector_should_not_collect_7() {
-        run_after_analysis(create_program_match_7(), |tcx| {
-            let hir_id = get_struct_tuple_hir_id(tcx);
-            let fields = collect_struct_constructor_calls(tcx, hir_id, 0);
-
-            assert_eq!(fields.len(), 0);
-        });
+        assert_eq!(actual, expected);
     }
 }
