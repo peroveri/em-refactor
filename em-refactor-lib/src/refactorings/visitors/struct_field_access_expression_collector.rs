@@ -93,76 +93,67 @@ impl<'v> Visitor<'v> for StructFieldAccessExpressionCollector<'v> {
 
 #[cfg(test)]
 mod test {
-    use super::super::super::utils::get_source;
     use super::*;
-    use crate::{create_test_span, run_after_analysis};
+    use crate::test_utils::run_ty_query;
+    use crate::refactoring_invocation::{QueryResult, TyContext};
     use super::super::collect_field;
-    use quote::quote;
-    use quote::__private::TokenStream;
+    use crate::refactorings::utils::get_struct_hir_id;
 
-    fn create_program_with_field_access() -> TokenStream {
-        quote! {
-            struct S { foo: u32 }
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<String>> + Send> {
+        Box::new(move |ty| {
+            let span = ty.source().map_span(&file_name, from, to)?;
+            let (field, _) = collect_field(ty.0, span).unwrap();
+            let hir_id = get_struct_hir_id(ty.0, field);
+            let xs = collect_struct_field_access_expressions(ty.0, hir_id, &field.ident.as_str().to_string());
+
+            Ok(xs.iter().map(|s| ty.get_source(*s)).collect::<Vec<_>>())
+        })
+    }
+    #[test]
+    fn should_collect_access() {
+        let input = r#"
+            struct S { /*START*/foo/*END*/: u32 }
             fn foo() {
                 let s = S {foo: 0};
                 let _ = s.foo;
-            }
-        }
+            }"#;
+
+        let expected = Ok(vec!["s.foo".to_owned()]);
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
-    fn create_program_with_field_access_self_param() -> TokenStream {
-        quote! {
-            struct S { foo: u32 }
+    #[test]
+    fn should_collect_access_self_param() {
+        let input = r#"
+            struct S { /*START*/foo/*END*/: u32 }
             impl S {
                 fn foo(&self) {
                     let _ = self.foo;
                 }
-            }
-        }
+            }"#;
+
+        let expected = Ok(vec!["self.foo".to_owned()]);
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
-    fn create_program_with_field_access_self_type() -> TokenStream {
-        quote! {
-            struct S { foo: u32 }
+    #[test]
+    fn should_collect_access_self_type() {
+        let input = r#"
+            struct S { /*START*/foo/*END*/: u32 }
             impl S {
                 fn foo(s: Self) {
                     let _ = s.foo;
                 }
-            }
-        }
-    }
-    fn get_struct_hir_id(tcx: TyCtxt<'_>) -> HirId {
-        let (field, _) = collect_field(tcx, create_test_span(11, 14)).unwrap();
-        let struct_def_id = field.hir_id.owner.to_def_id();
-        tcx.hir().as_local_hir_id(struct_def_id).unwrap()
-    }
-    
-    #[test]
-    fn struct_field_access_expression_collector_should_collect_access() {
-        run_after_analysis(create_program_with_field_access(), |tcx| {
-            let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_field_access_expressions(tcx, hir_id, "foo");
+            }"#;
 
-            assert_eq!(fields.len(), 1);
-            assert_eq!(get_source(tcx, fields[0]), "s . foo");
-        });
-    }
-    #[test]
-    fn struct_field_access_expression_collector_should_collect_access_self_param() {
-        run_after_analysis(create_program_with_field_access_self_param(), |tcx| {
-            let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_field_access_expressions(tcx, hir_id, "foo");
+        let expected = Ok(vec!["s.foo".to_owned()]);
 
-            assert_eq!(fields.len(), 1);
-            assert_eq!(get_source(tcx, fields[0]), "self . foo");
-        });
-    }
-    #[test]
-    fn struct_field_access_expression_collector_should_collect_access_self_type() {
-        run_after_analysis(create_program_with_field_access_self_type(), |tcx| {
-            let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_field_access_expressions(tcx, hir_id, "foo");
+        let actual = run_ty_query(input, map);
 
-            assert_eq!(fields.len(), 1);
-            assert_eq!(get_source(tcx, fields[0]), "s . foo");
-        });
+        assert_eq!(actual, expected);
     }
 }
