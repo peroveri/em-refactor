@@ -5,7 +5,7 @@ use tempfile::TempDir;
 use crate::refactoring_invocation::{argument_list_to_refactor_def, AstContext, get_sys_root, MyRefactorCallbacks, Query, QueryResult, TyContext};
 use em_refactor_lib_types::{FileStringReplacement, RefactorArgs, SelectionType};
 
-pub fn init_main_rs_and_get_args(program: &str) -> (Vec<String>, TempDir)
+pub(crate) fn init_main_rs_and_get_args(program: &str) -> (Vec<String>, TempDir)
 {
     let tmp_dir = TempDir::new().unwrap_or_else(|_| panic!("failed to create tmp dir"));
     let tmp_dir_path = tmp_dir.path();
@@ -39,7 +39,7 @@ fn set_main_rs(path: &Path, content: &str) -> std::io::Result<()> {
     Ok(())
 }
 #[derive(Clone)]
-pub struct TestInit {
+pub(crate) struct TestInit {
     add_comment: bool,
     program: String,
     refactoring: String,
@@ -67,7 +67,7 @@ impl TestInit {
         ret
     }
 }
-pub fn run_refactoring(init: TestInit) -> QueryResult<String>  {
+pub(crate) fn run_refactoring(init: TestInit) -> QueryResult<String>  {
     let (rustc_args, d) = init_main_rs_and_get_args(&init.program);
     let q = argument_list_to_refactor_def(
         RefactorArgs {
@@ -86,7 +86,7 @@ pub fn run_refactoring(init: TestInit) -> QueryResult<String>  {
     err.unwrap();
     Ok(crate::refactoring_invocation::get_file_content(&c.result?.0).unwrap())
 }
-pub struct TestContext {
+pub(crate) struct TestContext {
     pub main_path: String,
     pub selection: Option<(u32, u32)>
 }
@@ -102,7 +102,7 @@ fn find_selection(program: &str) -> Option<(u32, u32)> {
         None
     }
 }
-pub fn run_ast_query<T, F>(program: &str, init: F) -> QueryResult<T>
+pub(crate) fn run_ast_query<T, F>(program: &str, init: F) -> QueryResult<T>
     where
         F: Fn(TestContext) -> Box<dyn Fn(&AstContext) -> QueryResult<T> + Send>,
         T: std::fmt::Debug + PartialEq + Send {
@@ -120,7 +120,7 @@ pub fn run_ast_query<T, F>(program: &str, init: F) -> QueryResult<T>
 
     c.result
 }
-pub fn run_ty_query<T, F>(program: &str, init: F) -> QueryResult<T>
+pub(crate) fn run_ty_query<T, F>(program: &str, init: F) -> QueryResult<T>
     where
         F: Fn(String, u32, u32) -> Box<dyn Fn(&TyContext) -> QueryResult<T> + Send>,
         T: std::fmt::Debug + PartialEq + Send {
@@ -139,7 +139,7 @@ pub fn run_ty_query<T, F>(program: &str, init: F) -> QueryResult<T>
 
     c.result
 }
-pub fn assert_success3<T, F>(program: &str, init: F, expected: T) 
+pub(crate) fn assert_success3<T, F>(program: &str, init: F, expected: T) 
     where
         F: Fn(String, u32, u32) -> Box<dyn Fn(&TyContext) -> QueryResult<T> + Send>,
         T: std::fmt::Debug + PartialEq + Send {
