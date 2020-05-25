@@ -27,7 +27,7 @@ pub fn do_refactoring(tcx: &TyContext, struct_hir_id: HirId, field_index: usize,
         changes.push(tcx.map_change(struct_expression, replacement)?);
     }
 
-    for field_access_expression in collect_struct_field_access_expressions(tcx.0, struct_hir_id, &field_index.to_string()) {
+    for field_access_expression in collect_struct_field_access_expressions(tcx, struct_hir_id, &field_index.to_string()) {
         let replacement = format!("(*{})", tcx.get_source(field_access_expression));
         changes.push(tcx.map_change(field_access_expression, replacement)?);
     }

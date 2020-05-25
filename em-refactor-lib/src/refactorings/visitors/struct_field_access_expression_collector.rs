@@ -3,6 +3,7 @@ use rustc_hir::intravisit::{FnKind, walk_expr, walk_fn, walk_crate, NestedVisito
 use rustc_middle::hir::map::Map;
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
+use crate::refactoring_invocation::TyContext;
 
 ///
 /// Collect all places where a given struct occurs in a field access expression where the field is `field_ident`.
@@ -24,19 +25,19 @@ use rustc_span::Span;
 /// ```
 /// [Field access expressions grammar](https://doc.rust-lang.org/stable/reference/expressions/field-expr.html)
 pub fn collect_struct_field_access_expressions(
-    tcx: TyCtxt,
+    tcx: &TyContext,
     struct_hir_id: HirId,
     field_ident: &str,
 ) -> Vec<Span> {
     let mut v = StructFieldAccessExpressionCollector {
-        tcx,
+        tcx: tcx.0,
         struct_hir_id,
         field: vec![],
         field_ident: field_ident.to_string(),
         body_id: None,
     };
 
-    walk_crate(&mut v, tcx.hir().krate());
+    walk_crate(&mut v, tcx.0.hir().krate());
 
     v.field
 }
@@ -95,7 +96,7 @@ impl<'v> Visitor<'v> for StructFieldAccessExpressionCollector<'v> {
 mod test {
     use super::*;
     use crate::test_utils::run_ty_query;
-    use crate::refactoring_invocation::{QueryResult, TyContext};
+    use crate::refactoring_invocation::QueryResult;
     use super::super::collect_field;
     use crate::refactorings::utils::get_struct_hir_id;
 
@@ -104,7 +105,7 @@ mod test {
             let span = ty.source().map_span(&file_name, from, to)?;
             let (field, _) = collect_field(ty.0, span).unwrap();
             let hir_id = get_struct_hir_id(ty.0, field);
-            let xs = collect_struct_field_access_expressions(ty.0, hir_id, &field.ident.as_str().to_string());
+            let xs = collect_struct_field_access_expressions(ty, hir_id, &field.ident.as_str().to_string());
 
             Ok(xs.iter().map(|s| ty.get_source(*s)).collect::<Vec<_>>())
         })

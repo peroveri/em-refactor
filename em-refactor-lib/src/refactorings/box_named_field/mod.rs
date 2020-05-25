@@ -33,7 +33,7 @@ pub fn do_refactoring(tcx: &TyContext, struct_hir_id: HirId, field_ident: &str, 
         changes.push(tcx.map_change(struct_expression, replacement)?);
     }
 
-    for field_access_expression in collect_struct_field_access_expressions(tcx.0, struct_hir_id, field_ident) {
+    for field_access_expression in collect_struct_field_access_expressions(tcx, struct_hir_id, field_ident) {
         let replacement = format!("(*{})", tcx.get_source(field_access_expression));
         changes.push(tcx.map_change(field_access_expression, replacement)?);
     }
