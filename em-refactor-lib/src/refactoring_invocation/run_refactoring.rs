@@ -1,4 +1,4 @@
-use em_refactor_lib_types::{FileStringReplacement, RefactorArgs};
+use em_refactor_lib_types::RefactorArgs;
 use crate::refactoring_invocation::{arg_value, argument_list_to_refactor_def, AstDiff, from_error, from_success, MyRefactorCallbacks, QueryResult, RefactoringErrorInternal, rustc_rerun, serialize, InMemoryFileLoader};
 use itertools::Itertools;
 
@@ -86,8 +86,8 @@ fn check_no_overlapping_changes(res: &QueryResult<AstDiff>) -> QueryResult<()> {
     Ok(())
 }
 
-
-pub fn get_file_content(changes: &[FileStringReplacement]) -> Option<String> {
+#[cfg(test)]
+pub(crate) fn get_file_content(changes: &[em_refactor_lib_types::FileStringReplacement]) -> Option<String> {
     use std::fs::File;
     use std::io::prelude::*;
     let mut changes = changes.to_vec();
@@ -107,7 +107,7 @@ pub fn get_file_content(changes: &[FileStringReplacement]) -> Option<String> {
     return Some(content);
 }
 
-pub fn is_dep(deps: &[String], rustc_arg: &[String]) -> bool {
+pub(crate) fn is_dep(deps: &[String], rustc_arg: &[String]) -> bool {
     (if let Some(val) = arg_value(rustc_arg, "--crate-name", |_| true) {
         deps.iter().any(|s| s == val)
     } else {
