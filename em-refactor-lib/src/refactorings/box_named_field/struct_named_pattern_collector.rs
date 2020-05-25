@@ -5,6 +5,7 @@ use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 use super::super::box_field::StructPatternCollection;
 use if_chain::if_chain;
+use crate::refactoring_invocation::TyContext;
 
 ///
 /// Collect all places where a given struct occurs in a pattern. Field_ident should also occur in the pattern.
@@ -36,12 +37,12 @@ use if_chain::if_chain;
 /// ```
 /// [Struct pattern grammar](https://doc.rust-lang.org/stable/reference/patterns.html#struct-patterns)
 pub fn collect_struct_named_patterns(
-    tcx: TyCtxt,
+    tcx: &TyContext,
     struct_hir_id: HirId,
     field_ident: &str,
 ) -> StructPatternCollection {
     let mut v = StructPatternCollector {
-        tcx,
+        tcx: tcx.0,
         struct_hir_id,
         patterns: StructPatternCollection {
             new_bindings: vec![],
@@ -50,7 +51,7 @@ pub fn collect_struct_named_patterns(
         field_ident: field_ident.to_string(),
     };
 
-    walk_crate(&mut v, tcx.hir().krate());
+    walk_crate(&mut v, tcx.0.hir().krate());
 
     v.patterns
 }
@@ -125,7 +126,7 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
 mod test {
     use super::*;
     use crate::test_utils::run_ty_query;
-    use crate::refactoring_invocation::{QueryResult, TyContext};
+    use crate::refactoring_invocation::QueryResult;
     use crate::refactorings::utils::get_struct_hir_id;
     use crate::refactorings::visitors::collect_field;
 
@@ -135,7 +136,7 @@ mod test {
 
             let (field, _) = collect_field(ty.0, span).unwrap();
             let hir_id = get_struct_hir_id(ty.0, field);
-            let fields = collect_struct_named_patterns(ty.0, hir_id, &field.ident.as_str().to_string());
+            let fields = collect_struct_named_patterns(ty, hir_id, &field.ident.as_str().to_string());
 
             Ok((
                 fields.new_bindings.len(),

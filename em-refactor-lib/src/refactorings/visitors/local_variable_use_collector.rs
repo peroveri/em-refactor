@@ -79,7 +79,7 @@ mod test {
 
             let (field, _) = collect_field(ty.0, span).unwrap();
             let struct_hir_id = get_struct_hir_id(ty.0, &field);
-            let patterns = collect_struct_named_patterns(ty.0, struct_hir_id, &ty.get_source(span)).new_bindings;
+            let patterns = collect_struct_named_patterns(ty, struct_hir_id, &ty.get_source(span)).new_bindings;
 
             let mut ret = vec![];
             for id in patterns {

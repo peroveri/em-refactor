@@ -11,7 +11,7 @@ pub mod struct_named_pattern_collector;
 
 pub fn do_refactoring(tcx: &TyContext, struct_hir_id: HirId, field_ident: &str, field_ty_span: Span) -> QueryResult<AstDiff> {
 
-    let struct_patterns = collect_struct_named_patterns(tcx.0, struct_hir_id, field_ident);
+    let struct_patterns = collect_struct_named_patterns(tcx, struct_hir_id, field_ident);
 
     if !struct_patterns.other.is_empty() {
         return Err(RefactoringErrorInternal::used_in_pattern(&field_ident));
