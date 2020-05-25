@@ -37,7 +37,7 @@ pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryR
         let struct_hir_id = get_struct_hir_id(tcx.0, &field);
 
         if field.is_positional() {
-            Ok(AstDiff(box_tuple_field::do_refactoring(tcx.0, struct_hir_id, index, field.ty.span)?))
+            box_tuple_field::do_refactoring(tcx, struct_hir_id, index, field.ty.span)
         } else {
             box_named_field::do_refactoring(tcx, struct_hir_id, &field.ident.to_string(), field.ty.span)
         }

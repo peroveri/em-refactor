@@ -4,6 +4,7 @@ use rustc_middle::hir::map::Map;
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 use super::super::box_field::StructPatternCollection;
+use crate::refactoring_invocation::TyContext;
 use if_chain::if_chain;
 
 ///
@@ -36,12 +37,12 @@ use if_chain::if_chain;
 /// ```
 /// [Struct pattern grammar](https://doc.rust-lang.org/stable/reference/patterns.html#struct-patterns)
 pub fn collect_struct_tuple_patterns(
-    tcx: TyCtxt,
+    tcx: &TyContext,
     struct_hir_id: HirId,
     field_index: usize,
 ) -> StructPatternCollection {
     let mut v = StructPatternCollector {
-        tcx,
+        tcx: tcx.0,
         struct_hir_id,
         patterns: StructPatternCollection {
             new_bindings: vec![],
@@ -50,7 +51,7 @@ pub fn collect_struct_tuple_patterns(
         field_index,
     };
 
-    walk_crate(&mut v, tcx.hir().krate());
+    walk_crate(&mut v, tcx.0.hir().krate());
 
     v.patterns
 }
@@ -130,7 +131,7 @@ mod test {
 
             let (field, _) = collect_field(ty.0, span).unwrap();
             let hir_id = get_struct_hir_id(ty.0, field);
-            let fields = collect_struct_tuple_patterns(ty.0, hir_id, 0);
+            let fields = collect_struct_tuple_patterns(ty, hir_id, 0);
 
             Ok((
                 fields.new_bindings.len(),
