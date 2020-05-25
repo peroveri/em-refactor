@@ -33,7 +33,7 @@
         {
             "label": "test cli",
             "type": "shell",
-            "command": "cargo test --package refactor-cli --test cli_tests",
+            "command": "cargo test --package em-refactor-cli --test cli_tests",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -42,7 +42,7 @@
         {
             "label": "test box field",
             "type": "shell",
-            "command": "cargo test --package refactor-cli --test refactoring_box_named_field --test refactoring_box_tuple_field",
+            "command": "cargo test --package em-refactor-cli --test refactoring_box_named_field --test refactoring_box_tuple_field",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -51,7 +51,7 @@
         {
             "label": "test close-over-variables",
             "type": "shell",
-            "command": "cargo test --package refactor-cli --test refactoring_close_over_variables",
+            "command": "cargo test --package em-refactor-cli --test refactoring_close_over_variables",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -60,7 +60,7 @@
         {
             "label": "test extract-block",
             "type": "shell",
-            "command": "cargo test --package refactor-cli --test refactoring_extract_block_items --test refactoring_extract_block_ownership --test refactoring_extract_block_vars",
+            "command": "cargo test --package em-refactor-cli --test refactoring_extract_block_items --test refactoring_extract_block_ownership --test refactoring_extract_block_vars",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -69,7 +69,7 @@
         {
             "label": "test inline-macro",
             "type": "shell",
-            "command": "cargo test --package refactor-cli --test refactoring_inline_macro",
+            "command": "cargo test --package em-refactor-cli --test refactoring_inline_macro",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -78,7 +78,7 @@
         {
             "label": "test introduce-closure",
             "type": "shell",
-            "command": "cargo test --package refactor-cli --test refactoring_introduce_closure_cf",
+            "command": "cargo test --package em-refactor-cli --test refactoring_introduce_closure_cf",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -87,7 +87,7 @@
         {
             "label": "test pull-up-item-declarations",
             "type": "shell",
-            "command": "cargo test --package refactor-cli --test refactoring_pull_up_item_declarations",
+            "command": "cargo test --package em-refactor-cli --test refactoring_pull_up_item_declarations",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -96,7 +96,7 @@
         {
             "label": "test split-conflicting-match-arms",
             "type": "shell",
-            "command": "cargo test --package refactor-cli --test refactoring_split_conflicting_match_arms",
+            "command": "cargo test --package em-refactor-cli --test refactoring_split_conflicting_match_arms",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -105,7 +105,7 @@
         {
             "label": "test lib",
             "type": "shell",
-            "command": "cargo test --package refactor-lib",
+            "command": "cargo test --package em-refactor-lib",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -123,7 +123,7 @@
         {
             "label": "run experiment - box field",
             "type": "shell",
-            "command": "cargo build --bins --lib --release && cargo run --release --bin refactor-experiments -- box-field --workspace-root \"../../local/exp-dir/RustyXML\"",
+            "command": "cargo build --bins --lib --release && cargo run --release --bin em-refactor-experiments -- box-field --workspace-root \"../../local/exp-dir/rust-sun\" > box-field.txt",
             "problemMatcher": [
                 "$rustc"
             ],
@@ -132,7 +132,7 @@
         {
             "label": "run experiment - extract method",
             "type": "shell",
-            "command": "cargo build --bins --lib --release && cargo run --release --bin refactor-experiments -- extract-method --workspace-root \"../../local/exp-dir/RustyXML\"",
+            "command": "cargo build --bins --lib --release && cargo run --release --bin em-refactor-experiments -- extract-method --log-to-file --workspace-root \"../../local/exp-dir/RustyXML\"",
             "problemMatcher": [
                 "$rustc"
             ],

@@ -106,6 +106,60 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb1f6b1ce1c140482ea30ddd3335fc0024ac7ee112895426e0a629a6c20adfe3"
 
 [[package]]
+name = "em-refactor-cli"
+version = "0.1.0"
+dependencies = [
+ "assert_cmd",
+ "clap",
+ "em-refactor-lib",
+ "em-refactor-lib-types",
+ "itertools",
+ "predicates",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "em-refactor-experiments"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "clap",
+ "em-refactor-lib-types",
+ "itertools",
+ "log",
+ "regex",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "em-refactor-lib"
+version = "0.1.0"
+dependencies = [
+ "assert_cmd",
+ "em-refactor-lib-types",
+ "if_chain",
+ "itertools",
+ "predicates",
+ "quote",
+ "regex",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
+name = "em-refactor-lib-types"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "escargot"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -318,60 +372,6 @@ name = "redox_syscall"
 version = "0.1.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2439c63f3f6139d1b57529d16bc3b8bb855230c8efcc5d3a896c8bea7c3b1e84"
-
-[[package]]
-name = "refactor-cli"
-version = "0.1.0"
-dependencies = [
- "assert_cmd",
- "clap",
- "itertools",
- "predicates",
- "refactor-lib",
- "refactor-lib-types",
- "serde",
- "serde_json",
- "tempfile",
-]
-
-[[package]]
-name = "refactor-experiments"
-version = "0.1.0"
-dependencies = [
- "chrono",
- "clap",
- "itertools",
- "log",
- "refactor-lib-types",
- "regex",
- "serde",
- "serde_json",
- "tempfile",
-]
-
-[[package]]
-name = "refactor-lib"
-version = "0.1.0"
-dependencies = [
- "assert_cmd",
- "if_chain",
- "itertools",
- "predicates",
- "quote",
- "refactor-lib-types",
- "regex",
- "serde",
- "serde_json",
- "tempfile",
-]
-
-[[package]]
-name = "refactor-lib-types"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
-]
 
 [[package]]
 name = "regex"

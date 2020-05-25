@@ -1,0 +1,31 @@
+[package]
+name = "em-refactor-cli"
+version = "0.1.0"
+authors = ["Per Ove Ringdal <perori@uio.no>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "cargo-em-refactor"
+test = false
+path = "src/main.rs"
+
+[[bin]]
+name = "em-refactor-driver"
+test = true
+path = "src/driver.rs"
+
+[dependencies]
+clap = "2.33.0"
+itertools = "0.9"
+em-refactor-lib = { path = "../em-refactor-lib" }
+em-refactor-lib-types = { path = "../em-refactor-lib-types" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[dev-dependencies]
+assert_cmd = "0.12"
+predicates = "1.0"
+serde_json = "1.0"
+tempfile = "3.1"

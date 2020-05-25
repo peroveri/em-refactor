@@ -1,10 +1,10 @@
 [workspace]
 members = [
-    "refactor-cli",
-    "refactor-experiments",
-    "refactor-lib",
-    "refactor-lib-types"
+    "em-refactor-cli",
+    "em-refactor-experiments",
+    "em-refactor-lib",
+    "em-refactor-lib-types"
 ]
 exclude = [
-    "refactor-examples"
+    "em-refactor-examples"
 ]

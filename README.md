@@ -19,17 +19,17 @@ cargo build --bins --release
 
 Candidates:
 
-```cargo-my-refactor candidates <box-field/extract-method> [--target-dir=PATH]```
+```cargo-em-refactor candidates <box-field/extract-method> [--target-dir=PATH]```
 ```sh
-./target/release/cargo-my-refactor candidates box-field --target-dir="../path/to/project"
-./target/release/cargo-my-refactor candidates extract-method
+./target/release/cargo-em-refactor candidates box-field --target-dir="../path/to/project"
+./target/release/cargo-em-refactor candidates extract-method
 ```
 
 Refactoring:
 
-```cargo-my-refactor refactor <box-field/extract-block/extract-method/...> <FILE> <SELECTION> [--target-dir=PATH]```
+```cargo-em-refactor refactor <box-field/extract-block/extract-method/...> <FILE> <SELECTION> [--target-dir=PATH]```
 ```sh
-./target/release/cargo-my-refactor refactor box-field refactor-lib/src/refactorings/visitors/struct_field_access_expression_collector.rs 1242:1255
+./target/release/cargo-em-refactor refactor box-field refactor-lib/src/refactorings/visitors/struct_field_access_expression_collector.rs 1242:1255
 ```
 
 # Running in VS Code
@@ -46,7 +46,7 @@ Refactoring:
 - Debug the extension (Debug View -> Launch client)
 - Configure settings in the new window that launched
   - Open the vs code extension settings (File->Preferences->Settings) 
-  - Set the "Refactoring Binary Path" setting to the absolute path of the binary file from step 2 ( it will be \<git repo folder> + /target/release/cargo-my-refactor )
+  - Set the "Refactoring Binary Path" setting to the absolute path of the binary file from step 2 ( it will be \<git repo folder> + /target/release/cargo-em-refactor )
 
 # [./refactor-examples -- Examples in rust](./refactor-examples)
 This project should contain a list of valid refactorings that can be used for unit tests.
@@ -74,4 +74,4 @@ main.rs calls ```cargo check``` with the executable from driver.rs as argument. 
 
 The tool can be invoked like this:
 
-`cargo run --bin my-refactor-driver refactor-examples/extract_method/owned_mut_value.rs  -- --refactoring=extract-block --selection=39:46`
+`cargo run --bin em-refactor-driver refactor-examples/extract_method/owned_mut_value.rs  -- --refactoring=extract-block --selection=39:46`
