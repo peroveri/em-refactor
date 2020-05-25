@@ -2,11 +2,13 @@ import { singleton, inject } from "tsyringe";
 import * as shell from "shelljs";
 import { NotificationService } from "./NotificationService";
 import { RefactorArgs } from "./mappings";
+import { SettingsService } from "./SettingsService";
 
 @singleton()
 export class ShellService {
     private isExecuting: boolean = false;
     constructor(
+        @inject(SettingsService) private settings: SettingsService,
         @inject(NotificationService) private notifications: NotificationService) { }
 
     private shellExec(cmd: string) {
@@ -20,9 +22,9 @@ export class ShellService {
         return result;
     }
 
-    callRefactoring(relativeFilePath: string, arg: RefactorArgs, binaryPath: string) {
-
-        let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.unsafe, binaryPath);
+    async callRefactoring(relativeFilePath: string, arg: RefactorArgs) {
+        let settings = await this.settings.getSettings();
+        let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.unsafe, settings.refactoringBinaryPath, settings.cargoToolchain);
         if (cmd instanceof Error) {
             return new Error(cmd.message);
         }
@@ -46,24 +48,26 @@ export class ShellService {
         return result;
     }
 
-    runCargoCheck() {
+    async runCargoCheck() {
         /* https://github.com/shelljs/shelljs/wiki/Electron-compatibility */
         if (shell.config.execPath === null) {
             shell.config.execPath = shell.which('node').toString();
         }
-        let res = this.shellExec("cargo +nightly-2020-04-15 check --target-dir=./target/refactorings --all-targets");
+        let settings = await this.settings.getSettings();
+        let res = this.shellExec(`cargo ${settings.cargoToolchain} check --target-dir=./target/refactorings --all-targets`);
         if(res instanceof Error) {
             this.notifications.sendErrorNotification(res.message);
         } else {
             this.notifications.sendInfoNotification(`cargo check returned with status: ${res.code}`);
         }
     }
-    queryCandidates(refactoring: string, binaryPath: string) {
+    async queryCandidates(refactoring: string) {
         /* https://github.com/shelljs/shelljs/wiki/Electron-compatibility */
         if (shell.config.execPath === null) {
             shell.config.execPath = shell.which('node').toString();
         }
-        let cmd = convertToCandidateCmd(refactoring, binaryPath);
+        let settings = await this.settings.getSettings();
+        let cmd = convertToCandidateCmd(refactoring, settings.refactoringBinaryPath, settings.cargoToolchain);
         if (cmd instanceof Error) {
             return new Error(cmd.message);
         }
@@ -78,21 +82,21 @@ export class ShellService {
     }
 }
 
-const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, unsafe: boolean, binaryPath: string): string | Error => {
+const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, unsafe: boolean, binaryPath: string, toolchain: string): string | Error => {
     if (!isValidBinaryPath(binaryPath)) {
         return new Error(`'${binaryPath}' is not a valid binary file`);
     }
     const refactorArgs = `--target-dir=./target/refactorings refactor ${refactoring} ${relativeFilePath} ${selection}` + (unsafe ? ' --unsafe' : '');
 
-    return `${binaryPath} ${refactorArgs}`;
+    return `cargo ${toolchain} run --bin cargo-my-refactor --manifest-path=${binaryPath} -- ${refactorArgs}`;
 }
-const convertToCandidateCmd = (refactoring: string, binaryPath: string): string | Error => {
+const convertToCandidateCmd = (refactoring: string, binaryPath: string, toolchain: string): string | Error => {
     if (!isValidBinaryPath(binaryPath)) {
         return new Error(`'${binaryPath}' is not a valid binary file`);
     }
     const refactorArgs = `--target-dir=./target/refactorings candidates ${refactoring}`;
 
-    return `${binaryPath} ${refactorArgs}`;
+    return `cargo ${toolchain} run --bin cargo-my-refactor --manifest-path=${binaryPath} -- ${refactorArgs}`;
 }
 
 const isValidBinaryPath = (binaryPath: string): boolean =>

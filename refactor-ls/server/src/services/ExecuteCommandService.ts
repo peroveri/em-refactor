@@ -23,22 +23,22 @@ export class ExecuteCommandService {
                 const edits = handleExecuteGenerateTestCommand(params);
                 await this.workspace.applyEdits(edits);
                 return Promise.resolve();
-            } else if(await this.handleCustom(params, settings.refactoringBinaryPath)) {
+            } else if(await this.handleCustom(params)) {
 
                 return Promise.resolve();
             }
-            return this.handleExecuteRefactoringCommand(params, settings.refactoringBinaryPath);
+            return this.handleExecuteRefactoringCommand(params);
         } catch (e) {
             return Promise.reject(`Unhandled expection in handleExecuteCommand:\n${JSON.stringify(e)}`);
         }
     };
 
-    handleCustom = async (params: ExecuteCommandParams, binaryPath: string) => {
+    handleCustom = async (params: ExecuteCommandParams) => {
         if(params.command === config.cargoCheckCommand) {
-            this.shell.runCargoCheck();
+            await this.shell.runCargoCheck();
             return true;
         } else if (params.command === config.candidatesCommand && params.arguments && params.arguments[0]) {
-            let res = this.shell.queryCandidates(params.arguments[0], binaryPath);
+            let res = await this.shell.queryCandidates(params.arguments[0]);
             if(res instanceof Error) {
                 this.notificationService.sendErrorNotification(res.message);
             } else {
@@ -54,7 +54,7 @@ export class ExecuteCommandService {
         return false;
     }
 
-    async handleExecuteRefactoringCommand(params: ExecuteCommandParams, binaryPath: string): Promise<ApplyWorkspaceEditParams | void> {
+    async handleExecuteRefactoringCommand(params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void> {
 
         let arg = mapToRefactorArgs(params);
         if (arg === undefined) {
@@ -67,7 +67,7 @@ export class ExecuteCommandService {
             return Promise.reject("unknown file path");
         }
 
-        let result = this.shell.callRefactoring(relativeFilePath, arg, binaryPath)
+        let result = await this.shell.callRefactoring(relativeFilePath, arg)
 
         if (result instanceof Error) {
             this.notificationService.sendErrorNotification(result.message);

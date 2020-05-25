@@ -13,7 +13,7 @@ static DRIVER_NAME: &str = "my-refactor-driver";
 // integrate with cargo such that we won't need to do this.
 pub(crate) fn clean_local_targets(metadata: &Metadata, target_dir: Option<&str>) -> InvocationResult<()> {
     for name in &metadata.package_names {
-        let mut args = vec!["+nightly-2020-04-15".to_owned(), "clean".to_owned(), "--package".to_owned(), name.to_string()];
+        let mut args = vec!["clean".to_owned(), "--package".to_owned(), name.to_string()];
         if let Some(dir) = &target_dir {
             args.push(format!("--target-dir={}", dir));
         }
@@ -74,7 +74,7 @@ pub(crate) fn run_refactoring_cmd(target_dir: Option<&str>, env_args: (String, S
     if cfg!(windows) {
         path.set_extension("exe");
     }
-    let mut args = vec!["+nightly-2020-04-15".to_owned(), "check".to_owned(), "-j".to_owned(), "1".to_owned(), "--quiet".to_owned(), "--all-targets".to_owned()];
+    let mut args = vec!["check".to_owned(), "-j".to_owned(), "1".to_owned(), "--quiet".to_owned(), "--all-targets".to_owned()];
 
     if let Some(arg) = target_dir {
         args.push(format!("--target-dir={}", arg));

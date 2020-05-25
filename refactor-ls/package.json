@@ -43,6 +43,12 @@
 					"default": "",
 					"description": "The path to the refactoring binary file."
 				},
+				"languageServerExample.cargoToolchain": {
+					"scope": "window",
+					"type": "string",
+					"default": "+nightly-2020-04-15",
+					"description": "Toolchain."
+				},
 				"languageServerExample.trace.server": {
 					"scope": "window",
 					"type": "string",

@@ -17,4 +17,5 @@ interface LSPExtensionSettings {
     isGenerateTestFilesEnabled: boolean;
     isUnsafeRefactoringShown: boolean;
     refactoringBinaryPath: string;
+    cargoToolchain: string;
 }
