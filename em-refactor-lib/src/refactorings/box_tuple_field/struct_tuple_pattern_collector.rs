@@ -120,13 +120,28 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
 mod test {
     use super::*;
     use crate::refactorings::visitors::collect_field;
-    use crate::{create_test_span, run_after_analysis};
-    use quote::quote;
-    use quote::__private::TokenStream;
+    use crate::test_utils::run_ty_query;
+    use crate::refactoring_invocation::{QueryResult, TyContext};
+    use crate::refactorings::utils::get_struct_hir_id;
 
-    fn create_program_self_tuple_wildcard() -> TokenStream {
-        quote! {
-            struct S ( i32 );
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<(usize, Vec<String>)> + Send> {
+        Box::new(move |ty| {
+            let span = ty.source().map_span(&file_name, from, to)?;
+
+            let (field, _) = collect_field(ty.0, span).unwrap();
+            let hir_id = get_struct_hir_id(ty.0, field);
+            let fields = collect_struct_tuple_patterns(ty.0, hir_id, 0);
+
+            Ok((
+                fields.new_bindings.len(),
+                fields.other.iter().map(|s| ty.get_source(*s)).collect::<Vec<_>>()))
+        })
+    }
+
+    #[test]
+    fn should_collect_struct_self_tuple_wildcard() {
+        let input = r#"
+            struct S (/*START*/i32/*END*/);
             impl S {
                 fn foo(s: Self) {
                     match s {
@@ -134,12 +149,21 @@ mod test {
                         _ => {}
                     }
                 }
-            }
-        }
+            }"#;
+
+        let expected = Ok((
+            1,
+            vec![],
+        ));
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
-    fn create_program_self_tuple_pattern() -> TokenStream {
-        quote! {
-            struct S ( i32 );
+    #[test]
+    fn should_collect_struct_self_tuple_pattern() {
+        let input = r#"
+            struct S (/*START*/i32/*END*/);
             impl S {
                 fn foo(s: Self) {
                     match s {
@@ -147,32 +171,15 @@ mod test {
                         _ => {}
                     }
                 }
-            }
-        }
-    }
-    fn get_tuple_hir_id(tcx: TyCtxt<'_>) -> HirId {
-        let (field, _) = collect_field(tcx, create_test_span(11, 14)).unwrap();
-        let struct_def_id = field.hir_id.owner.to_def_id();
-        tcx.hir().as_local_hir_id(struct_def_id).unwrap()
-    }
+            }"#;
 
-    #[test]
-    fn struct_pattern_collector_should_collect_struct_self_tuple_wildcard() {
-        run_after_analysis(create_program_self_tuple_wildcard(), |tcx| {
-            let struct_hir_id = get_tuple_hir_id(tcx);
-            let fields = collect_struct_tuple_patterns(tcx, struct_hir_id, 0);
+        let expected = Ok((
+            0,
+            vec!["field @ 0".to_owned()],
+        ));
 
-            assert_eq!(fields.new_bindings.len(), 1);
-        });
-    }
-    #[test]
-    fn struct_pattern_collector_should_collect_struct_self_tuple_pattern() {
-        run_after_analysis(create_program_self_tuple_pattern(), |tcx| {
-            let struct_hir_id = get_tuple_hir_id(tcx);
-            let fields = collect_struct_tuple_patterns(tcx, struct_hir_id, 0);
+        let actual = run_ty_query(input, map);
 
-            assert_eq!(fields.new_bindings.len(), 0);
-            assert_eq!(fields.other.len(), 1);
-        });
+        assert_eq!(actual, expected);
     }
 }
