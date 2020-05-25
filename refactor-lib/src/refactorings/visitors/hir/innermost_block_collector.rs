@@ -1,5 +1,5 @@
-use rustc_hir::{BodyId, Block, FnDecl, HirId};
-use rustc_hir::intravisit::{NestedVisitorMap, Visitor, FnKind, walk_fn, walk_block, walk_crate};
+use rustc_hir::{BodyId, Block, Expr, FnDecl, HirId};
+use rustc_hir::intravisit::{NestedVisitorMap, Visitor, FnKind, walk_fn, walk_block, walk_crate, walk_expr};
 use rustc_middle::hir::map::Map;
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
@@ -56,9 +56,6 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
         if self.body_id.is_empty() {
             return;
         }
-        if let Some(expr) = &body.expr {
-            walk_desugars(self, &expr.kind);
-        }
         if !body.span.contains(self.pos) {
             return;
         }
@@ -71,6 +68,11 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
         self.result = Some((
              body,
             *self.body_id.last().unwrap()));
+    }
+    fn visit_expr(&mut self, expr: &'v Expr) {
+        if !walk_desugars(self, expr) {
+            walk_expr(self, expr);
+        }
     }
 }
 
@@ -117,12 +119,35 @@ mod test {
         fn foo() {
             for i in { vec![ 1 ] } {
                 /*START*/print!("{}", i);/*END*/
+                return;
             }
         }"#;
 
         let expected = Ok(r#"{
                 /*START*/print!("{}", i);/*END*/
+                return;
             }"#.to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
+    }
+    #[test]
+    fn desugar_for_outside() {
+        let input = r#"
+        fn foo() {
+            /*START*/for i in { vec![ 1 ] } {
+                print!("{}", i);
+                return;
+            }/*END*/
+        }"#;
+
+        let expected = Ok(r#"{
+            /*START*/for i in { vec![ 1 ] } {
+                print!("{}", i);
+                return;
+            }/*END*/
+        }"#.to_owned());
 
         let actual = run_ty_query(input, map);
 
@@ -258,19 +283,45 @@ mod test {
         assert_eq!(actual, expected);
     }
     #[test]
+    #[ignore]
     fn desugar_whilelet() {
         let input = r#"
         fn foo(mut i: Option<i32>) {
             while let Some(x) = i {
                 /*START*/print!("{}", x);/*END*/
                 i = None;
+                return;
             }
         }"#;
 
         let expected = Ok(r#"{
                 /*START*/print!("{}", x);/*END*/
                 i = None;
+                return;
             }"#.to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
+    }
+    #[test]
+    fn desugar_whilelet_outside() {
+        let input = r#"
+        fn foo(mut i: Option<i32>) {
+            /*START*/while let Some(x) = i {
+                print!("{}", x);
+                i = None;
+                return;
+            }/*END*/
+        }"#;
+
+        let expected = Ok(r#"{
+            /*START*/while let Some(x) = i {
+                print!("{}", x);
+                i = None;
+                return;
+            }/*END*/
+        }"#.to_owned());
 
         let actual = run_ty_query(input, map);
 

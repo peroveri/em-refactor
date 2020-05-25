@@ -1,5 +1,5 @@
-use rustc_hir::{Block, BodyId, FnDecl, HirId };
-use rustc_hir::intravisit::{NestedVisitorMap, FnKind, walk_block, walk_fn, walk_crate, Visitor};
+use rustc_hir::{Block, BodyId, Expr, FnDecl, HirId };
+use rustc_hir::intravisit::{NestedVisitorMap, FnKind, walk_block, walk_expr, walk_fn, walk_crate, Visitor};
 use rustc_middle::hir::map::Map;
 use rustc_middle::ty::TyCtxt;
 use rustc_span::{BytePos, Span};
@@ -68,9 +68,6 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
     }
 
     fn visit_block(&mut self, block: &'v Block) {
-        if let Some(expr) = &block.expr {
-            walk_desugars(self, &expr.kind);
-        }
         if self.selection_contains_span(block.span) {
             self.selected_block = Some((block, *self.body_ids.last().unwrap()));
             return;
@@ -79,6 +76,11 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
             return;
         }
         walk_block(self, block);
+    }
+    fn visit_expr(&mut self, expr: &'v Expr) {
+        if !walk_desugars(self, expr) {
+            walk_expr(self, expr);
+        }
     }
 }
 
@@ -127,6 +129,23 @@ mod test {
             while {true}/*START*/{1;}/*END*/
         }"#;
         let expected = Ok("{1;}".to_owned());
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
+    }
+    #[test]
+    fn should_collect_for_body() {
+        let input = r#"
+        fn foo() {
+            let x = vec![1];
+            /*START*/{
+                for i in x.iter().rev() {i;}
+            };/*END*/
+        }"#;
+        let expected = Ok(r"{
+                for i in x.iter().rev() {i;}
+            }".to_owned());
 
         let actual = run_ty_query(input, map);
 
