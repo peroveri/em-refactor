@@ -20,5 +20,3 @@ pub mod refactoring_invocation;
 
 #[cfg(test)]
 mod test_utils;
-#[cfg(test)]
-use test_utils::{create_test_span, run_after_analysis};

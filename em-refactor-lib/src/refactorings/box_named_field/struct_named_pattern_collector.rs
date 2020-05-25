@@ -124,46 +124,86 @@ impl<'v> Visitor<'v> for StructPatternCollector<'v> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::test_utils::run_ty_query;
+    use crate::refactoring_invocation::{QueryResult, TyContext};
+    use crate::refactorings::utils::get_struct_hir_id;
     use crate::refactorings::visitors::collect_field;
-    use crate::{create_test_span, run_after_analysis};
-    use quote::quote;
-    use quote::__private::TokenStream;
 
-    fn create_program_match() -> TokenStream {
-        quote! {
-            struct S { field: u32 }
+    fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<(usize, Vec<String>)> + Send> {
+        Box::new(move |ty| {
+            let span = ty.source().map_span(&file_name, from, to)?;
+
+            let (field, _) = collect_field(ty.0, span).unwrap();
+            let hir_id = get_struct_hir_id(ty.0, field);
+            let fields = collect_struct_named_patterns(ty.0, hir_id, &field.ident.as_str().to_string());
+
+            Ok((
+                fields.new_bindings.len(),
+                fields.other.iter().map(|s| ty.get_source(*s)).collect::<Vec<_>>()))
+        })
+    }
+    #[test]
+    fn should_collect_match_pattern() {
+        let input = r#"
+            struct S { /*START*/field/*END*/: u32 }
             fn foo() {
                 match (S {field: 0}) {
                     S {field: 0} => {},
                     _ => {}
                 }
-            }
-        }
+            }"#;
+
+        let expected = Ok((
+            0,
+            vec!["field: 0".to_owned()],
+        ));
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
-    fn create_program_match_without_field() -> TokenStream {
-        quote! {
-            struct S { field: u32 }
+    #[test]
+    fn should_collect_if_let_pattern() {
+        let input = r#"
+            struct S { /*START*/field/*END*/: u32 }
+            fn foo() {
+                if let (S{field: 0}) = (S{field: 1}) {
+                }
+            }"#;
+
+        let expected = Ok((
+            0,
+            vec!["field: 0".to_owned()],
+        ));
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
+    }
+    #[test]
+    fn should_not_collect_struct_without_field() {
+        let input = r#"
+            struct S { /*START*/field/*END*/: u32 }
             fn foo() {
                 match (S {field: 0}) {
                     S {..} => {},
                     _ => {}
                 }
-            }
-        }
-    }
+            }"#;
 
-    fn create_program_if_let() -> TokenStream {
-        quote! {
-            struct S { field: u32 }
-            fn foo() {
-                if let (S{field: 0}) = (S{field: 1}) {
-                }
-            }
-        }
+        let expected = Ok((
+            0,
+            vec![],
+        ));
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
-    fn create_program_self_type() -> TokenStream {
-        quote! {
-            struct S { field: u32 }
+    #[test]
+    fn should_collect_struct_self_type() {
+        let input = r#"
+            struct S { /*START*/field/*END*/: u32 }
             impl S {
                 fn foo(s: Self) {
                     match s {
@@ -171,12 +211,21 @@ mod test {
                         _ => {}
                     }
                 }
-            }
-        }
+            }"#;
+
+        let expected = Ok((
+            0,
+            vec!["field: 0".to_owned()],
+        ));
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
-    fn create_program_self_type_wildcard() -> TokenStream {
-        quote! {
-            struct S { field: u32 }
+    #[test]
+    fn should_collect_struct_self_type_wildcard() {
+        let input = r#"
+            struct S { /*START*/field/*END*/: u32 }
             impl S {
                 fn foo(s: Self) {
                     match s {
@@ -184,78 +233,30 @@ mod test {
                         _ => {}
                     }
                 }
-            }
-        }
-    }
-    fn create_program_match_6() -> TokenStream {
-        quote! {
-            # [ derive ( Eq , PartialEq , Ord , PartialOrd , Clone , Hash , Default , Debug ) ] struct S { foo : u32 }
-        }
-    }
-    fn get_struct_hir_id(tcx: TyCtxt<'_>) -> HirId {
-        let (field, _) = collect_field(tcx, create_test_span(11, 16)).unwrap();
-        let struct_def_id = field.hir_id.owner.to_def_id();
-        tcx.hir().as_local_hir_id(struct_def_id).unwrap()
-    }
+            }"#;
 
-    fn get_struct_hir_id6(tcx: TyCtxt<'_>) -> HirId {
-        let (field, _) = collect_field(tcx, create_test_span(95, 98)).unwrap();
-        let struct_def_id = field.hir_id.owner.to_def_id();
-        tcx.hir().as_local_hir_id(struct_def_id).unwrap()
+        let expected = Ok((
+            1,
+            vec![],
+        ));
+
+        let actual = run_ty_query(input, map);
+
+        assert_eq!(actual, expected);
     }
     #[test]
-    fn struct_pattern_collector_should_collect_match_pattern() {
-        run_after_analysis(create_program_match(), |tcx| {
-            let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_named_patterns(tcx, hir_id, "field");
+    fn should_not_collect_in_std_derives() {
+        let input = r#"
+            #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Hash, Default, Debug)]
+            struct S { /*START*/field/*END*/: u32 }"#;
 
-            assert_eq!(fields.other.len(), 1);
-        });
-    }
-    #[test]
-    fn struct_pattern_collector_should_collect_if_let_pattern() {
-        run_after_analysis(create_program_if_let(), |tcx| {
-            let hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_named_patterns(tcx, hir_id, "field");
+        let expected = Ok((
+            0,
+            vec![],
+        ));
 
-            assert_eq!(fields.other.len(), 1);
-        });
-    }
-    #[test]
-    fn struct_pattern_collector_should_not_collect_struct_without_field() {
-        run_after_analysis(create_program_match_without_field(), |tcx| {
-            let struct_hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_named_patterns(tcx, struct_hir_id, "field");
+        let actual = run_ty_query(input, map);
 
-            assert_eq!(fields.other.len(), 0);
-        });
-    }
-    #[test]
-    fn struct_pattern_collector_should_collect_struct_self_type() {
-        run_after_analysis(create_program_self_type(), |tcx| {
-            let struct_hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_named_patterns(tcx, struct_hir_id, "field");
-
-            assert_eq!(fields.other.len(), 1);
-        });
-    }
-    #[test]
-    fn struct_pattern_collector_should_collect_struct_self_type_wildcard() {
-        run_after_analysis(create_program_self_type_wildcard(), |tcx| {
-            let struct_hir_id = get_struct_hir_id(tcx);
-            let fields = collect_struct_named_patterns(tcx, struct_hir_id, "field");
-
-            assert_eq!(fields.new_bindings.len(), 1);
-        });
-    }
-    #[test]
-    fn struct_pattern_collector_should_not_collect_in_std_derives() {
-        run_after_analysis(create_program_match_6(), |tcx| {
-            let struct_hir_id = get_struct_hir_id6(tcx);
-            let fields = collect_struct_named_patterns(tcx, struct_hir_id, "foo");
-
-            assert_eq!(fields.new_bindings.len(), 0);
-            assert_eq!(fields.other.len(), 0);
-        });
+        assert_eq!(actual, expected);
     }
 }

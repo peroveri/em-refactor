@@ -1,54 +1,9 @@
-use rustc_interface::interface;
-use rustc_middle::ty::TyCtxt;
 use std::fs::File;
 use std::io::prelude::*;
 use std::path::Path;
-use quote::__private::TokenStream;
-use rustc_span::{BytePos, Span};
 use tempfile::TempDir;
 use crate::refactoring_invocation::{argument_list_to_refactor_def, AstContext, get_sys_root, MyRefactorCallbacks, Query, QueryResult, TyContext};
 use em_refactor_lib_types::{FileStringReplacement, RefactorArgs, SelectionType};
-
-/**
- * Function that can be used to run unit tests.
- * Accepts a TokenStream (from quote) and a function with a single parameter TyCtxt.
- */
-#[allow(unused)]
-pub fn run_after_analysis<F>(program: TokenStream, func: F)
-where
-    F: Fn(TyCtxt<'_>) -> (),
-    F: Send
-{
-    let (rustc_args, d) = init_main_rs_and_get_args(&format!("{}", program));
-    let mut c = RustcAfterAnalysisCallbacks(func);
-    let err = rustc_driver::run_compiler(&rustc_args, &mut c, None, None);
-    err.unwrap();
-}
-
-pub fn create_test_span(lo: u32, hi: u32) -> rustc_span::Span {
-    Span::with_root_ctxt(BytePos(lo), BytePos(hi))
-}
-
-struct RustcAfterAnalysisCallbacks<F>(F);
-
-impl<F> rustc_driver::Callbacks for RustcAfterAnalysisCallbacks<F>
-where
-    F: Fn(TyCtxt<'_>) -> ()
-{
-    fn after_analysis<'tcx>(
-        &mut self, 
-        compiler: &interface::Compiler,
-        queries: &'tcx rustc_interface::Queries<'tcx>
-    ) -> rustc_driver::Compilation {
-        compiler.session().abort_if_errors();
-        queries
-            .global_ctxt()
-            .unwrap()
-            .peek_mut()
-            .enter(|tcx| self.0(tcx));
-        rustc_driver::Compilation::Stop
-    }
-}
 
 pub fn init_main_rs_and_get_args(program: &str) -> (Vec<String>, TempDir)
 {
