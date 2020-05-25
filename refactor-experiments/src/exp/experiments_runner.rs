@@ -48,9 +48,11 @@ impl ExperimentsRunner {
     fn run_candidate_refactoring(&mut self, candidate: CandidatePosition) -> std::io::Result<()> {
         let mut stopwatch = Stopwatch::start("run_candidate_refactoring".to_owned());
         let changes = self.cmd_runner.refactor(&candidate, &self.refactoring)?;
+        stopwatch.add("refactor");
         
         if let Some(err) = changes.errors.first() {
             self.report.add_err(candidate.clone(), err.clone());
+            stopwatch.add("add_err");
         } else {
             self.cmd_runner.apply_changes(changes)?;
             let next_test_result = self.cmd_runner.run_unit_tests()?;
@@ -60,8 +62,8 @@ impl ExperimentsRunner {
                 self.report.add_successful(candidate.clone());
             }
             self.cmd_runner.reset_repo()?;
+            stopwatch.add("reset_repo");
         }
-        stopwatch.add("apply_change".to_owned());
         info!("{}", stopwatch.report().unwrap());
         
         Ok(())
