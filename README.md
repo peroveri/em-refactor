@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/peroveri/em-refactor.svg?branch=master)](https://travis-ci.org/peroveri/em-refactor)
 # Running from the terminal
 ## Requirements
 - Rust - https://www.rust-lang.org/tools/install
