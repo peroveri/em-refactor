@@ -8,7 +8,7 @@ pub struct SourceMapContext<'a> {
 }
 
 impl<'a> SourceMapContext<'a> {
-    pub fn map_selection_to_span(&self, r: SelectionType, file: String) -> QueryResult<Span> {
+    pub(crate) fn map_selection_to_span(&self, r: SelectionType, file: String) -> QueryResult<Span> {
         match r {
             SelectionType::Comment(range_id) => {
                 crate::refactorings::visitors::ast::collect_comments_with_id(self, &range_id)
@@ -20,7 +20,7 @@ impl<'a> SourceMapContext<'a> {
         }
     }
 
-    pub fn map_span(&self, file_name: &str, from: u32, to: u32) -> QueryResult<Span> {
+    pub(crate) fn map_span(&self, file_name: &str, from: u32, to: u32) -> QueryResult<Span> {
         let file_name_real = FileName::Real(std::path::PathBuf::from(file_name));
         if let Some(source_file) = self.source_map.get_source_file(&file_name_real) {
             Ok(Span::with_root_ctxt(
@@ -41,10 +41,10 @@ impl<'a> SourceMapContext<'a> {
         }
         Err(RefactoringErrorInternal::arg_def("Selection should be formatted as <byte_from>:<byte_to>"))
     }
-    pub fn span_err(&self, span: Span, is_error: bool) -> RefactoringErrorInternal {
+    pub(crate) fn span_err(&self, span: Span, is_error: bool) -> RefactoringErrorInternal {
         RefactoringErrorInternal::invalid_selection_with_code(span.lo().0, span.hi().0, &self.get_source(span), is_error)
     }
-    pub fn get_source(&self, span: Span) -> String {
+    pub(crate) fn get_source(&self, span: Span) -> String {
         self.source_map.span_to_snippet(span).unwrap()
     }
 }
