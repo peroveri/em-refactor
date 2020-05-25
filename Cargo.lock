@@ -144,7 +144,6 @@ dependencies = [
  "if_chain",
  "itertools",
  "predicates",
- "quote",
  "regex",
  "serde",
  "serde_json",
