@@ -2,7 +2,6 @@ use rustc_hir::HirId;
 use rustc_span::Span;
 
 use crate::refactoring_invocation::{AstDiff, QueryResult, TyContext};
-use super::utils::get_struct_hir_id;
 use super::{box_named_field, box_tuple_field};
 use super::visitors::collect_field;
 
@@ -34,7 +33,7 @@ pub struct StructPatternCollection {
 
 pub fn do_refactoring(tcx: &TyContext, span: Span, _add_comment: bool) -> QueryResult<AstDiff> {
     if let Some((field, index)) = collect_field(tcx.0, span) {
-        let struct_hir_id = get_struct_hir_id(tcx.0, &field);
+        let struct_hir_id = tcx.get_struct_hir_id(&field);
 
         if field.is_positional() {
             box_tuple_field::do_refactoring(tcx, struct_hir_id, index, field.ty.span)

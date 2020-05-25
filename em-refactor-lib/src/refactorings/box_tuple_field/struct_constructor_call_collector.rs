@@ -103,14 +103,13 @@ mod test {
     use crate::test_utils::run_ty_query;
     use crate::refactoring_invocation::QueryResult;
     use crate::refactorings::visitors::collect_field;
-    use crate::refactorings::utils::get_struct_hir_id;
 
     fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<String>> + Send> {
         Box::new(move |ty| {
             let span = ty.source().map_span(&file_name, from, to)?;
 
             let (field, _) = collect_field(ty.0, span).unwrap();
-            let hir_id = get_struct_hir_id(ty.0, field);
+            let hir_id = ty.get_struct_hir_id(field);
             let fields = collect_struct_constructor_calls(ty, hir_id, 0);
 
             Ok(fields.iter().map(|s| ty.get_source(*s)).collect::<Vec<_>>())

@@ -1,4 +1,4 @@
-use rustc_hir::BodyId;
+use rustc_hir::{BodyId, StructField, HirId};
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
 use em_refactor_lib_types::FileStringReplacement;
@@ -23,5 +23,10 @@ impl<'a> TyContext<'a> {
     }
     pub fn get_body_span(&self, body_id: BodyId) -> Span {
         self.0.hir().body(body_id).value.span
+    }
+
+    pub fn get_struct_hir_id(&self, field: &StructField) -> HirId {
+        let struct_def_id = field.hir_id.owner.to_def_id();
+        self.0.hir().as_local_hir_id(struct_def_id).unwrap()
     }
 }

@@ -71,7 +71,6 @@ mod test {
     use crate::test_utils::run_ty_query;
     use crate::refactorings::visitors::collect_field;
     use crate::refactoring_invocation::QueryResult;
-    use crate::refactorings::utils::get_struct_hir_id;
     use crate::refactorings::box_named_field::struct_named_pattern_collector::collect_struct_named_patterns;
 
     fn map(file_name: String, from: u32, to: u32) -> Box<dyn Fn(&TyContext) -> QueryResult<Vec<String>> + Send> {
@@ -79,7 +78,7 @@ mod test {
             let span = ty.source().map_span(&file_name, from, to)?;
 
             let (field, _) = collect_field(ty.0, span).unwrap();
-            let struct_hir_id = get_struct_hir_id(ty.0, &field);
+            let struct_hir_id = ty.get_struct_hir_id(&field);
             let patterns = collect_struct_named_patterns(ty, struct_hir_id, &ty.get_source(span)).new_bindings;
 
             let mut ret = vec![];

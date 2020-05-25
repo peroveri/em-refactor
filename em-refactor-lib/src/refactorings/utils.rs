@@ -1,6 +1,5 @@
 use em_refactor_lib_types::FileStringReplacement;
 use crate::refactoring_invocation::{QueryResult, RefactoringErrorInternal};
-use rustc_hir::{HirId, StructField};
 use rustc_middle::ty::TyCtxt;
 use rustc_span::{FileName, Span};
 use rustc_span::source_map::SourceMap;
@@ -57,10 +56,6 @@ pub fn get_source(tcx: TyCtxt, span: Span) -> String {
     tcx.sess.source_map().span_to_snippet(span).unwrap()
 }
 
-pub fn get_struct_hir_id(tcx: TyCtxt<'_>, field: &StructField) -> HirId {
-    let struct_def_id = field.hir_id.owner.to_def_id();
-    tcx.hir().as_local_hir_id(struct_def_id).unwrap()
-}
 
 pub fn map_span_to_index(source_map: &SourceMap, span: Span) -> QueryResult<(String, Range)> {
     let filename = get_filename(source_map, span)?;
