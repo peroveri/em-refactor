@@ -4,6 +4,7 @@ use rustc_hir::def::Res;
 use rustc_middle::hir::map::Map;
 use rustc_middle::ty::TyCtxt;
 use rustc_span::Span;
+use crate::refactoring_invocation::TyContext;
 
 ///
 /// Collects all uses of a local variable
@@ -23,14 +24,14 @@ use rustc_span::Span;
 /// ```
 /// then `collect_local_variable_use(x)` will return `(x0, x1)` and `(y0, y1)`
 ///
-pub fn collect_local_variable_use(tcx: TyCtxt, hir_id: HirId) -> Vec<Span> {
+pub fn collect_local_variable_use(tcx: &TyContext, hir_id: HirId) -> Vec<Span> {
     let mut v = LocalVariableUseCollector {
-        tcx,
+        tcx: tcx.0,
         hir_id,
         uses: vec![],
     };
 
-    walk_crate(&mut v, tcx.hir().krate());
+    walk_crate(&mut v, tcx.0.hir().krate());
 
     v.uses
 }
@@ -69,7 +70,7 @@ mod test {
     use super::*;
     use crate::test_utils::run_ty_query;
     use crate::refactorings::visitors::collect_field;
-    use crate::refactoring_invocation::{QueryResult, TyContext};
+    use crate::refactoring_invocation::QueryResult;
     use crate::refactorings::utils::get_struct_hir_id;
     use crate::refactorings::box_named_field::struct_named_pattern_collector::collect_struct_named_patterns;
 
@@ -83,7 +84,7 @@ mod test {
 
             let mut ret = vec![];
             for id in patterns {
-                ret.extend(collect_local_variable_use(ty.0, id));
+                ret.extend(collect_local_variable_use(ty, id));
             }
             Ok(ret.iter().map(|s| ty.get_source(*s)).collect::<Vec<_>>())
         })

@@ -39,7 +39,7 @@ pub fn do_refactoring(tcx: &TyContext, struct_hir_id: HirId, field_ident: &str, 
     }
 
     for new_binding in struct_patterns.new_bindings {
-        for local_use in collect_local_variable_use(tcx.0, new_binding) {
+        for local_use in collect_local_variable_use(tcx, new_binding) {
             let replacement = format!("(*{})", tcx.get_source(local_use));
             changes.push(tcx.map_change(local_use, replacement)?);
         }
