@@ -71,8 +71,8 @@
 		"test-client": "node ./client/out/test/runTest.js",
 		"test-server": "cd server && npm run test",
 		"vscode-package": "vsce package",
-		"vscode-install": "code --install-extension lsp-refactoring-sample-1.0.0.vsix",
-		"vscode-uninstall": "code --uninstall-extension lsp-refactoring-sample-1.0.0.vsix",
+		"vscode-install": "code --install-extension rust-em-refactoring-1.0.0.vsix",
+		"vscode-uninstall": "code --uninstall-extension rust-em-refactoring-1.0.0.vsix",
 		"clean": "rm -rf client/out && rm -rf server/out"
 	},
 	"devDependencies": {
