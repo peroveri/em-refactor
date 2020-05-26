@@ -36,7 +36,7 @@ impl ReportData {
         self.result.push((candidate, RefactorResult::Success()));
     }
     pub fn add_unittest_err(&mut self, candidate: CandidatePosition, test_results: TestResults) {
-        info!("Report::add_successful {}", self.result.len() + 1);
+        info!("Report::add_unit_err {}", self.result.len() + 1);
         self.result.push((candidate, RefactorResult::UnitErr(test_results)));
     }
     pub fn set_candidates(&mut self, candidates: Vec<CandidatePosition>) {

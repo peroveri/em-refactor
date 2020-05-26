@@ -124,6 +124,7 @@ impl CmdRunner {
             .arg("test")
             .arg("--no-fail-fast")
             .arg("--all-targets")
+            .arg("--color=never")
             .current_dir(&self.crate_path)
             .output()?;
     

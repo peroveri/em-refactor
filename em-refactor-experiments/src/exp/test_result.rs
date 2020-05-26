@@ -103,4 +103,49 @@ test result: ok. 5 passed; 3 failed; 1 ignored; 0 measured; 0 filtered out";
 
         Ok(())
     }
+
+    const OUTPUT_FAIL: &str = r#"
+running 1 test
+test test1 ... FAILED
+
+failures:
+
+---- test1 stdout ----
+thread 'test1' panicked at 'assertion failed: `(left == right)`
+  left: `10`,
+ right: `2`', src/main.rs:10:11
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    test1
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out
+"#;
+
+    #[test] 
+    fn test_fail_should_parse() -> std::io::Result<()> {
+        let expected = TestResults {
+            results: vec![TestResult::new(0, 1, 0, 0, 0)],
+            sum: TestResult::new(0, 1, 0, 0, 0)
+        };
+        let actual = TestResults::from(OUTPUT_FAIL)?;
+
+        assert_eq!(actual, expected);
+
+        Ok(())
+    }
+
+    #[test] 
+    fn test_eq() -> std::io::Result<()>{    
+        let t1 = TestResults::from(TEST_OUTPUT)?;
+        let t2 = TestResults::from(OUTPUT_FAIL)?;
+
+        assert_ne!(t1, t2);
+        assert_eq!(t1, t1);
+        assert_eq!(t2, t2);
+
+        Ok(())
+    }
+
 }
