@@ -32,6 +32,12 @@ cargo build --bins --release
   - Open the VS Code extension settings (File->Preferences->Settings) named `EM refactoring`
   - Set the "Refactoring Binary Path" setting to the absolute path to the top level [Cargo.toml](./Cargo.toml) file in this repo ( it will be \<git repo folder> + /Cargo.toml )
 
+# Limitations
+- VS Code must be opened at the root folder of the Rust project
+- The project must compile successfully
+- Unicode characters are not supported
+- The ``?'' operator is not supported
+
 # Refactoring from the terminal
 
 Candidates and refactorings can be run either in the current directory, or by setting the --target-dir="path" option
