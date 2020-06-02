@@ -31,6 +31,12 @@
 					"default": false,
 					"description": "Developer setting. Allows test files to be generated."
 				},
+				"emRefactor.isMicroRefactoringsShown": {
+					"scope": "window",
+					"type": "boolean",
+					"default": false,
+					"description": "Controls whether micro refactorings are shown."
+				},
 				"emRefactor.isUnsafeRefactoringShown": {
 					"scope": "window",
 					"type": "boolean",

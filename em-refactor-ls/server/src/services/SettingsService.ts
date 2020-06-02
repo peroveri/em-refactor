@@ -15,6 +15,7 @@ export class SettingsService {
 
 interface LSPExtensionSettings {
     isGenerateTestFilesEnabled: boolean;
+    isMicroRefactoringsShown: boolean;
     isUnsafeRefactoringShown: boolean;
     refactoringBinaryPath: string;
     cargoToolchain: string;

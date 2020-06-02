@@ -1,16 +1,18 @@
 import { TextDocument, CodeActionParams, CodeActionKind } from "vscode-languageserver";
 import { config, generateJsonCodeActions, listRefactorCodeActions } from ".";
 
-const refactorings = [
-    "box-field",
+const microRefactorings = [
     "close-over-variables",
     "convert-closure-to-function",
     "extract-block",
-    "extract-method",
     "inline-macro",
     "introduce-closure",
     "lift-function-declaration",
     "pull-up-item-declaration"
+];
+const compositeRefactorings = [
+    "box-field",
+    "extract-method",
 ];
 
 // Refactorings should be shown when they are applicable at the current selection
@@ -19,12 +21,17 @@ const refactorings = [
 
 // Maybe use the syn library and get the tokens of a .rs file when it is opened / changed?
 
-const listGenerateJsonCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean) =>
-    isGenerateTestFilesEnabled ? generateJsonCodeActions(refactorings, doc, params) : [];
+const listRefactorings = (isMicroRefactoringsShown: boolean) => {
+    let refactorings = isMicroRefactoringsShown ? compositeRefactorings.concat(microRefactorings) : compositeRefactorings;
+    return refactorings.sort();
+};
 
-export const listCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean, isUnsafeRefactoringShown: boolean) =>
-    listGenerateJsonCodeActions(doc, params, isGenerateTestFilesEnabled)
-        .concat(listRefactorCodeActions(doc, params.range, refactorings, isUnsafeRefactoringShown))
+const listGenerateJsonCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean, isMicroRefactoringsShown: boolean) =>
+    isGenerateTestFilesEnabled ? generateJsonCodeActions(listRefactorings(isMicroRefactoringsShown), doc, params) : [];
+
+export const listCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean, isUnsafeRefactoringShown: boolean, isMicroRefactoringsShown: boolean) =>
+    listGenerateJsonCodeActions(doc, params, isGenerateTestFilesEnabled, isMicroRefactoringsShown)
+        .concat(listRefactorCodeActions(doc, params.range, listRefactorings(isMicroRefactoringsShown), isUnsafeRefactoringShown))
         .sort((a, b) => a.title.localeCompare(b.title));
 
 export const listAllCommands = () => [
