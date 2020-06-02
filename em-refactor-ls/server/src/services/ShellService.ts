@@ -24,7 +24,7 @@ export class ShellService {
 
     async callRefactoring(relativeFilePath: string, arg: RefactorArgs) {
         let settings = await this.settings.getSettings();
-        let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.unsafe, settings.refactoringBinaryPath, settings.cargoToolchain);
+        let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.unsafe, settings.refactoringCargoTomlPath, settings.cargoToolchain);
         if (cmd instanceof Error) {
             return new Error(cmd.message);
         }
@@ -67,7 +67,7 @@ export class ShellService {
             shell.config.execPath = shell.which('node').toString();
         }
         let settings = await this.settings.getSettings();
-        let cmd = convertToCandidateCmd(refactoring, settings.refactoringBinaryPath, settings.cargoToolchain);
+        let cmd = convertToCandidateCmd(refactoring, settings.refactoringCargoTomlPath, settings.cargoToolchain);
         if (cmd instanceof Error) {
             return new Error(cmd.message);
         }
@@ -82,21 +82,21 @@ export class ShellService {
     }
 }
 
-const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, unsafe: boolean, binaryPath: string, toolchain: string): string | Error => {
-    if (!isValidBinaryPath(binaryPath)) {
-        return new Error(`'${binaryPath}' is not a valid binary file`);
+const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, unsafe: boolean, maifestPath: string, toolchain: string): string | Error => {
+    if (!isValidBinaryPath(maifestPath)) {
+        return new Error(`'${maifestPath}' is not a valid binary file`);
     }
     const refactorArgs = `--target-dir=./target/refactorings refactor ${refactoring} ${relativeFilePath} ${selection}` + (unsafe ? ' --unsafe' : '');
 
-    return `cargo ${toolchain} run --bin cargo-em-refactor --manifest-path=${binaryPath} -- ${refactorArgs}`;
+    return `cargo ${toolchain} run --bin cargo-em-refactor --manifest-path=${maifestPath} -- ${refactorArgs}`;
 }
-const convertToCandidateCmd = (refactoring: string, binaryPath: string, toolchain: string): string | Error => {
-    if (!isValidBinaryPath(binaryPath)) {
-        return new Error(`'${binaryPath}' is not a valid binary file`);
+const convertToCandidateCmd = (refactoring: string, maifestPath: string, toolchain: string): string | Error => {
+    if (!isValidBinaryPath(maifestPath)) {
+        return new Error(`'${maifestPath}' is not a valid binary file`);
     }
     const refactorArgs = `--target-dir=./target/refactorings candidates ${refactoring}`;
 
-    return `cargo ${toolchain} run --bin cargo-em-refactor --manifest-path=${binaryPath} -- ${refactorArgs}`;
+    return `cargo ${toolchain} run --bin cargo-em-refactor --manifest-path=${maifestPath} -- ${refactorArgs}`;
 }
 
 const isValidBinaryPath = (binaryPath: string): boolean =>

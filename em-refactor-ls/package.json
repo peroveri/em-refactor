@@ -43,11 +43,11 @@
 					"default": false,
 					"description": "Developer setting. Allows unsafe invocation of refactorings."
 				},
-				"emRefactor.refactoringBinaryPath": {
+				"emRefactor.refactoringCargoTomlPath": {
 					"scope": "window",
 					"type": "string",
 					"default": "",
-					"description": "The path to the refactoring binary file."
+					"description": "The path to the refactoring Cargo.toml file."
 				},
 				"emRefactor.cargoToolchain": {
 					"scope": "window",

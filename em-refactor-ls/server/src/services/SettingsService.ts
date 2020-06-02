@@ -17,6 +17,6 @@ interface LSPExtensionSettings {
     isGenerateTestFilesEnabled: boolean;
     isMicroRefactoringsShown: boolean;
     isUnsafeRefactoringShown: boolean;
-    refactoringBinaryPath: string;
+    refactoringCargoTomlPath: string;
     cargoToolchain: string;
 }
