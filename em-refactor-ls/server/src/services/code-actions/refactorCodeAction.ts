@@ -6,8 +6,8 @@ import {
     TextDocument,
 } from 'vscode-languageserver';
 
-import { config, listRefactorings } from '../mappings';
-import { ByteRange, LSPExtensionSettings, RefactorArgs } from '../../models';
+import { config } from '../mappings';
+import { ByteRange, listRefactorings, LSPExtensionSettings, RefactorArgs } from '../../models';
 
 const mapToRefactorArgs = (doc: TextDocument, range: ByteRange, refactoring: string, unsafe: boolean): RefactorArgs => ({
     file: doc.uri,

@@ -1,8 +1,7 @@
 import { singleton, inject } from "tsyringe";
 import { TextDocuments, CodeActionParams, Command, CodeAction } from 'vscode-languageserver';
 import { SettingsService } from "./SettingsService";
-import { listCodeActions } from "./mappings";
-import { listRefactorCodeActions } from "./code-actions";
+import { listCodeActions, listRefactorCodeActions } from "./code-actions";
 
 @singleton()
 export class CodeActionService {
