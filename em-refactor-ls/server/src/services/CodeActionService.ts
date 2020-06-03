@@ -1,6 +1,6 @@
 import { singleton, inject } from "tsyringe";
 import { TextDocuments, CodeActionParams, Command, CodeAction } from 'vscode-languageserver';
-import { SettingsService } from "./";
+import { SettingsService } from "./SettingsService";
 import { listCodeActions } from "./mappings";
 
 @singleton()

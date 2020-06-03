@@ -1,7 +1,9 @@
 import { singleton, inject } from "tsyringe";
 import { ExecuteCommandParams } from 'vscode-languageserver';
-import { RefactorOutputs, mapRefactorResultToWorkspaceEdits, RefactorArgs } from "../mappings";
-import { NotificationService, ShellService, WorkspaceService } from "../";
+import { RefactorOutputs, mapRefactorResultToWorkspaceEdits, RefactorArgs, config } from "../mappings";
+import { NotificationService } from "../NotificationService";
+import { ShellService } from "../ShellService";
+import { WorkspaceService } from "../WorkspaceService";
 
 @singleton()
 export class RefactorCommand {
@@ -13,7 +15,7 @@ export class RefactorCommand {
     }
 
     canHandle = (params: ExecuteCommandParams) => 
-        mapToRefactorArgs(params) !== undefined;
+        params.command === config.refactorCommand;
 
     excuteCommand = async (params: ExecuteCommandParams) => {
         

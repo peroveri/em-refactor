@@ -12,16 +12,19 @@ export class ExecuteCommandService {
     ) {
     }
 
+    /**
+     * Handles the workspace/executeCommand request
+     */
     handleExecuteCommand = async (params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void | any> => {
         try {
-            if (await this.generateTestFileCommand.canHandle(params)) {
+            if (this.refactorCommand.canHandle(params)) {
+                return this.refactorCommand.excuteCommand(params);
+            } else if (await this.generateTestFileCommand.canHandle(params)) {
                 return this.generateTestFileCommand.excuteCommand(params);
             } else if (this.runCargoCheckCommand.canHandle(params)) {
                 return this.runCargoCheckCommand.excuteCommand();
             } else if (await this.queryCandidatesCommand.canHandle(params)) {
                 return this.queryCandidatesCommand.excuteCommand(params);
-            } else if(this.refactorCommand.canHandle(params)) {
-                return this.refactorCommand.excuteCommand(params);
             }
         } catch (e) {
             return Promise.reject(`Unhandled expection in handleExecuteCommand:\n${JSON.stringify(e)}`);

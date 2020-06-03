@@ -1,7 +1,9 @@
 import { singleton, inject } from "tsyringe";
 import { ExecuteCommandParams, CreateFile, TextDocumentEdit, TextEdit, Position, ApplyWorkspaceEditParams } from 'vscode-languageserver';
 import { config } from "../mappings";
-import { NotificationService, ShellService, WorkspaceService } from "../";
+import { NotificationService } from "../NotificationService";
+import { ShellService } from "../ShellService";
+import { WorkspaceService } from "../WorkspaceService";
 
 @singleton()
 export class QueryCandidatesCommand {

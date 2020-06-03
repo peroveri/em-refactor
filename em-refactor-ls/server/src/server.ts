@@ -1,7 +1,7 @@
 import "reflect-metadata";
 
-import { bootstrapAndReturnConnection } from './services/connection';
 import { container } from "tsyringe";
+import { bootstrapAndReturnConnection } from './services/connection';
 import { ExecuteCommandService } from "./services/ExecuteCommandService";
 import { NotificationService } from "./services/NotificationService";
 
