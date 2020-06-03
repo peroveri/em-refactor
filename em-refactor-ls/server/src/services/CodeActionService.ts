@@ -16,6 +16,6 @@ export class CodeActionService {
         if (doc === undefined) {
             return Promise.resolve([]);
         }
-        return listCodeActions(doc, params, settings.isGenerateTestFilesEnabled, settings.isUnsafeRefactoringShown, settings.isMicroRefactoringsShown);
+        return listCodeActions(doc, params, settings);
     };
 }

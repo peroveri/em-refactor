@@ -1,5 +1,6 @@
 import { TextDocument, CodeActionParams } from "vscode-languageserver";
 import { generateJsonCodeActions, listRefactorCodeActions } from ".";
+import { LSPExtensionSettings } from '../SettingsService';
 
 const microRefactorings = [
     "close-over-variables",
@@ -26,10 +27,10 @@ const listRefactorings = (isMicroRefactoringsShown: boolean) => {
     return refactorings.sort();
 };
 
-const listGenerateJsonCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean, isMicroRefactoringsShown: boolean) =>
-    isGenerateTestFilesEnabled ? generateJsonCodeActions(listRefactorings(isMicroRefactoringsShown), doc, params) : [];
+const listGenerateJsonCodeActions = (doc: TextDocument, params: CodeActionParams, settings: LSPExtensionSettings) =>
+    settings.isGenerateTestFilesEnabled ? generateJsonCodeActions(listRefactorings(settings.isMicroRefactoringsShown), doc, params) : [];
 
-export const listCodeActions = (doc: TextDocument, params: CodeActionParams, isGenerateTestFilesEnabled: boolean, isUnsafeRefactoringShown: boolean, isMicroRefactoringsShown: boolean) =>
-    listGenerateJsonCodeActions(doc, params, isGenerateTestFilesEnabled, isMicroRefactoringsShown)
-        .concat(listRefactorCodeActions(doc, params.range, listRefactorings(isMicroRefactoringsShown), isUnsafeRefactoringShown))
+export const listCodeActions = (doc: TextDocument, params: CodeActionParams, settings: LSPExtensionSettings) =>
+    listGenerateJsonCodeActions(doc, params, settings)
+        .concat(listRefactorCodeActions(doc, params.range, listRefactorings(settings.isMicroRefactoringsShown), settings.isUnsafeRefactoringShown))
         .sort((a, b) => a.title.localeCompare(b.title));

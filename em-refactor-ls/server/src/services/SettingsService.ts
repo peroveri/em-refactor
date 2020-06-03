@@ -13,7 +13,7 @@ export class SettingsService {
     }
 }
 
-interface LSPExtensionSettings {
+export interface LSPExtensionSettings {
     isGenerateTestFilesEnabled: boolean;
     isMicroRefactoringsShown: boolean;
     isUnsafeRefactoringShown: boolean;
