@@ -1,6 +1,6 @@
 import { singleton, inject } from "tsyringe";
 import { ExecuteCommandParams } from 'vscode-languageserver';
-import { config } from "../mappings";
+import { config } from "../../models";
 import { ShellService } from "../ShellService";
 
 @singleton()

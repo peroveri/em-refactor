@@ -9,7 +9,7 @@ import {
     CodeActionKind,
 } from 'vscode-languageserver';
 import { CodeActionService } from "./CodeActionService";
-import { config } from "./mappings";
+import { config } from "../models";
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
