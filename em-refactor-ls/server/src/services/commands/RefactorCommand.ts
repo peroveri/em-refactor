@@ -1,6 +1,7 @@
 import { singleton, inject } from "tsyringe";
 import { ExecuteCommandParams } from 'vscode-languageserver';
-import { RefactorOutputs, mapRefactorResultToWorkspaceEdits, RefactorArgs, config } from "../mappings";
+import { RefactorOutputs, mapRefactorResultToWorkspaceEdits, config } from "../mappings";
+import { RefactorArgs } from '../../models';
 import { NotificationService } from "../NotificationService";
 import { ShellService } from "../ShellService";
 import { WorkspaceService } from "../WorkspaceService";

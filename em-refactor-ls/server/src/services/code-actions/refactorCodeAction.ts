@@ -6,15 +6,9 @@ import {
     TextDocument,
 } from 'vscode-languageserver';
 
-import { ByteRange, config } from '.';
-
-export interface RefactorArgs {
-    file: string;
-    version: number;
-    refactoring: string;
-    selection: string;
-    unsafe: boolean;
-}
+import { ByteRange, config, listRefactorings } from '../mappings';
+import { RefactorArgs } from '../../models';
+import { LSPExtensionSettings } from '../SettingsService';
 
 const mapToRefactorArgs = (doc: TextDocument, range: ByteRange, refactoring: string, unsafe: boolean): RefactorArgs => ({
     file: doc.uri,
@@ -35,13 +29,14 @@ const mapToCodeAction = (range: ByteRange, refactoring: string, doc: TextDocumen
 });
 
 /**
- * TODO: Query the refactoring tool for possible refactorings at a given range.
+ * Lists available refactorings as commands
  */
-export function listRefactorCodeActions(doc: TextDocument, range: Range, refactorings: string[], isUnsafeRefactoringShown: boolean): (Command | CodeAction)[] {
+export function listRefactorCodeActions(doc: TextDocument, range: Range, settings: LSPExtensionSettings): (Command | CodeAction)[] {
     const byteRange = ByteRange.fromRange(range, doc);
     if (!byteRange.isRange() || byteRange.isEmpty()) {
         return [];
     }
+    const refactorings = listRefactorings(settings.isMicroRefactoringsShown);
     return refactorings.map(r => mapToCodeAction(byteRange, r, doc, false))
-        .concat(isUnsafeRefactoringShown ? refactorings.map(r => mapToCodeAction(byteRange, r, doc, true)) : [])
+        .concat(settings.isUnsafeRefactoringShown ? refactorings.map(r => mapToCodeAction(byteRange, r, doc, true)) : [])
 }

@@ -1,5 +1,5 @@
 import { TextDocument, CodeActionParams } from "vscode-languageserver";
-import { generateJsonCodeActions, listRefactorCodeActions } from ".";
+import { generateJsonCodeActions } from ".";
 import { LSPExtensionSettings } from '../SettingsService';
 
 const microRefactorings = [
@@ -22,7 +22,7 @@ const compositeRefactorings = [
 
 // Maybe use the syn library and get the tokens of a .rs file when it is opened / changed?
 
-const listRefactorings = (isMicroRefactoringsShown: boolean) => {
+export const listRefactorings = (isMicroRefactoringsShown: boolean) => {
     let refactorings = isMicroRefactoringsShown ? compositeRefactorings.concat(microRefactorings) : compositeRefactorings;
     return refactorings.sort();
 };
@@ -31,6 +31,4 @@ const listGenerateJsonCodeActions = (doc: TextDocument, params: CodeActionParams
     settings.isGenerateTestFilesEnabled ? generateJsonCodeActions(listRefactorings(settings.isMicroRefactoringsShown), doc, params) : [];
 
 export const listCodeActions = (doc: TextDocument, params: CodeActionParams, settings: LSPExtensionSettings) =>
-    listGenerateJsonCodeActions(doc, params, settings)
-        .concat(listRefactorCodeActions(doc, params.range, listRefactorings(settings.isMicroRefactoringsShown), settings.isUnsafeRefactoringShown))
-        .sort((a, b) => a.title.localeCompare(b.title));
+    listGenerateJsonCodeActions(doc, params, settings);
