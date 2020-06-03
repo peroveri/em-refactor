@@ -1,5 +1,5 @@
-import { TextDocument, CodeActionParams, CodeActionKind } from "vscode-languageserver";
-import { config, generateJsonCodeActions, listRefactorCodeActions } from ".";
+import { TextDocument, CodeActionParams } from "vscode-languageserver";
+import { generateJsonCodeActions, listRefactorCodeActions } from ".";
 
 const microRefactorings = [
     "close-over-variables",
@@ -33,14 +33,3 @@ export const listCodeActions = (doc: TextDocument, params: CodeActionParams, isG
     listGenerateJsonCodeActions(doc, params, isGenerateTestFilesEnabled, isMicroRefactoringsShown)
         .concat(listRefactorCodeActions(doc, params.range, listRefactorings(isMicroRefactoringsShown), isUnsafeRefactoringShown))
         .sort((a, b) => a.title.localeCompare(b.title));
-
-export const listAllCommands = () => [
-        config.refactorCommand,
-        config.generateTestJsonCommand,
-        config.candidatesCommand,
-        config.cargoCheckCommand,
-    ];
-
-export const listAllCodeActionKinds = () => [
-        CodeActionKind.Refactor
-    ];

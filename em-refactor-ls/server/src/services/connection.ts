@@ -6,9 +6,10 @@ import {
     InitializeParams,
     TextDocuments,
     DidChangeConfigurationNotification,
+    CodeActionKind,
 } from 'vscode-languageserver';
 import { CodeActionService } from "./CodeActionService";
-import { listAllCommands, listAllCodeActionKinds } from "./mappings";
+import { config } from "./mappings";
 
 let hasConfigurationCapability: boolean = false;
 let hasWorkspaceFolderCapability: boolean = false;
@@ -64,10 +65,15 @@ function initConnection(): [Connection, TextDocuments] {
             capabilities: {
                 textDocumentSync: documents.syncKind,
                 codeActionProvider: !!hasCodeActionLiteralSupport ? {
-                    codeActionKinds: listAllCodeActionKinds()
+                    codeActionKinds: [CodeActionKind.Refactor]
                 } : undefined,
                 executeCommandProvider: {
-                    commands: listAllCommands()
+                    commands: [
+                        config.refactorCommand,
+                        config.generateTestJsonCommand,
+                        config.candidatesCommand,
+                        config.cargoCheckCommand
+                    ]
                 },
             }
         };
