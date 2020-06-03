@@ -1,58 +1,37 @@
 import { singleton, inject } from "tsyringe";
-import { ExecuteCommandParams, ApplyWorkspaceEditParams, TextEdit, CreateFile, TextDocumentEdit, Position } from 'vscode-languageserver';
-import { canExecuteGenerateTestCommand, config, handleExecuteGenerateTestCommand, mapRefactorResultToWorkspaceEdits, RefactorArgs, RefactorOutputs } from "./mappings";
-import { SettingsService } from "./SettingsService";
+import { ExecuteCommandParams, ApplyWorkspaceEditParams } from 'vscode-languageserver';
+import { mapRefactorResultToWorkspaceEdits, RefactorArgs, RefactorOutputs } from "./mappings";
 import { NotificationService } from "./NotificationService";
 import { ShellService } from "./ShellService";
 import { WorkspaceService } from "./WorkspaceService";
+import { GenerateTestFileCommand, QueryCandidatesCommand, RunCargoCheckCommand } from './commands';
 
 @singleton()
 export class ExecuteCommandService {
     constructor(
-        @inject(SettingsService) private settings: SettingsService,
         @inject(NotificationService) private notificationService: NotificationService,
         @inject(ShellService) private shell: ShellService,
         @inject(WorkspaceService) private workspace: WorkspaceService,
+        @inject(GenerateTestFileCommand) private generateTestFileCommand: GenerateTestFileCommand,
+        @inject(QueryCandidatesCommand) private queryCandidatesCommand: QueryCandidatesCommand,
+        @inject(RunCargoCheckCommand) private runCargoCheckCommand: RunCargoCheckCommand,
     ) {
     }
 
     handleExecuteCommand = async (params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void | any> => {
         try {
-            let settings = await this.settings.getSettings();
-            if (settings.isGenerateTestFilesEnabled && canExecuteGenerateTestCommand(params)) {
-                const edits = handleExecuteGenerateTestCommand(params);
-                await this.workspace.applyEdits(edits);
-                return Promise.resolve();
-            } else if(await this.handleCustom(params)) {
-
-                return Promise.resolve();
+            if (await this.generateTestFileCommand.canHandle(params)) {
+                return this.generateTestFileCommand.excuteCommand(params);
+            } else if (this.runCargoCheckCommand.canHandle(params)) {
+                return this.runCargoCheckCommand.excuteCommand();
+            } else if (await this.queryCandidatesCommand.canHandle(params)) {
+                return this.queryCandidatesCommand.excuteCommand(params);
             }
             return this.handleExecuteRefactoringCommand(params);
         } catch (e) {
             return Promise.reject(`Unhandled expection in handleExecuteCommand:\n${JSON.stringify(e)}`);
         }
     };
-
-    handleCustom = async (params: ExecuteCommandParams) => {
-        if(params.command === config.cargoCheckCommand) {
-            await this.shell.runCargoCheck();
-            return true;
-        } else if (params.command === config.candidatesCommand && params.arguments && params.arguments[0]) {
-            let res = await this.shell.queryCandidates(params.arguments[0]);
-            if(res instanceof Error) {
-                this.notificationService.sendErrorNotification(res.message);
-            } else {
-                let workspaceInfo = await this.workspace.getWorkspaceUri();
-                let newFileUri = workspaceInfo?.join(`${params.arguments[0]}-candidates.json`);
-                if(newFileUri !== undefined) {
-                    let edits = newFile(newFileUri, res);
-                    await this.workspace.applyEdits(edits);
-                }
-            }
-            return true;
-        }
-        return false;
-    }
 
     async handleExecuteRefactoringCommand(params: ExecuteCommandParams): Promise<ApplyWorkspaceEditParams | void> {
 
@@ -78,29 +57,29 @@ export class ExecuteCommandService {
             let outputs;
             try {
                 outputs = JSON.parse(result.stdout) as RefactorOutputs;
-            } catch(e) {
+            } catch (e) {
                 console.log(e);
                 throw e;
             }
 
-            if(outputs.errors.length > 0) {
+            if (outputs.errors.length > 0) {
                 this.notificationService.sendErrorNotification(outputs.errors[0].message);
                 return Promise.reject(outputs.errors[0].message);
             }
-            
+
             let edits = mapRefactorResultToWorkspaceEdits(arg, outputs, workspaceInfo.uri);
 
-            for(const edit of edits) {
+            for (const edit of edits) {
 
                 this.notificationService.logError(JSON.stringify(edit));
                 let editResponse = await this.workspace.applyEdit(edit);
-                
-                if(editResponse.applied) {
+
+                if (editResponse.applied) {
                     this.notificationService.sendInfoNotification(`Applied: ${arg.refactoring}`);
                 } else {
                     this.notificationService.sendErrorNotification(`Failed to apply: ${arg.refactoring}`);
                 }
-    
+
             }
 
 
@@ -113,28 +92,6 @@ export class ExecuteCommandService {
     }
 
 }
-
-const newFile = (name: string, content: string) => 
-    [{
-        edit: {
-            documentChanges: [
-                CreateFile.create(name, { overwrite: true }),
-            ],
-            label: config.candidatesCommand
-        }
-    }, {
-        edit: {
-            documentChanges: [
-                TextDocumentEdit.create({
-                    uri: name,
-                    version: null
-                }, [
-                    TextEdit.insert(Position.create(0, 0), content)
-                ])
-            ],
-            label: config.candidatesCommand
-        },
-    }];
 
 const mapToRefactorArgs = (params: ExecuteCommandParams): RefactorArgs | undefined => {
     if (params && params.arguments && params.arguments[0]) {
