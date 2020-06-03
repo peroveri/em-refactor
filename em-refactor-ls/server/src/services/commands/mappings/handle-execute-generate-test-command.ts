@@ -1,5 +1,5 @@
 import { ExecuteCommandParams, ApplyWorkspaceEditParams, CodeActionKind, Position, CreateFile, TextEdit, TextDocumentEdit } from 'vscode-languageserver';
-import { GenerateTestFileArgs } from '../../models';
+import { GenerateTestFileArgs } from '../../../models';
 
 const getJsonContent = (args: GenerateTestFileArgs): string =>
     JSON.stringify({

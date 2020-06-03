@@ -1,7 +1,7 @@
 import { singleton, inject } from "tsyringe";
 import { ExecuteCommandParams } from 'vscode-languageserver';
-import { RefactorOutputs, mapRefactorResultToWorkspaceEdits } from "../mappings";
-import { config, RefactorArgs } from '../../models';
+import { mapRefactorResultToWorkspaceEdits } from "./mappings";
+import { config, RefactorArgs, RefactorOutputs } from '../../models';
 import { NotificationService } from "../NotificationService";
 import { ShellService } from "../ShellService";
 import { WorkspaceService } from "../WorkspaceService";
@@ -15,11 +15,11 @@ export class RefactorCommand {
     ) {
     }
 
-    canHandle = (params: ExecuteCommandParams) => 
+    canHandle = (params: ExecuteCommandParams) =>
         params.command === config.refactorCommand;
 
     excuteCommand = async (params: ExecuteCommandParams) => {
-        
+
         let arg = mapToRefactorArgs(params);
         if (arg === undefined) {
             return Promise.reject(`invalid args: ${JSON.stringify(params.arguments)}`);

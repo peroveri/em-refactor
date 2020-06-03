@@ -1,6 +1,6 @@
 import { singleton, inject } from "tsyringe";
 import { Connection, ApplyWorkspaceEditParams } from "vscode-languageserver";
-import { WorkspaceFolderInfo } from "./mappings";
+import { WorkspaceFolderInfo } from "../models";
 
 @singleton()
 export class WorkspaceService {
