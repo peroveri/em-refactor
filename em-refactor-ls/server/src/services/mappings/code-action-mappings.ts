@@ -1,6 +1,6 @@
 import { TextDocument, CodeActionParams } from "vscode-languageserver";
 import { generateJsonCodeActions } from ".";
-import { LSPExtensionSettings } from '../SettingsService';
+import { LSPExtensionSettings } from '../../models';
 
 const microRefactorings = [
     "close-over-variables",

@@ -1,5 +1,6 @@
 import { singleton, inject } from "tsyringe";
 import { Connection } from 'vscode-languageserver';
+import { LSPExtensionSettings } from "../models";
 
 @singleton()
 export class SettingsService {
@@ -11,12 +12,4 @@ export class SettingsService {
             section: 'emRefactor'
         }).then(e => <LSPExtensionSettings>e);
     }
-}
-
-export interface LSPExtensionSettings {
-    isGenerateTestFilesEnabled: boolean;
-    isMicroRefactoringsShown: boolean;
-    isUnsafeRefactoringShown: boolean;
-    refactoringCargoTomlPath: string;
-    cargoToolchain: string;
 }
