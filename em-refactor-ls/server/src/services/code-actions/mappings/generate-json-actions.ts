@@ -1,5 +1,5 @@
 import { CodeAction, CodeActionParams, Command, TextDocument, TextDocumentIdentifier, CodeActionKind } from 'vscode-languageserver';
-import { ByteRange, GenerateTestFileArgs } from "../../../models";
+import { ByteRange, GenerateTestFileArgs, config } from "../../../models";
 
 const getDocName = (doc: TextDocumentIdentifier): string =>
     doc.uri.substring(doc.uri.lastIndexOf("/") + 1, doc.uri.lastIndexOf("."));
@@ -8,7 +8,7 @@ export const mapToCodeAction = (params: CodeActionParams, refactoring: string, s
     title: `Generate ${getDocName(params.textDocument)}.json for ${refactoring} ${should_fail ? ' (failing)' : ''}`,
     command: {
         title: 'generate',
-        command: 'emRefactor.generate_test_file',
+        command: config.generateTestJsonCommand,
         arguments: [{
             file_uri: params.textDocument.uri,
             refactoring,
