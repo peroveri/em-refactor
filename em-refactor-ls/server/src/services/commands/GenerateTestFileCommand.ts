@@ -1,6 +1,6 @@
 import { singleton, inject } from "tsyringe";
 import { ExecuteCommandParams } from 'vscode-languageserver';
-import { canExecuteGenerateTestCommand, handleExecuteGenerateTestCommand } from "../mappings";
+import { handleExecuteGenerateTestCommand, config } from "../mappings";
 import { SettingsService, WorkspaceService } from "../";
 
 @singleton()
@@ -14,7 +14,8 @@ export class GenerateTestFileCommand {
     canHandle = async (params: ExecuteCommandParams) => {
         let settings = await this.settings.getSettings();
 
-        return settings.isGenerateTestFilesEnabled && canExecuteGenerateTestCommand(params);
+        return params.command === config.generateTestJsonCommand &&
+               settings.isGenerateTestFilesEnabled;
     }
 
     excuteCommand = (params: ExecuteCommandParams) => {

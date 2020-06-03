@@ -29,8 +29,6 @@ const getTestName = (s: string): string =>
     s.substring(s.lastIndexOf("/") + 1, s.lastIndexOf(".rs"));
 
 
-export const canExecuteGenerateTestCommand = (params: ExecuteCommandParams) =>
-    `emRefactor.generate_test_file` === params.command;
 
 export const handleExecuteGenerateTestCommand = (params: ExecuteCommandParams): ApplyWorkspaceEditParams[] => {
     let args = params.arguments as GenerateTestFileArgs[];
