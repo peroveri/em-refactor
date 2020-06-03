@@ -2,7 +2,7 @@ import { singleton, inject } from "tsyringe";
 import * as shell from "shelljs";
 import { NotificationService } from "./NotificationService";
 import { SettingsService } from "./SettingsService";
-import { RefactorArgs } from "../models";
+import { RefactorArgs, LSPExtensionSettings } from "../models";
 
 @singleton()
 export class ShellService {
@@ -24,7 +24,7 @@ export class ShellService {
 
     async callRefactoring(relativeFilePath: string, arg: RefactorArgs) {
         let settings = await this.settings.getSettings();
-        let cmd = convertToCmd(relativeFilePath, arg.refactoring, arg.selection, arg.unsafe, settings.refactoringCargoTomlPath, settings.cargoToolchain);
+        let cmd = convertToCmd(relativeFilePath, arg, settings);
         if (cmd instanceof Error) {
             return new Error(cmd.message);
         }
@@ -67,7 +67,7 @@ export class ShellService {
             shell.config.execPath = shell.which('node').toString();
         }
         let settings = await this.settings.getSettings();
-        let cmd = convertToCandidateCmd(refactoring, settings.refactoringCargoTomlPath, settings.cargoToolchain);
+        let cmd = convertToCandidateCmd(refactoring, settings);
         if (cmd instanceof Error) {
             return new Error(cmd.message);
         }
@@ -82,21 +82,21 @@ export class ShellService {
     }
 }
 
-const convertToCmd = (relativeFilePath: string, refactoring: string, selection: string, unsafe: boolean, maifestPath: string, toolchain: string): string | Error => {
-    if (!isValidBinaryPath(maifestPath)) {
-        return new Error(`'${maifestPath}' is not a valid binary file`);
+const convertToCmd = (relativeFilePath: string, arg: RefactorArgs, settings: LSPExtensionSettings): string | Error => {
+    if (!isValidBinaryPath(settings.refactoringCargoTomlPath)) {
+        return new Error(`'${settings.refactoringCargoTomlPath}' is not a path`);
     }
-    const refactorArgs = `--target-dir=./target/refactorings refactor ${refactoring} ${relativeFilePath} ${selection}` + (unsafe ? ' --unsafe' : '');
+    const refactorArgs = `--target-dir=./target/refactorings refactor ${arg.refactoring} ${relativeFilePath} ${arg.selection}` + (arg.unsafe ? ' --unsafe' : '');
 
-    return `cargo ${toolchain} run --bin cargo-em-refactor --manifest-path=${maifestPath} -- ${refactorArgs}`;
+    return `cargo ${settings.cargoToolchain} run --bin cargo-em-refactor --manifest-path=${settings.refactoringCargoTomlPath} -- ${refactorArgs}`;
 }
-const convertToCandidateCmd = (refactoring: string, maifestPath: string, toolchain: string): string | Error => {
-    if (!isValidBinaryPath(maifestPath)) {
-        return new Error(`'${maifestPath}' is not a valid binary file`);
+const convertToCandidateCmd = (refactoring: string, settings: LSPExtensionSettings): string | Error => {
+    if (!isValidBinaryPath(settings.refactoringCargoTomlPath)) {
+        return new Error(`'${settings.refactoringCargoTomlPath}' is not a path`);
     }
     const refactorArgs = `--target-dir=./target/refactorings candidates ${refactoring}`;
 
-    return `cargo ${toolchain} run --bin cargo-em-refactor --manifest-path=${maifestPath} -- ${refactorArgs}`;
+    return `cargo ${settings.cargoToolchain} run --bin cargo-em-refactor --manifest-path=${settings.refactoringCargoTomlPath} -- ${refactorArgs}`;
 }
 
 const isValidBinaryPath = (binaryPath: string): boolean =>
