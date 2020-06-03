@@ -1,5 +1,5 @@
 import * as assert from 'assert';
-import { mapToCodeAction } from '.';
+import { mapToCodeAction } from './generate-json-actions';
 import { Position, CodeAction, CodeActionKind, CodeActionParams } from 'vscode-languageserver';
 
 describe("generate-json-actions", () => {
