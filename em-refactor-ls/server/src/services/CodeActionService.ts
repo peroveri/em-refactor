@@ -1,7 +1,7 @@
 import { singleton, inject } from "tsyringe";
 import { TextDocuments, CodeActionParams, Command, CodeAction } from 'vscode-languageserver';
 import { SettingsService } from "./SettingsService";
-import { listCodeActions, listRefactorCodeActions } from "./code-actions";
+import { listGenerateTestFileCodeActions, listRefactorCodeActions } from "./code-actions";
 
 @singleton()
 export class CodeActionService {
@@ -19,7 +19,7 @@ export class CodeActionService {
         if (doc === undefined) {
             return Promise.resolve([]);
         }
-        return listCodeActions(doc, params, settings)
+        return listGenerateTestFileCodeActions(doc, params, settings)
             .concat(listRefactorCodeActions(doc, params.range, settings))
             .sort((a, b) => a.title.localeCompare(b.title));;
     };
