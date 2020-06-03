@@ -1,7 +1,7 @@
 import { singleton, inject } from "tsyringe";
 import { ExecuteCommandParams } from 'vscode-languageserver';
 import { config } from "../mappings";
-import { ShellService } from "../ShellService";
+import { ShellService } from "../";
 
 @singleton()
 export class RunCargoCheckCommand {

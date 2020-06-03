@@ -1,9 +1,7 @@
 import { singleton, inject } from "tsyringe";
-import { ExecuteCommandParams, CreateFile, TextDocumentEdit, TextEdit, Position } from 'vscode-languageserver';
+import { ExecuteCommandParams, CreateFile, TextDocumentEdit, TextEdit, Position, ApplyWorkspaceEditParams } from 'vscode-languageserver';
 import { config } from "../mappings";
-import { ShellService } from "../ShellService";
-import { NotificationService } from "../NotificationService";
-import { WorkspaceService } from "../WorkspaceService";
+import { NotificationService, ShellService, WorkspaceService } from "../";
 
 @singleton()
 export class QueryCandidatesCommand {
@@ -35,14 +33,14 @@ export class QueryCandidatesCommand {
         }
     }
 }
-const newFile = (name: string, content: string) =>
+const newFile = (name: string, content: string): ApplyWorkspaceEditParams[] =>
     [{
         edit: {
             documentChanges: [
                 CreateFile.create(name, { overwrite: true }),
             ],
-            label: config.candidatesCommand
-        }
+        },
+        label: config.candidatesCommand
     }, {
         edit: {
             documentChanges: [
@@ -53,6 +51,6 @@ const newFile = (name: string, content: string) =>
                     TextEdit.insert(Position.create(0, 0), content)
                 ])
             ],
-            label: config.candidatesCommand
         },
+        label: config.candidatesCommand
     }];

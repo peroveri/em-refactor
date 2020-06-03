@@ -1,8 +1,7 @@
 import { singleton, inject } from "tsyringe";
 import { ExecuteCommandParams } from 'vscode-languageserver';
 import { canExecuteGenerateTestCommand, handleExecuteGenerateTestCommand } from "../mappings";
-import { SettingsService } from "../SettingsService";
-import { WorkspaceService } from "../WorkspaceService";
+import { SettingsService, WorkspaceService } from "../";
 
 @singleton()
 export class GenerateTestFileCommand {
