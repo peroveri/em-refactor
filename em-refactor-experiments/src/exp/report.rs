@@ -1,6 +1,6 @@
 use em_refactor_lib_types::{CandidatePosition, RefactoringError, RefactorErrorType};
 use serde::Serialize;
-use super::{TestResult, TestResults};
+use super::{Metrics, TestResult, TestResults};
 use log::info;
 use itertools::Itertools;
 
@@ -10,6 +10,7 @@ pub struct ReportData {
     pub test_result: TestResults,
     pub candidates: Vec<CandidatePosition>,
     pub result: Vec<(CandidatePosition, RefactorResult)>,
+    pub metrics: Vec<(String, String)>
 }
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub enum RefactorResult {
@@ -24,6 +25,7 @@ impl ReportData {
             candidates: vec![],
             result: vec![],
             test_result: TestResults::new(),
+            metrics: vec![]
         }
     }
     pub fn add_err(&mut self, candidate: CandidatePosition, err: RefactoringError) {
@@ -46,6 +48,29 @@ impl ReportData {
     pub fn set_test_result(&mut self, test_result: TestResults) {
         info!("Report::set_test_result: {}", test_result.to_single_line());
         self.test_result = test_result;
+    }
+    pub fn set_metrics(&mut self, metrics: &Metrics) {
+        let total: std::time::Duration = metrics.iter()
+            .map(|e| 
+                e.iter()
+                .find(|m| m.name == "total")
+                .unwrap().duration)
+            .sum();
+        self.metrics.push(("total".to_owned(), format!("{:?}", total)));
+        let refactoring: std::time::Duration = metrics.iter()
+            .map(|e| 
+                e.iter()
+                .find(|m| m.name == "refactor")
+                .unwrap().duration)
+            .sum();
+        self.metrics.push(("refactor".to_owned(), format!("{:?}", refactoring)));
+        let unit_test: std::time::Duration = metrics.iter()
+            .map(|e| 
+                e.iter()
+                .find(|m| m.name == "unit_test")
+                .unwrap().duration)
+            .sum();
+        self.metrics.push(("unit_test".to_owned(), format!("{:?}", unit_test)));
     }
     pub fn to_report(&self) -> Report {
         Report {
@@ -160,7 +185,8 @@ mod test {
                     message: "foo".to_owned()
                 }))
             ],
-            test_result: TestResults::new()
+            test_result: TestResults::new(),
+            metrics: vec![]
         };
 
         let expected = Report {

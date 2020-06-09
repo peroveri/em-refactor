@@ -1,10 +1,10 @@
-use super::{CmdRunner, ExperimentsOutput, ReportData, Stopwatch};
+use super::{CmdRunner, ExperimentsOutput, MetricsData, ReportData, Stopwatch};
 use em_refactor_lib_types::CandidatePosition;
 use std::path::PathBuf;
 use log::{error, info};
 use std::fs::File;
 use std::io::prelude::*;
-
+pub type Metrics = Vec<Vec<MetricsData>>;
 /// # Algo (Extract Method)
 /// Given Project / Crate
 /// C  <- Candidates (Extract block)
@@ -21,7 +21,8 @@ struct ExperimentsRunner {
     refactoring: String,
     cmd_runner: CmdRunner,
     report: ReportData,
-    only_file: Option<String>
+    only_file: Option<String>,
+    metrics: Metrics
 }
 
 impl ExperimentsRunner {
@@ -30,7 +31,8 @@ impl ExperimentsRunner {
             report: ReportData::new(refactoring.clone()),
             refactoring,
             cmd_runner,
-            only_file
+            only_file,
+            metrics: vec![]
         }
     }
 
@@ -58,6 +60,7 @@ impl ExperimentsRunner {
                 self.run_candidate_refactoring(candidate)?;
             }
         }
+        self.report.set_metrics(&self.metrics);
         Ok(())
     }
 
@@ -68,7 +71,6 @@ impl ExperimentsRunner {
         
         if let Some(err) = changes.errors.first() {
             self.report.add_err(candidate.clone(), err.clone());
-            stopwatch.add("add_err");
         } else {
             self.cmd_runner.apply_changes(changes)?;
             let next_test_result = self.cmd_runner.run_unit_tests()?;
@@ -78,9 +80,11 @@ impl ExperimentsRunner {
                 self.report.add_successful(candidate.clone());
             }
             self.cmd_runner.reset_repo()?;
-            stopwatch.add("reset_repo");
         }
-        info!("{}", stopwatch.report().unwrap());
+        stopwatch.add("unit_test");
+
+        self.metrics.push(stopwatch.report().unwrap());
+        info!("metrics: {}", &self.metrics.last().unwrap().iter().map(|e| format!("{:?}", e)).collect::<Vec<_>>().join(", "));
         
         Ok(())
     }
