@@ -20,16 +20,30 @@ use std::io::prelude::*;
 struct ExperimentsRunner {
     refactoring: String,
     cmd_runner: CmdRunner,
-    report: ReportData
+    report: ReportData,
+    only_file: Option<String>
 }
 
 impl ExperimentsRunner {
-    pub fn new(refactoring: String, cmd_runner: CmdRunner) -> Self {
+    pub fn new(refactoring: String, cmd_runner: CmdRunner, only_file: Option<String>) -> Self {
         Self {
             report: ReportData::new(refactoring.clone()),
             refactoring,
-            cmd_runner
+            cmd_runner,
+            only_file
         }
+    }
+
+    fn matches_file(&self, file: &str) -> bool {
+        if self.only_file.is_none() {
+            return true;
+        }
+        if let Some(f) = &self.only_file {
+            if f == file {
+                return true;
+            }
+        }
+        return false;
     }
 
     fn run_exp_on_project(&mut self) -> std::io::Result<()> {
@@ -40,7 +54,9 @@ impl ExperimentsRunner {
         self.report.set_test_result(self.cmd_runner.run_unit_tests()?);
         self.report.set_candidates(self.cmd_runner.query_candidates(&self.refactoring)?.candidates);
         for candidate in self.report.candidates.clone() {
-            self.run_candidate_refactoring(candidate)?;
+            if self.matches_file(&candidate.file) {
+                self.run_candidate_refactoring(candidate)?;
+            }
         }
         Ok(())
     }
@@ -78,7 +94,7 @@ pub fn run_all_exp(options: ExperimentOptions) -> std::io::Result<()> {
         tool_path.set_extension("exe");
     }
     let cmd_runner = CmdRunner::new_default_tmp_dir(&PathBuf::from(&options.workspace_root), tool_path);
-    let mut experiments_runner = ExperimentsRunner::new(options.refactoring.to_string(), cmd_runner);
+    let mut experiments_runner = ExperimentsRunner::new(options.refactoring.to_string(), cmd_runner, options.only_file.clone());
     experiments_runner.run_exp_on_project()?;
 
     let output = serde_json::to_string(&ExperimentsOutput::create(&experiments_runner.report)).unwrap();
@@ -90,7 +106,8 @@ pub struct ExperimentOptions {
     pub refactoring: String,
     pub started_at: String,
     pub workspace_root: String,
-    pub log_to_file: bool
+    pub log_to_file: bool,
+    pub only_file: Option<String>
 }
 
 impl ExperimentOptions {
