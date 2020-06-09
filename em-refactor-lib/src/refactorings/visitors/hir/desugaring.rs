@@ -8,10 +8,10 @@ pub fn walk_desugars<'v, T>(visitor: &mut T, expr: &'v Expr) -> bool where T: Vi
         walk_expr(visitor, arg);
         walk_expr(visitor, body);
         true
-    } else if let Some((cond, body)) = while_let(expr) {
-        walk_expr(visitor, cond);
-        walk_expr(visitor, body);
-        true
+    // } else if let Some((cond, body)) = while_let(expr) {
+    //     walk_expr(visitor, cond);
+    //     walk_expr(visitor, body);
+    //     true
     } else if let Some((cond, then, els)) = if_block(expr) {
         walk_expr(visitor, cond);
         walk_expr(visitor, then);
@@ -95,19 +95,18 @@ fn if_block<'tcx>(
     }
 }
 
-/// 
-fn while_let<'tcx>(
-    expr: &'tcx Expr<'tcx>,
-) -> Option<(
-    &'tcx Expr<'tcx>,
-    &'tcx Expr<'tcx>,
-)> {
-    if let ExprKind::Match(ref cond, ref arms, MatchSource::WhileLetDesugar) = expr.kind {
+// fn while_let<'tcx>(
+//     expr: &'tcx Expr<'tcx>,
+// ) -> Option<(
+//     &'tcx Expr<'tcx>,
+//     &'tcx Expr<'tcx>,
+// )> {
+//     if let ExprKind::Match(ref cond, ref arms, MatchSource::WhileLetDesugar) = expr.kind {
         
-        if let Some(arm) = arms.first() {
-            let Arm { body, .. } = arm;
-            return Some((cond, body));
-        }
-    } 
-    None
-}
+//         if let Some(arm) = arms.get(1) {
+//             let Arm { body, .. } = arm;
+//             return Some((cond, body));
+//         }
+//     } 
+//     None
+// }

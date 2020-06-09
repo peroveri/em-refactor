@@ -56,18 +56,20 @@ impl<'v> Visitor<'v> for BlockCollector<'v> {
         if self.body_id.is_empty() {
             return;
         }
-        if !body.span.contains(self.pos) {
-            return;
-        }
+        // if !body.span.contains(self.pos) && !body.span.from_expansion() {
+        //     return;
+        // }
 
         walk_block(self, body);
         if self.result.is_some() {
             return;
         }
 
-        self.result = Some((
-             body,
-            *self.body_id.last().unwrap()));
+        if body.span.contains(self.pos) && !body.span.from_expansion() {
+            self.result = Some((
+                body,
+                *self.body_id.last().unwrap()));
+        }
     }
     fn visit_expr(&mut self, expr: &'v Expr) {
         if !walk_desugars(self, expr) {
@@ -283,7 +285,6 @@ mod test {
         assert_eq!(actual, expected);
     }
     #[test]
-    #[ignore]
     fn desugar_whilelet() {
         let input = r#"
         fn foo(mut i: Option<i32>) {
