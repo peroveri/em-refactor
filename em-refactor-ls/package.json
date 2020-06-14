@@ -34,7 +34,7 @@
 				"emRefactor.isMicroRefactoringsShown": {
 					"scope": "window",
 					"type": "boolean",
-					"default": false,
+					"default": true,
 					"description": "Controls whether micro refactorings are shown."
 				},
 				"emRefactor.isUnsafeRefactoringShown": {
