@@ -19,7 +19,7 @@
 		"vscode-languageserver": "~5.2.1"
 	},
 	"devDependencies": {
-		"mocha": "^6.1.4"
+		"mocha": "^10.2.0"
 	},
 	"scripts": {
 		"pretest": "cd .. && npm run compile",
